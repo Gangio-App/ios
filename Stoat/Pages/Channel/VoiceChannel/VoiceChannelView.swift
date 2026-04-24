@@ -57,7 +57,11 @@ struct VoiceChannelView: View {
         
         let token = try! await viewState.http.joinVoiceChannel(channel: channel.id, node: node.name).get()
         let dele = VoiceChannelDelegate(updater: $updater)
-        let room = Room(delegate: dele, connectOptions: ConnectOptions(autoSubscribe: false))
+        let room = Room(delegate: dele, connectOptions: ConnectOptions(autoSubscribe: true))
+        
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP])
+        try? session.setActive(true)
         
         try! await room.connect(url: node.public_url, token: token.token)
         
@@ -364,10 +368,7 @@ class VoiceChannelDelegate: RoomDelegate {
     func room(_ room: Room, participant: RemoteParticipant, didPublishTrack publication: RemoteTrackPublication) {
         print("remote \(publication.kind), \(publication.source)")
         print(publication.track)
-        
-        if publication.kind == .audio {
-            Task { try! await publication.set(subscribed: true) }
-        }
+        // Auto-subscription will handle this now
         
         self.updater.toggle()
     }

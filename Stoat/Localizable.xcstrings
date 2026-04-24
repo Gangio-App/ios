@@ -1,432 +1,298 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
-    "(edited)" : {
-
-    },
-    "@" : {
-
-    },
-    "@ off" : {
-
-    },
-    "@ on" : {
-
-    },
-    "#%@" : {
-
-    },
-    "%@" : {
-
-    },
-    "%@ code" : {
-
-    },
-    "%lld" : {
-
-    },
+    "" : { },
+    "(edited)" : { },
     "About" : {
-
-    },
-    "Accent" : {
-
-    },
-    "Active Sessions" : {
-
-    },
-    "Add a server" : {
-
-    },
-    "Add a topic..." : {
-
-    },
-    "Add Friend" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Über" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hakkında" } }
+      }
     },
     "Appearance" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Erscheinungsbild" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Görünüm" } }
+      }
     },
     "Auto" : {
-
-    },
-    "Banner" : {
-
-    },
-    "Bans" : {
-
-    },
-    "Bio" : {
-
-    },
-    "Bot" : {
-
-    },
-    "Brought to you with ❤️ by the Revolt team." : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Automatisch" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Otomatik" } }
+      }
     },
     "Cancel" : {
-
-    },
-    "Categories" : {
-
-    },
-    "Channel Icon" : {
-
-    },
-    "Code or link" : {
-
-    },
-    "Community Guidelines" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Abbrechen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "İptal" } }
+      }
     },
     "Connecting..." : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Verbinde..." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bağlanıyor..." } }
+      }
     },
     "Conversations" : {
-
-    },
-    "Copy contents" : {
-
-    },
-    "Create a new server" : {
-
-    },
-    "Create Account" : {
-
-    },
-    "Created %lld days ago" : {
-
-    },
-    "Created today" : {
-
-    },
-    "Customisation" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Unterhaltungen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sohbetler" } }
+      }
     },
     "Dark" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Dunkel" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Koyu" } }
+      }
     },
     "Delete" : {
-
-    },
-    "Delete channel" : {
-
-    },
-    "Delete server" : {
-
-    },
-    "Didn't get an email?" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Löschen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sil" } }
+      }
     },
     "Direct Messages" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Direktnachrichten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Direkt Mesajlar" } }
+      }
     },
     "Discovery" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Entdecken" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Keşfet" } }
+      }
     },
     "Edit" : {
-
-    },
-    "Email" : {
-
-    },
-    "Email Token" : {
-
-    },
-    "Emojis" : {
-
-    },
-    "enter" : {
-
-    },
-    "Enter the server's invite" : {
-
-    },
-    "Enter the verification code sent to your email" : {
-
-    },
-    "Enter your email, and if we've got you on record we'll send you another one" : {
-
-    },
-    "Enter your Username" : {
-
-    },
-    "Find your community, connect with the world." : {
-
-    },
-    "foo" : {
-
-    },
-    "Forgot Password" : {
-
-    },
-    "Forgot your password?" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Bearbeiten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düzenle" } }
+      }
     },
     "Friends" : {
-
-    },
-    "Get another code" : {
-
-    },
-    "Give us some detail" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Freunde" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Arkadaşlar" } }
+      }
     },
     "Home" : {
-
-    },
-    "How did you get here?" : {
-
-    },
-    "I confirm that i am at least 18 years old" : {
-
-    },
-    "Invite Members" : {
-
-    },
-    "Invites" : {
-
-    },
-    "Join" : {
-
-    },
-    "Join by invite code or link" : {
-
-    },
-    "Join Server" : {
-
-    },
-    "Joined" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Home" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ana Sayfa" } }
+      }
     },
     "Language" : {
-
-    },
-    "Let's fix that" : {
-
-    },
-    "Let's log you in" : {
-
-    },
-    "Let's sign you up" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Sprache" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dil" } }
+      }
     },
     "Light" : {
-
-    },
-    "Loading more messages..." : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Hell" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Açık" } }
+      }
     },
     "Loading..." : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Laden..." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yükleniyor..." } }
+      }
     },
     "Log In" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Anmelden" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Giriş Yap" } }
+      }
     },
     "Logout" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Abmelden" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çıkış Yap" } }
+      }
     },
     "Members" : {
-
-    },
-    "Members - %lld" : {
-
-    },
-    "Message %@" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Mitglieder" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Üyeler" } }
+      }
     },
     "Message Box" : {
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Message Box"
-          }
-        }
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Nachrichtenbox" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj Kutusu" } }
       }
     },
-    "Message Box Background" : {
-
-    },
-    "Message Box Border" : {
-
-    },
-    "Misc" : {
-
-    },
-    "Mute" : {
-
-    },
-    "New messages since %@" : {
-
-    },
-    "New Password" : {
-
-    },
-    "No hcaptcha support" : {
-
-    },
-    "No hcapture support" : {
-
-    },
-    "One more thing" : {
-
-    },
-    "Open Profile" : {
-
-    },
     "Overview" : {
-
-    },
-    "Password" : {
-
-    },
-    "Permissions" : {
-
-    },
-    "Pick a category" : {
-
-    },
-    "Please note that this does not get sent to this server's moderators" : {
-
-    },
-    "Primary Background" : {
-
-    },
-    "Privacy Policy" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Übersicht" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Genel Bakış" } }
+      }
     },
     "Profile" : {
-
-    },
-    "Profile Picture" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Profil" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Profil" } }
+      }
     },
     "Reply" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Antworten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yanıtla" } }
+      }
     },
     "Report" : {
-
-    },
-    "Report reason" : {
-
-    },
-    "Resend a verification email" : {
-
-    },
-    "Reset Password" : {
-
-    },
-    "Revolt" : {
-
-    },
-    "Revolt is one of the best ways to stay connected with your friends and community, anywhere, anytime." : {
-
-    },
-    "Revolt on IOS" : {
-
-    },
-    "Roles" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Melden" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Rapor Et" } }
+      }
     },
     "Save" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Speichern" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kaydet" } }
+      }
     },
     "Saved Messages" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Gespeicherte Nachrichten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kaydedilen Mesajlar" } }
+      }
     },
     "Search" : {
-
-    },
-    "Secondary Background" : {
-
-    },
-    "Select File" : {
-
-    },
-    "Select Photo" : {
-
-    },
-    "Select Username" : {
-
-    },
-    "Server Description" : {
-
-    },
-    "Server Icon" : {
-
-    },
-    "Server Name" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Suche" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ara" } }
+      }
     },
     "Sessions" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Sitzungen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Oturumlar" } }
+      }
     },
     "Settings" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ayarlar" } }
+      }
     },
     "Sign Up" : {
-
-    },
-    "Submit" : {
-
-    },
-    "Tell us what's wrong with this message" : {
-
-    },
-    "Terms of Service" : {
-
-    },
-    "Text Colour" : {
-
-    },
-    "This channel is marked as NSFW" : {
-
-    },
-    "This Device" : {
-
-    },
-    "This is the start of your conversation." : {
-
-    },
-    "Todo" : {
-
-    },
-    "Top Bar" : {
-
-    },
-    "unknown" : {
-
-    },
-    "Unknown message" : {
-
-    },
-    "use a %@ code" : {
-
-    },
-    "User Management" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Registrieren" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kayıt Ol" } }
+      }
     },
     "Username" : {
-
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Benutzername" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kullanıcı Adı" } }
+      }
     },
-    "Verification Code" : {
-
+    "Notification Permissions" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bildirim İzinleri" } }
+      }
     },
-    "Verify" : {
-
+    "Push Notifications" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Anlık Bildirimler" } }
+      }
     },
-    "Welcome to" : {
-
+    "Receive notifications when the app is closed" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uygulama kapalıyken bildirim al" } }
+      }
     },
-    "What's wrong..." : {
-
+    "In-App Notifications" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uygulama İçi Bildirimler" } }
+      }
     },
-    "You've got 2FA enabled to keep your account extra-safe." : {
-
+    "Show notifications while using the app" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uygulamayı kullanırken bildirimleri göster" } }
+      }
+    },
+    "Account Preferences" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hesap Tercihleri" } }
+      }
+    },
+    "Global Preferences" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Genel Tercihler" } }
+      }
+    },
+    "DMs, mentions, and server defaults" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "DM'ler, bahsetmeler ve sunucu varsayılanları" } }
+      }
+    },
+    "Troubleshooting" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sorun Giderme" } }
+      }
+    },
+    "System Settings" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sistem Ayarları" } }
+      }
+    },
+    "Open device settings to manage alerts" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uyarıları yönetmek için cihaz ayarlarını aç" } }
+      }
+    },
+    "Voice & Audio" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses & Görüntü" } }
+      }
+    },
+    "Audio Levels" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Seviyeleri" } }
+      }
+    },
+    "Master Volume" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ana Ses Seviyesi" } }
+      }
+    },
+    "Sound Effects" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Efektleri" } }
+      }
+    },
+    "Message Sent" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj Gönderildi" } }
+      }
+    },
+    "Play a sound when you send a message" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj gönderdiğinde bir ses çal" } }
+      }
+    },
+    "Message Received" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj Alındı" } }
+      }
+    },
+    "Play a sound when you receive a message" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj aldığında bir ses çal" } }
+      }
+    },
+    "Voice Input" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Girişi" } }
+      }
+    },
+    "Voice Output" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Çıkışı" } }
+      }
     }
   },
   "version" : "1.0"

@@ -9,38 +9,48 @@ import SwiftUI
 
 struct DeveloperSettings: View {
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        List {
-            Button {
-                Task {
-                    await viewState.promptForNotifications()
-                }
-            } label: {
-                Text("Force remote notification upload")
-            }
-            .listRowBackground(viewState.theme.background2)
-
-            Section("Api Url") {
-                TextField("Api Url", text: Binding {
-                    try! ViewState.decodeUserDefaults(forKey: "apiUrl") ?? DEFAULT_API_URL
-                } set: {
-                    UserDefaults.standard.set(try! JSONEncoder().encode($0), forKey: "apiUrl")
-                    try! viewState.keychain.remove("sessionToken")
-                })
-                .foregroundStyle(viewState.theme.foreground2)
-                
-                Button("Sign out and switch instance") {
-                    Task {
-                        try! await viewState.signOut().get()
+        ScrollView {
+            VStack(spacing: 20) {
+                // Debug Actions
+                SettingsSectionView(title: "Debug Actions") {
+                    Button(action: {
+                        Task {
+                            await viewState.promptForNotifications()
+                        }
+                    }) {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.blue.opacity(0.15))
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "bell.badge.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.blue)
+                            }
+                            Text("Force Remote Notification Upload")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(colorScheme == .dark ? .white : .black)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                     }
                 }
-                .foregroundStyle(viewState.theme.error)
+
+                // API Info (read-only)
+                SettingsSectionView(title: "API Info") {
+                    InfoRow(icon: "server.rack", iconColor: .purple, title: "API URL", value: viewState.http.baseURL)
+                    Divider().padding(.leading, 52)
+                    InfoRow(icon: "antenna.radiowaves.left.and.right", iconColor: .green, title: "WS", value: viewState.apiInfo?.ws ?? "N/A")
+                }
             }
-            .listRowBackground(viewState.theme.background2)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
         }
-        .background(viewState.theme.background)
-        .scrollContentBackground(.hidden)
+        .background(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96))
         .toolbarBackground(viewState.theme.topBar, for: .automatic)
         .navigationTitle("Developer")
     }

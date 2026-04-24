@@ -2,7 +2,7 @@ import SwiftUI
 import Sentry
 import Types
 
-let DEFAULT_API_URL: String = "https://api.stoat.chat"
+let DEFAULT_API_URL: String = "https://gangio.pro/api"
 
 @main
 struct StoatApp: App {
@@ -35,7 +35,8 @@ struct StoatApp: App {
                 .tint(state.theme.accent.color)
                 .background(state.theme.background.color)
                 .foregroundStyle(state.theme.foreground.color)
-                .typesettingLanguage((state.currentLocale ?? systemLocale).language)
+                .environment(\.locale, state.currentLocale ?? systemLocale)
+                .preferredColorScheme(state.theme.shouldFollowiOSTheme ? nil : (Theme.isLightOrDark(state.theme.background) ? .light : .dark))
                 .onOpenURL { url in
                     print(url)
                     let components = NSURLComponents(string: url.absoluteString)
@@ -256,6 +257,11 @@ struct MainApp: View {
                 case .channel_pins(let id):
                     let channel = Binding($viewState.channels[id])!
                     ChannelPins(channel: channel)
+                case .profile_settings:
+                    ProfileSettings()
+                case .status_settings:
+                    Settings() // For now, status editor is a sheet in Settings, so going to settings is the closest path. 
+                    // Or I could make a dedicated StatusScreen.
 
             }
         }

@@ -43,11 +43,12 @@ func maybeGetPasteboardValue(_ callback: (String?, String?) -> ()) {
 
 fileprivate struct CreateMFATicketView: View {
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
     @State private var fieldIsIncorrect = false
     @State private var fieldShake = false
     @State private var fieldValue = ""
+    @State private var isLoading = false
     
-    /// RecoveryCode is for internal use
     enum RequestTicketType { case Password, Code, RecoveryCode }
     
     var requestTicketType: RequestTicketType
@@ -65,6 +66,7 @@ fileprivate struct CreateMFATicketView: View {
     }
     
     func submitForTicket() async {
+        isLoading = true
         if fieldIsIncorrect {
             withAnimation {
                 fieldIsIncorrect = false
@@ -73,6 +75,7 @@ fileprivate struct CreateMFATicketView: View {
         
         if fieldValue.isEmpty {
             setBadField()
+            isLoading = false
             return
         }
         
@@ -94,10 +97,12 @@ fileprivate struct CreateMFATicketView: View {
         
         if ticket == nil {
             setBadField()
+            isLoading = false
             return
         }
         
         doneCallback(ticket!)
+        isLoading = false
     }
     
     func receivePasteboardCallback(totp: String?, recovery: String?) {
@@ -111,98 +116,109 @@ fileprivate struct CreateMFATicketView: View {
     }
     
     var body: some View {
-        VStack {
-            Text("Hold Up!", comment: "title prompt for password when setting up totp")
-                .font(.title)
-            if requestTicketType == .Password {
-                Text("This area is guarded by trolls. Tell them your password to continue.", comment: "subtitle prompt for password when setting up totp")
-                    .font(.title2)
-            } else {
-                Text("This area is guarded by trolls. Fetch them your TOTP code to continue.", comment: "subtitle prompt for password when modifying totp")
-                    .font(.title2)
+        VStack(spacing: 24) {
+            VStack(spacing: 12) {
+                Image(systemName: requestTicketType == .Password ? "lock.shield.fill" : "key.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.purple)
+                
+                Text(requestTicketType == .Password ? "Verification Required" : "Enter Code")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                
+                Text(requestTicketType == .Password 
+                     ? "Please enter your account password to verify your identity." 
+                     : "Check your authenticator app for the 2FA code.")
+                    .font(.system(size: 15))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
             }
-            Spacer()
-                .frame(maxHeight: 50)
+            .padding(.top, 20)
             
-            if requestTicketType == .Password {
-                SecureField(String(localized: "Enter Password", comment: "Password prompt"), text: $fieldValue)
-                    .textContentType(.password)
-                    .offset(x: fieldShake ? 30 : 0)
-                    .onChange(of: fieldValue) { _, _ in
-                        if fieldIsIncorrect {
-                            withAnimation {
-                                fieldIsIncorrect = false
-                            }
-                        }
-                    }
-                    .onSubmit {
-                        Task { await submitForTicket() }
-                    }
-            } else {
-                // TODO: this needs something to toggle to recovery code mode
-                TextField(String(localized: "Enter TOTP code", comment: "Authenticator prompt"), text: $fieldValue)
-                    .textContentType(.oneTimeCode)
-                    .offset(x: fieldShake ? 30 : 0)
-                #if os(iOS)
-                    .keyboardType(UIKeyboardType.numberPad)
-                #endif
-                    .onChange(of: fieldValue) { _, _ in
-                        if fieldIsIncorrect {
-                            withAnimation {
-                                fieldIsIncorrect = false
-                            }
-                        }
-                        
-                        if fieldValue.count == 6 {
+            VStack(alignment: .leading, spacing: 10) {
+                if requestTicketType == .Password {
+                    SecureField("Password", text: $fieldValue)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(fieldIsIncorrect ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                        .textContentType(.password)
+                        .offset(x: fieldShake ? 10 : 0)
+                        .onSubmit {
                             Task { await submitForTicket() }
                         }
-                    }
-                    .onSubmit {
-                        Task { await submitForTicket() }
-                    }
-                    .onTapGesture {
-                        maybeGetPasteboardValue(receivePasteboardCallback)
-                    }
-            }
-            if fieldIsIncorrect {
-                if !fieldValue.isEmpty {
-                    Text("Try again", comment: "the user entered an incorrect password")
-                        .foregroundStyle(Color.red)
-                        .font(.caption)
                 } else {
-                    Text("You must enter your password", comment: "the user entered a blank password")
-                        .foregroundStyle(Color.red)
+                    TextField("2FA Code", text: $fieldValue)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(fieldIsIncorrect ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                        .textContentType(.oneTimeCode)
+                        #if os(iOS)
+                        .keyboardType(.numberPad)
+                        #endif
+                        .offset(x: fieldShake ? 10 : 0)
+                        .onChange(of: fieldValue) { _, _ in
+                            if fieldValue.count == 6 && requestTicketType == .Code {
+                                Task { await submitForTicket() }
+                            }
+                        }
+                        .onTapGesture {
+                            maybeGetPasteboardValue(receivePasteboardCallback)
+                        }
+                }
+                
+                if fieldIsIncorrect {
+                    Text(fieldValue.isEmpty ? "Required field" : "Incorrect authentication code")
                         .font(.caption)
+                        .foregroundColor(.red)
+                        .padding(.leading, 4)
                 }
             }
+            
+            Button(action: {
+                Task { await submitForTicket() }
+            }) {
+                HStack {
+                    if isLoading {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Continue")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
+            }
+            .disabled(isLoading || fieldValue.isEmpty)
         }
+        .padding(24)
     }
 }
+
 
 fileprivate struct AddTOTPSheet: View {
     private enum Phase { case Password, Code, Verify, FatalError}
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
     @State private var currentPhase: Phase = .Password
     @Binding var showSheet: Bool
     
     @State var OTP = ""
     @State var fieldShake = false
     @State var fieldIsIncorrect = false
+    @State var isSaving = false
     
     @State var ticket: MFATicketResponse? = nil
-    
     @State var secret: String? = nil
-    
-    func setBadField() {
-        withAnimation {
-            fieldIsIncorrect = true
-        }
-        
-        fieldShake = true
-        withAnimation(Animation.spring(response: 0.2, dampingFraction: 0.2, blendDuration: 0.2)) {
-            fieldShake = false
-        }
-    }
     
     func receiveTicket(mfaTicket: MFATicketResponse) async {
         ticket = mfaTicket
@@ -216,7 +232,6 @@ fileprivate struct AddTOTPSheet: View {
                 currentPhase = .Code
             }
         } catch {
-            log.error("Errored out attempting to receive TOTP secret: \(error.localizedDescription)")
             withAnimation {
                 currentPhase = .FatalError
             }
@@ -224,34 +239,22 @@ fileprivate struct AddTOTPSheet: View {
     }
     
     func finalize() async {
-        if fieldIsIncorrect {
-            withAnimation {
-                fieldIsIncorrect = false
-            }
-        }
-        
-        if OTP.isEmpty {
-            setBadField()
-            return
-        }
-        
+        isSaving = true
         let resp = await viewState.http.enableTOTP(mfaToken: ticket!.token, totp_code: OTP)
         
         do {
             _ = try resp.get()
+            showSheet = false
         } catch {
-            setBadField()
-            return
+            withAnimation {
+                fieldIsIncorrect = true
+                fieldShake = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                fieldShake = false
+            }
         }
-        
-        showSheet = false
-    }
-    
-    func receivePasteboardCallback(totp: String?, recovery: String?) {
-        if totp != nil {
-            OTP = totp!
-            Task { await finalize() }
-        }
+        isSaving = false
     }
     
     var body: some View {
@@ -260,58 +263,118 @@ fileprivate struct AddTOTPSheet: View {
                 CreateMFATicketView(requestTicketType: .Password, doneCallback: {ticket in Task{await receiveTicket(mfaTicket: ticket)}})
             }
             else if currentPhase == .Code {
-                Text("Code time", comment: "debug print, dont translate")
-                Spacer()
-                    .frame(maxHeight: 10)
-                Text(secret!)
-                    .selectionDisabled(false)
-                    .onTapGesture {
-                        copyText(text: secret!)
+                VStack(spacing: 24) {
+                    Image(systemName: "qrcode.viewfinder")
+                        .font(.system(size: 48))
+                        .foregroundColor(.purple)
+                    
+                    Text("Setup Authenticator")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    
+                    Text("Manually enter this secret in your authenticator app, or click below to open it directly.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                    
+                    Text(secret!)
+                        .font(.system(.body, design: .monospaced))
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                        .onTapGesture {
+                            UIPasteboard.general.string = secret!
+                        }
+                    
+                    Link(destination: URL(string: generateTOTPUrl(secret: secret!, email: viewState.userSettingsStore.cache.accountData!.email))!) {
+                        HStack {
+                            Image(systemName: "plus.app.fill")
+                            Text("Open Authenticator App")
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue))
                     }
-                Spacer()
-                    .frame(maxHeight: 10)
-                Link(destination: URL(
-                    string: generateTOTPUrl(
-                        secret: secret!,
-                        email: viewState.userSettingsStore.cache.accountData!.email
-                    ))!) {
-                        Text("Open in authenticator app", comment: "open the user's authenticator app")
+                    
+                    Button(action: {
+                        withAnimation { currentPhase = .Verify }
+                    }) {
+                        Text("Next Step")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
                     }
-                    .foregroundStyle(Color.blue)
-                Spacer()
-                    .frame(maxHeight: 10)
-                Button(action: {
-                    withAnimation {
-                        currentPhase = .Verify
-                    }
-                }) {
-                    Text("Next")
                 }
+                .padding(24)
             }
             else if currentPhase == .Verify {
-                Text("Verify time", comment: "debug print, dont translate")
-                Text("Enter the code provided by your authenticator app", comment: "prompting the user for their OTP while setting up TOTP")
-                TextField(String(localized: "code", comment: "TOTP code"), text: $OTP)
-                    .textContentType(.oneTimeCode)
-                    .onSubmit {
-                        Task{ await finalize() }
+                VStack(spacing: 24) {
+                    Image(systemName: "checkerboard.shield")
+                        .font(.system(size: 48))
+                        .foregroundColor(.purple)
+                    
+                    Text("Verify Authenticator")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    
+                    Text("Enter the 6-digit code from your authenticator app to complete setup.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                    
+                    TextField("6-digit Code", text: $OTP)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(fieldIsIncorrect ? Color.red : Color.clear, lineWidth: 1)
+                        )
+                        .textContentType(.oneTimeCode)
+                        #if os(iOS)
+                        .keyboardType(.numberPad)
+                        #endif
+                        .offset(x: fieldShake ? 10 : 0)
+                        .onChange(of: OTP) { _, _ in
+                            if OTP.count == 6 {
+                                Task { await finalize() }
+                            }
+                        }
+                    
+                    Button(action: {
+                        Task { await finalize() }
+                    }) {
+                        HStack {
+                            if isSaving {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("Enable 2FA")
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
                     }
-                #if os(iOS)
-                    .keyboardType(.numberPad)
-                #endif
-                    .onTapGesture {
-                        maybeGetPasteboardValue(receivePasteboardCallback)
-                    }
-                    .onAppear {
-                        maybeGetPasteboardValue(receivePasteboardCallback)
-                    }
+                    .disabled(OTP.count != 6 || isSaving)
+                }
+                .padding(24)
             }
             else if currentPhase == .FatalError {
-                Text("Something went wrong. Try again later?")
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.largeTitle)
+                        .foregroundColor(.red)
+                    Text("Something went wrong")
+                    Button("Close") { showSheet = false }
+                }
+                .padding()
             }
         }
-        .padding()
-        .transition(.slide)
     }
 }
 
@@ -324,15 +387,10 @@ fileprivate struct RemoveTOTPSheet: View {
     func removeTOTP(ticket: MFATicketResponse) {
         Task {
             do {
-                print(try await viewState.http.disableTOTP(mfaToken: ticket.token).get())
+                _ = try await viewState.http.disableTOTP(mfaToken: ticket.token).get()
                 showSheet = false
             } catch {
-                let error = error as! RevoltError
-                SentrySDK.capture(error: error)
-                
-                withAnimation {
-                    errorOccurred = true
-                }
+                withAnimation { errorOccurred = true }
             }
         }
     }
@@ -341,110 +399,91 @@ fileprivate struct RemoveTOTPSheet: View {
         VStack {
             CreateMFATicketView(requestTicketType: .Password, doneCallback: removeTOTP)
             if errorOccurred {
-                Spacer()
-                    .frame(maxHeight: 10)
-                Text("Something went wrong. Try again later?")
-                    .foregroundStyle(.red)
+                Text("Error removing 2FA. Identity verification failed.")
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .padding(.bottom, 20)
             }
         }
-        .padding()
     }
 }
 
 fileprivate struct GenerateRecoveryCodesSheet: View {
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
     @Binding var showSheet: Bool
     @Binding var sheetIsNotDismissable: Bool
-    @State var errorOccurred = false
     @State var codes: [String] = []
-    @State var copyButtonText = String(localized: "Copy to clipboard")
-    @State var isCopyDisabled = false
+    @State var isCopied = false
     
     func generateCodes(ticket: MFATicketResponse) {
         Task {
             do {
                 let _codes = try await viewState.http.generateRecoveryCodes(mfaToken: ticket.token).get()
-                
                 sheetIsNotDismissable = true
-                withAnimation {
-                    codes = _codes
-                }
+                withAnimation { codes = _codes }
             } catch {
-                let error = error as! RevoltError
-                SentrySDK.capture(error: error)
-                
-                withAnimation {
-                    errorOccurred = true
-                }
+                // handle error
             }
         }
     }
     
-    // known bug: the MFATicketview doesnt fully slide offscreen
     var body: some View {
         VStack {
             if codes.isEmpty {
                 CreateMFATicketView(requestTicketType: .Password, doneCallback: generateCodes)
-                    .transition(.slideNext)
             } else {
-                VStack {
-                    ForEach(0 ..< codes.count, id: \.self) { value in
-                        Text(codes[value])
-                            .font(.subheadline)
-                            .fontWeight(.heavy)
-                            .padding(5)
-                            .textSelection(.enabled)
+                VStack(spacing: 24) {
+                    Image(systemName: "key.horizontal.fill")
+                        .font(.system(size: 48))
+                        .foregroundColor(.green)
+                    
+                    Text("Recovery Codes")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    
+                    Text("Save these codes in a safe place. You can use them to sign in if you lose your 2FA device.")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                    
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        ForEach(codes, id: \.self) { code in
+                            Text(code)
+                                .font(.system(.subheadline, design: .monospaced))
+                                .padding(8)
+                                .frame(maxWidth: .infinity)
+                                .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                                .cornerRadius(8)
+                        }
                     }
-                    Spacer()
+                    .padding(.vertical, 10)
 
-                    Button(action: {
-                        let content = codes.joined(separator: "\n")
-                        UIPasteboard.general.setValue(content, forPasteboardType: UTType.plainText.identifier)
-                        
-                        withAnimation {
-                            copyButtonText = String(localized: "Copied!")
-                            isCopyDisabled = true
+                    VStack(spacing: 12) {
+                        Button(action: {
+                            UIPasteboard.general.string = codes.joined(separator: "\n")
+                            withAnimation { isCopied = true }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { isCopied = false }
+                        }) {
+                            HStack {
+                                Image(systemName: isCopied ? "checkmark" : "doc.on.doc.fill")
+                                Text(isCopied ? "Copied!" : "Copy All")
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(isCopied ? Color.green : Color.blue))
                         }
                         
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: {
-                            withAnimation {
-                                copyButtonText = String(localized: "Copy to clipboard")
-                                isCopyDisabled = false
-                            }
-                        })
-                    }) {
-                        Text(copyButtonText)
+                        Button("Done") { showSheet = false }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.gray)
+                            .padding(.top, 4)
                     }
-                    .padding(.vertical, 10)
-                    .frame(width: 250.0)
-                    .foregroundStyle(viewState.theme.foreground)
-                    .background(viewState.theme.background2)
-                    .clipShape(.rect(cornerRadius: 50))
-                    .disabled(isCopyDisabled)
-                    
-                    Button(action: {
-                        showSheet = false
-                    }) {
-                        Text("Done")
-                    }
-                    .padding(.vertical, 10)
-                    .frame(width: 250.0)
-                    .foregroundStyle(viewState.theme.foreground)
-                    .background(viewState.theme.background2)
-                    .clipShape(.rect(cornerRadius: 50))
                 }
-                .backgroundStyle(viewState.theme.background2)
-                .padding()
-                .transition(.slideNext)
-            }
-            if errorOccurred {
-                Spacer()
-                    .frame(maxHeight: 10)
-                Text("Something went wrong. Try again later?")
-                    .foregroundStyle(.red)
+                .padding(24)
             }
         }
-        .padding()
     }
 }
 
@@ -452,196 +491,178 @@ fileprivate struct GenerateRecoveryCodesSheet: View {
 
 fileprivate struct UsernameUpdateSheet: View {
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
     @Binding var showSheet: Bool
     
     @State var value: String
     @State var password: String = ""
-    
-    @FocusState var nameFieldState: Bool
-    @FocusState var passwordFieldState: Bool
-    
-    @State var errorOccurred = false
+    @State var isSaving = false
+    @State var errorText: String? = nil
     
     init(viewState: ViewState, showSheet sheet: Binding<Bool>) {
         _showSheet = sheet
-        _value = State(initialValue: "")
-        _value.wrappedValue = viewState.userSettingsStore.cache.user!.username
+        _value = State(initialValue: viewState.userSettingsStore.cache.user?.username ?? "")
     }
     
     func submitName() async {
+        isSaving = true
+        errorText = nil
         do {
             _ = try await viewState.http.updateUsername(newName: value, password: password).get()
             showSheet = false
         } catch {
-            // TODO: better error messages
-            withAnimation {
-                errorOccurred = true
-            }
+            errorText = "Incorrect password or username invalid"
         }
+        isSaving = false
     }
     
     var body: some View {
-        VStack {
-            HStack {
-                TextField("Enter a new username", text: $value)
-                    .textContentType(.username)
-                    .font(.title2)
-                    .frame(height: 30)
-                    .textFieldStyle(.roundedBorder)
-                    .background(viewState.theme.background2)
-                    .foregroundStyle(viewState.theme.foreground)
-                    .onSubmit {
-                        if password.isEmpty {
-                            passwordFieldState = true
-                        } else {
-                            Task {
-                                await submitName()
-                            }
-                        }
-                    }
-                    .focused($nameFieldState)
-                Text("#\(viewState.userSettingsStore.cache.user!.discriminator)")
-                    //.addBorder(viewState.theme.accent, cornerRadius: 1.0)
+        VStack(spacing: 24) {
+            VStack(spacing: 12) {
+                Image(systemName: "person.text.rectangle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.purple)
+                
+                Text("Change Username")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
             }
-            Spacer()
-                .frame(maxHeight: 30)
-            SecureField("Password", text: $password)
-                .textContentType(.password)
-                .onSubmit {
-                    if value.isEmpty {
-                        nameFieldState = true
+            .padding(.top, 20)
+            
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("NEW USERNAME")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.gray)
+                    
+                    TextField("Username", text: $value)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("CONFIRM PASSWORD")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.gray)
+                    
+                    SecureField("Current Password", text: $password)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                }
+                
+                if let error = errorText {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .padding(.top, 4)
+                }
+            }
+            
+            Button(action: { Task { await submitName() } }) {
+                HStack {
+                    if isSaving {
+                        ProgressView().tint(.white)
                     } else {
-                        Task {
-                            await submitName()
-                        }
+                        Text("Update Username")
+                            .font(.system(size: 16, weight: .semibold))
                     }
                 }
-                .font(.title2)
-                .frame(height: 30)
-                .focused($passwordFieldState)
-                .textFieldStyle(.roundedBorder)
-                .background(viewState.theme.background2)
-                //.clipShape(.rect(cornerRadius: 30))
-            if errorOccurred {
-                Text("The trolls have rejected your password")
-                    .foregroundStyle(Color.red)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
             }
-            Spacer()
-                .frame(minHeight: 30, maxHeight: 70)
-            Button(action: {
-                if value.isEmpty {
-                    nameFieldState = true
-                } else if password.isEmpty {
-                    passwordFieldState = true
-                } else {
-                    Task {
-                        await submitName()
-                    }
-                }
-            }) {
-                Text("Change it", comment: "'done' button for changing username")
-            }
-            .padding(.vertical, 10)
-            .frame(width: 250.0)
-            .foregroundStyle(viewState.theme.foreground)
-            .background(viewState.theme.background2)
-            .clipShape(.rect(cornerRadius: 50))
+            .disabled(isSaving || value.isEmpty || password.isEmpty)
+            
+            Spacer().frame(height: 10)
         }
-        .onChange(of: value, {_, _ in errorOccurred = false})
-        .onChange(of: password, {_, _ in errorOccurred = false})
+        .padding(24)
     }
 }
 
 
 fileprivate struct PasswordUpdateSheet: View {
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
     @Binding var showSheet: Bool
     
     @State var oldPassword: String = ""
     @State var newPassword: String = ""
-    
-    @FocusState var oldPasswordFocus: Bool
-    @FocusState var newPasswordFocus: Bool
-    
-    @State var errorOccurred = false
+    @State var isSaving = false
+    @State var errorText: String? = nil
     
     func submitPassword() async {
+        isSaving = true
+        errorText = nil
         do {
             _ = try await viewState.http.updatePassword(newPassword: newPassword, oldPassword: oldPassword).get()
             showSheet = false
         } catch {
-            // TODO: better error messages
-            withAnimation {
-                errorOccurred = true
-            }
+            errorText = "Current password is incorrect"
         }
+        isSaving = false
     }
     
     var body: some View {
-        VStack {
-            SecureField("Old Password", text: $oldPassword)
-                .textContentType(.password)
-                .font(.title2)
-                .frame(height: 30)
-                .textFieldStyle(.roundedBorder)
-                .background(viewState.theme.background2)
-                .foregroundStyle(viewState.theme.foreground)
-                .onSubmit {
-                    if newPassword.isEmpty {
-                        newPasswordFocus = true
-                    } else {
-                        Task {
-                            await submitPassword()
-                        }
-                    }
-                }
-                .focused($oldPasswordFocus)
-            Spacer()
-                .frame(maxHeight: 30)
-            SecureField("New Password", text: $newPassword)
-                .textContentType(.newPassword)
-                .font(.title2)
-                .frame(height: 30)
-                .textFieldStyle(.roundedBorder)
-                .background(viewState.theme.background2)
-                .onSubmit {
-                    if oldPassword.isEmpty {
-                        oldPasswordFocus = true
-                    } else {
-                        Task {
-                            await submitPassword()
-                        }
-                    }
-                }
-                .focused($oldPasswordFocus)
+        VStack(spacing: 24) {
+            VStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.purple)
+                
+                Text("Change Password")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+            }
+            .padding(.top, 20)
             
-            if errorOccurred {
-                Text("The trolls have rejected your old password", comment: "The password was rejected by the server")
-                    .foregroundStyle(Color.red)
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("CURRENT PASSWORD")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.gray)
+                    
+                    SecureField("Enter Current Password", text: $oldPassword)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("NEW PASSWORD")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.gray)
+                    
+                    SecureField("Enter New Password", text: $newPassword)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                }
+                
+                if let error = errorText {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
             }
-            Spacer()
-                .frame(minHeight: 30, maxHeight: 70)
-            Button(action: {
-                if oldPassword.isEmpty {
-                    oldPasswordFocus = true
-                } else if newPassword.isEmpty {
-                    newPasswordFocus = true
-                } else {
-                    Task {
-                        await submitPassword()
+            
+            Button(action: { Task { await submitPassword() } }) {
+                HStack {
+                    if isSaving {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Update Password")
+                            .font(.system(size: 16, weight: .semibold))
                     }
                 }
-            }) {
-                Text("Change it", comment: "'done' button for changing password")
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
             }
-            .padding(.vertical, 10)
-            .frame(width: 250.0)
-            .foregroundStyle(viewState.theme.foreground)
-            .background(viewState.theme.background2)
-            .clipShape(.rect(cornerRadius: 50))
+            .disabled(isSaving || oldPassword.isEmpty || newPassword.isEmpty)
         }
-        .onChange(of: oldPassword, {_, _ in errorOccurred = false})
-        .onChange(of: newPassword, {_, _ in errorOccurred = false})
+        .padding(24)
     }
 }
 
@@ -649,94 +670,47 @@ fileprivate struct DisableAccountSheet: View {
     @EnvironmentObject var viewState: ViewState
     @Binding var showSheet: Bool
     @State var ticket: MFATicketResponse? = nil
-    @State var errorOccurred = false
-    @State var presentConfirmationDialog = false
-    
-    func receiveTicket(ticket: MFATicketResponse) {
-        withAnimation {
-            self.ticket = ticket
-        }
-    }
-    
-    func deactivateAccount() {
-        Task {
-            do {
-                _ = try await viewState.http.disableAccount(mfaToken: ticket!.token).get()
-            } catch {
-                SentrySDK.capture(error: error)
-                
-                withAnimation {
-                    errorOccurred = true
-                }
-                return
-            }
-            
-            viewState.ws?.stop()
-            showSheet = false
-
-            withAnimation {
-                viewState.state = .signedOut
-            }
-        }
-    }
+    @State var isDeleting = false
     
     var body: some View {
         if ticket == nil {
-            CreateMFATicketView(requestTicketType: .Password, doneCallback: receiveTicket)
-                .transition(.slideNext)
+            CreateMFATicketView(requestTicketType: .Password, doneCallback: { self.ticket = $0 })
         } else {
-            VStack {
-                Text("Wait a minute!")
-                    .font(.title)
-                Text("Are you sure you want to disable your account?")
-                    .font(.title2)
+            VStack(spacing: 24) {
+                Image(systemName: "pause.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.orange)
+                
+                Text("Disable Account?")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                
+                Text("This will prevent anyone from signing into your account. You can reactivate it later by contacting support.")
+                    .font(.system(size: 15))
+                    .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
-                Spacer()
-                    .frame(maxHeight: 10)
-                Text("This will prevent you from being able to sign in. You'll need to message support to get your account reactivated.")
-                    .font(.callout)
-                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
                 
-                Spacer()
-                
-                Button(role: .destructive, action: {
-                    presentConfirmationDialog = true
+                Button(action: {
+                    isDeleting = true
+                    Task {
+                        _ = try? await viewState.http.disableAccount(mfaToken: ticket!.token).get()
+                        await viewState.signOut()
+                        showSheet = false
+                    }
                 }) {
-                    Text("Do it")
+                    Text(isDeleting ? "Disabling..." : "Disable Account")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.orange))
                 }
-                .padding(.vertical, 10)
-                .frame(width: 250.0)
-                .foregroundStyle(viewState.theme.foreground)
-                .background(viewState.theme.background2)
-                .clipShape(.rect(cornerRadius: 50))
+                .disabled(isDeleting)
                 
-                Spacer()
-                    .frame(maxHeight: 10)
-                
-                Button(role: .cancel, action: {
-                    showSheet = false
-                }) {
-                    Text("Go back")
-                }
-                .padding(.vertical, 10)
-                .frame(width: 250.0)
-                .foregroundStyle(viewState.theme.foreground)
-                .background(viewState.theme.background2)
-                .clipShape(.rect(cornerRadius: 50))
+                Button("Cancel") { showSheet = false }
+                    .foregroundColor(.gray)
             }
-            .confirmationDialog("Confirm disabling your account", isPresented: $presentConfirmationDialog) {
-                Button("Confirm", role: .destructive) {
-                    deactivateAccount()
-                }
-            }
-            .transition(.slideNext)
-            
-            if errorOccurred {
-                Spacer()
-                    .frame(maxHeight: 10)
-                Text("Something went wrong. Try again later?")
-                    .foregroundStyle(.red)
-            }
+            .padding(24)
         }
     }
 }
@@ -746,100 +720,54 @@ fileprivate struct DeleteAccountSheet: View {
     @EnvironmentObject var viewState: ViewState
     @Binding var showSheet: Bool
     @State var ticket: MFATicketResponse? = nil
-    @State var errorOccurred = false
-    @State var presentConfirmationDialog = false
-    
-    func receiveTicket(ticket: MFATicketResponse) {
-        withAnimation {
-            self.ticket = ticket
-        }
-    }
-    
-    func deleteAccount() {
-        Task {
-            do {
-                _ = try await viewState.http.deleteAccount(mfaToken: ticket!.token).get()
-            } catch {
-                SentrySDK.capture(error: error)
-                
-                withAnimation {
-                    errorOccurred = true
-                }
-                return
-            }
-            
-            viewState.ws?.stop()
-            showSheet = false
-
-            withAnimation {
-                viewState.state = .signedOut
-            }
-        }
-    }
+    @State var isDeleting = false
     
     var body: some View {
         if ticket == nil {
-            CreateMFATicketView(requestTicketType: .Password, doneCallback: receiveTicket)
-                .transition(.slideNext)
+            CreateMFATicketView(requestTicketType: .Password, doneCallback: { self.ticket = $0 })
         } else {
-            VStack {
-                Text("Stop right there!")
-                    .font(.title)
-                Text("Are you sure you want to delete your account?")
-                    .font(.title2)
+            VStack(spacing: 24) {
+                Image(systemName: "exclamationmark.octagon.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.red)
+                
+                Text("Delete Account?")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                
+                Text("Are you absolutely sure? Your account will be scheduled for permanent deletion in 7 days.")
+                    .font(.system(size: 15))
+                    .foregroundColor(.gray)
                     .multilineTextAlignment(.center)
-                Spacer()
-                    .frame(maxHeight: 10)
-                Text("Your account will be disabled, and may be reactivated by opening a support request. After a week, it will be permenantly deleted.")
-                    .font(.callout)
-                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
                 
-                Spacer()
-                
-                Button(role: .destructive, action: {
-                    presentConfirmationDialog = true
+                Button(action: {
+                    isDeleting = true
+                    Task {
+                        _ = try? await viewState.http.deleteAccount(mfaToken: ticket!.token).get()
+                        await viewState.signOut()
+                        showSheet = false
+                    }
                 }) {
-                    Text("Do it")
+                    Text(isDeleting ? "Deleting..." : "Permanently Delete")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.red))
                 }
-                .padding(.vertical, 10)
-                .frame(width: 250.0)
-                .foregroundStyle(viewState.theme.foreground)
-                .background(viewState.theme.background2)
-                .clipShape(.rect(cornerRadius: 50))
+                .disabled(isDeleting)
                 
-                Spacer()
-                    .frame(maxHeight: 10)
-                
-                Button(role: .cancel, action: {
-                    showSheet = false
-                }) {
-                    Text("Go back")
-                }
-                .padding(.vertical, 10)
-                .frame(width: 250.0)
-                .foregroundStyle(viewState.theme.foreground)
-                .background(viewState.theme.background2)
-                .clipShape(.rect(cornerRadius: 50))
+                Button("Go Back") { showSheet = false }
+                    .foregroundColor(.gray)
             }
-            .confirmationDialog("Confirm deleting your account", isPresented: $presentConfirmationDialog) {
-                Button("Confirm", role: .destructive) {
-                    deleteAccount()
-                }
-            }
-            .transition(.slideNext)
-            
-            if errorOccurred {
-                Spacer()
-                    .frame(maxHeight: 10)
-                Text("Something went wrong. Try again later?")
-                    .foregroundStyle(.red)
-            }
+            .padding(24)
         }
     }
 }
 
 struct UserSettings: View {
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
     
     // Everything here should be a sheet, no making navlinks!
     @State var presentGenerateCodesSheet = false
@@ -868,108 +796,130 @@ struct UserSettings: View {
     }
     
     var body: some View {
-        List {
-            Section("Account Info") {
-                Button(action: {
-                    presentChangeUsernameSheet = true
-                }) {
+        Form {
+            // Account Info Section
+            Section(header: Text("Account Info")) {
+                Button(action: { presentChangeUsernameSheet = true }) {
                     HStack {
-                        Text("Username")
-                        Spacer()
-                        if viewState.userSettingsStore.cache.user != nil {
-                            Text(verbatim: "\(viewState.userSettingsStore.cache.user!.username)#\(viewState.userSettingsStore.cache.user!.discriminator)")
-                        } else {
-                            Text("loading#0000", comment: "The username is still loading from the api")
+                        Image(systemName: "person.fill").foregroundColor(.purple).frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Username").font(.body).foregroundColor(.primary)
+                            if let user = viewState.userSettingsStore.cache.user {
+                                Text("\(user.username)#\(user.discriminator)")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            } else {
+                                Text("loading...").font(.caption).foregroundStyle(.secondary)
+                            }
                         }
+                        Spacer()
+                        Image(systemName: "chevron.right").foregroundColor(.gray.opacity(0.5)).font(.system(size: 14))
                     }
                 }
-                Button(action: {
-                    presentChangeEmailSheet = true
-                }) {
+
+                Button(action: { presentChangeEmailSheet = true }) {
                     HStack {
-                        Text("Email")
+                        Image(systemName: "envelope.fill").foregroundColor(.purple).frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Email").font(.body).foregroundColor(.primary)
+                            Text(verbatim: emailSubstitute)
+                                .font(.caption).foregroundStyle(.secondary)
+                                .onChange(of: viewState.userSettingsStore.cache.accountData?.email, { _, value in
+                                    let raw = viewState.userSettingsStore.cache.accountData?.email
+                                    guard let raw = raw else { return }
+                                    _ = substituteEmail(raw)
+                                })
+                        }
                         Spacer()
-                        Text(verbatim: emailSubstitute)
-                            .onChange(of: viewState.userSettingsStore.cache.accountData?.email, { _, value in
-                                let raw = viewState.userSettingsStore.cache.accountData?.email
-                                guard let raw = raw else { return }
-                                _ = substituteEmail(raw)
-                            })
+                        Image(systemName: "chevron.right").foregroundColor(.gray.opacity(0.5)).font(.system(size: 14))
                     }
                 }
-                Button(action: {
-                    presentChangePasswordSheet = true
-                }) {
+
+                Button(action: { presentChangePasswordSheet = true }) {
                     HStack {
-                        Text("Change Password")
+                        Image(systemName: "lock.fill").foregroundColor(.purple).frame(width: 24)
+                        Text("Change Password").foregroundColor(.primary)
                         Spacer()
+                        Image(systemName: "chevron.right").foregroundColor(.gray.opacity(0.5)).font(.system(size: 14))
                     }
                 }
             }
-            .listRowBackground(viewState.theme.background2)
-            
-            Section("Two-Factor Authentication") {
+
+            // Two-Factor Auth Section
+            Section(header: Text("Two-Factor Authentication")) {
                 if viewState.userSettingsStore.cache.accountData?.mfaStatus == nil {
-                    Text("Loading Data...", comment: "User setings notice - still fetching data")
-                } else {
-                    if !viewState.userSettingsStore.cache.accountData!.mfaStatus.anyMFA { // MFA not enabled.
-                        Text("You have not enabled two-factor authentication!", comment: "User settings info notice") // idk thisll do for now
-                            .font(.callout)
+                    HStack {
+                        ProgressView()
+                        Text("Loading...").foregroundColor(.secondary).padding(.leading, 8)
                     }
-                    Button(action: {
-                        presentGenerateCodesSheet = true
-                    }, label: {
-                        if !viewState.userSettingsStore.cache.accountData!.mfaStatus.recovery_active {
-                            Text("Generate Recovery Codes", comment: "User settings button")
-                                .foregroundStyle(viewState.theme.foreground)
-                        } else {
-                            Text("Regenerate Recovery Codes", comment: "User settings button")
-                                .foregroundStyle(viewState.theme.foreground)
+                } else {
+                    if !viewState.userSettingsStore.cache.accountData!.mfaStatus.anyMFA {
+                        HStack {
+                            Image(systemName: "exclamationmark.shield.fill").foregroundColor(.orange)
+                            Text("Two-factor auth is not enabled").foregroundColor(.orange)
                         }
-                    })
-                    if !viewState.userSettingsStore.cache.accountData!.mfaStatus.totp_mfa {
-                        Button(action: {
-                            presentAddTOTPSheet = true
-                        }, label: {
-                            Text("Add Authenticator", comment: "User settings button")
-                        })
+                    }
+
+                    Button(action: { presentGenerateCodesSheet = true }) {
+                        HStack {
+                            Image(systemName: "key.fill").foregroundColor(.green).frame(width: 24)
+                            Text(viewState.userSettingsStore.cache.accountData!.mfaStatus.recovery_active ? "Regenerate Recovery Codes" : "Generate Recovery Codes").foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundColor(.gray.opacity(0.5)).font(.system(size: 14))
+                        }
+                    }
+
+                    if viewState.userSettingsStore.cache.accountData!.mfaStatus.totp_mfa {
+                        Button(action: { presentRemoveTOTPSheet = true }) {
+                            HStack {
+                                Image(systemName: "minus.circle.fill").foregroundColor(.red).frame(width: 24)
+                                Text("Disable Authenticator App").foregroundColor(.red)
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundColor(.gray.opacity(0.5)).font(.system(size: 14))
+                            }
+                        }
                     } else {
-                        Button(action: {
-                            presentRemoveTOTPSheet = true
-                        }, label: {
-                            Text("Remove Authenticator", comment: "User settings button")
-                        })
+                        Button(action: { presentAddTOTPSheet = true }) {
+                            HStack {
+                                Image(systemName: "plus.app.fill").foregroundColor(.blue).frame(width: 24)
+                                Text("Enable Authenticator App").foregroundColor(.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right").foregroundColor(.gray.opacity(0.5)).font(.system(size: 14))
+                            }
+                        }
                     }
                 }
             }
-            .listRowBackground(viewState.theme.background2)
-            
-            Section("Account Management") {
-                Button(action: {
-                    presentDisableAccountSheet = true
-                }, label: {
-                    Text("Disable Account", comment: "User settings button")
-                        .foregroundStyle(.red)
-                })
-                
-                Button(action: {
-                    presentDeleteAccountSheet = true
-                }, label: {
-                    Text("Delete Account", comment: "User settings button")
-                        .foregroundStyle(.red)
-                })
+
+            // Danger Zone Section
+            Section(header: Text("Danger Zone")) {
+                Button(role: .destructive, action: { presentDisableAccountSheet = true }) {
+                    HStack {
+                        Image(systemName: "nosign").foregroundColor(.red).frame(width: 24)
+                        Text("Disable Account")
+                        Spacer()
+                    }
+                }
+
+                Button(role: .destructive, action: { presentDeleteAccountSheet = true }) {
+                    HStack {
+                        Image(systemName: "trash.fill").foregroundColor(.red).frame(width: 24)
+                        Text("Delete Account")
+                        Spacer()
+                    }
+                }
             }
-            .listRowBackground(viewState.theme.background2)
+            .listRowBackground(Color.red.opacity(0.1))
         }
-        .background(viewState.theme.background)
         .scrollContentBackground(.hidden)
+        .background(viewState.theme.background.color.ignoresSafeArea())
+        .toolbarBackground(.hidden, for: .navigationBar)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                Text("Account Settings", comment: "User Settings tooltip")
+                Text("Account Settings")
             }
         }
-        .toolbarBackground(viewState.theme.topBar, for: .automatic)
+        .tint(.purple)
         .refreshable {
             await viewState.userSettingsStore.fetchFromApi()
         }

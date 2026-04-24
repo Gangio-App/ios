@@ -66,7 +66,7 @@ struct AddBot: View {
                     HStack(spacing: 12) {
                         switch target {
                             case .group(let group):
-                                ChannelIcon(channel: .group_dm_channel(group), initialSize: (24, 24), frameSize: (32, 32))
+                                ChannelIcon(channel: .group_dm_channel(group), width: 32, height: 32)
                             case .server(let server):
                                 ServerIcon(server: server, height: 32, width: 32, clipTo: Circle())
                                 

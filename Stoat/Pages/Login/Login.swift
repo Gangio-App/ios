@@ -14,6 +14,10 @@ struct LogIn: View {
     @State private var errorMessage: String? = nil
     
     @State private var needsOnboarding = false
+    
+    @State private var isWaitingWithSpinner = false
+    @State private var isSpinnerComplete = false
+    @State private var animateGradients = false
 
     @Binding public var mfaTicket: String
     @Binding public var mfaMethods: [String]
@@ -27,20 +31,46 @@ struct LogIn: View {
         await viewState.signIn(email: email, password: password, callback: { state in
             switch state {
                 case .Mfa(let ticket, let methods):
+                    withAnimation {
+                        isWaitingWithSpinner = false
+                        isSpinnerComplete = false
+                    }
                     self.mfaTicket = ticket
                     self.mfaMethods = methods
                     self.path.append("mfa")
 
                 case .Disabled:
-                    self.errorMessage = "Account has been disabled."
+                    withAnimation {
+                        isWaitingWithSpinner = false
+                        isSpinnerComplete = false
+                        self.errorMessage = "Account has been disabled."
+                    }
 
                 case .Success:
-                    path = NavigationPath()
+                    withAnimation {
+                        isSpinnerComplete = true
+                    }
+                    Task {
+                        try? await Task.sleep(nanoseconds: 1_000_000_000)
+                        withAnimation {
+                            isWaitingWithSpinner = false
+                            isSpinnerComplete = false
+                            path = NavigationPath()
+                        }
+                    }
                 
                 case .Invalid:
-                    self.errorMessage = "Invalid email and/or password"
+                    withAnimation {
+                        isWaitingWithSpinner = false
+                        isSpinnerComplete = false
+                        self.errorMessage = "Invalid email and/or password"
+                    }
                 
                 case .Onboarding:
+                    withAnimation {
+                        isWaitingWithSpinner = false
+                        isSpinnerComplete = false
+                    }
                     viewState.isOnboarding = true
                     self.needsOnboarding = true
             }
@@ -48,108 +78,186 @@ struct LogIn: View {
     }
 
     var body: some View {
-        VStack {
-            Spacer()
+        ZStack {
+            (colorScheme == .light ? Color(hue: 0.62, saturation: 0.02, brightness: 0.98) : Color(hue: 0.62, saturation: 0.1, brightness: 0.05))
+                .ignoresSafeArea()
 
-            Text("Let's log you in")
-                .font(.title)
-                .fontWeight(.bold)
-                .padding()
-                .foregroundStyle((colorScheme == .light) ? Color.black : Color.white)
-
-            Group {
-                if let error = errorMessage {
-                    Text(verbatim: error)
-                        .foregroundStyle(.red)
+            GeometryReader { proxy in
+                ZStack {
+                    Circle()
+                        .fill(Color(hue: 0.55, saturation: 0.8, brightness: 0.9).opacity(colorScheme == .light ? 0.15 : 0.25))
+                        .blur(radius: 100)
+                        .frame(width: proxy.size.width, height: proxy.size.width)
+                        .offset(x: animateGradients ? -proxy.size.width/3 : proxy.size.width/3, y: animateGradients ? -proxy.size.height/4 : proxy.size.height/4)
+                    
+                    Circle()
+                        .fill(Color(hue: 0.75, saturation: 0.8, brightness: 0.9).opacity(colorScheme == .light ? 0.15 : 0.25))
+                        .blur(radius: 100)
+                        .frame(width: proxy.size.width, height: proxy.size.width)
+                        .offset(x: animateGradients ? proxy.size.width/3 : -proxy.size.width/3, y: animateGradients ? proxy.size.height/4 : -proxy.size.height/4)
                 }
+            }
+            .ignoresSafeArea()
+            .onAppear {
+                withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
+                    animateGradients.toggle()
+                }
+            }
 
-                TextField(
-                    "Email",
-                    text: $email
-                )
-                    #if os(iOS)
-                    .keyboardType(.emailAddress)
-                    #endif
-                    .textContentType(.emailAddress)
+            VStack(spacing: 24) {
+                Spacer()
+
+                VStack(spacing: 12) {
+                    Image("wide")
+                        .resizable()
+                        .if(colorScheme == .dark, content: { $0.colorInvert() })
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 30)
+                        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 3)
+                        .padding(.bottom, 8)
+                        
+                    Text("Welcome Back")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle((colorScheme == .light) ? Color.black : Color.white)
+                    
+                    Text("Enter your credentials to continue")
+                        .font(.subheadline)
+                        .foregroundStyle(.gray)
+                }
+                .padding(.bottom, 20)
+
+                VStack(spacing: 16) {
+                    if let error = errorMessage {
+                        Text(verbatim: error)
+                            .font(.callout)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.white)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 16)
+                            .background(Color.red.opacity(0.9))
+                            .clipShape(Capsule())
+                            .shadow(color: Color.red.opacity(0.3), radius: 5, x: 0, y: 3)
+                    }
+
+                    HStack(spacing: 12) {
+                        Image(systemName: "envelope.fill")
+                            .foregroundColor(.gray)
+                        TextField("Email", text: $email)
+                            #if os(iOS)
+                            .keyboardType(.emailAddress)
+                            #endif
+                            .textContentType(.emailAddress)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .disabled(isWaitingWithSpinner)
+                            .foregroundStyle(colorScheme == .light ? .black : .white)
+                    }
                     .padding()
-                    .background((colorScheme == .light) ? Color(white: 0.851) : Color(white: 0.2))
-                    .clipShape(.rect(cornerRadius: 5))
-                    .foregroundStyle((colorScheme == .light) ? Color.black : Color.white)
-
-                ZStack(alignment: .trailing) {
-                    TextField(
-                        "Password",
-                        text: $password
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                     )
-                        .textContentType(.password)
-                        .padding()
-                        .background((colorScheme == .light) ? Color(white: 0.851) : Color(white: 0.2))
-                        .clipShape(.rect(cornerRadius: 5))
-                        .modifier(PasswordModifier())
-                        .textContentType(.password)
-                        .foregroundStyle((colorScheme == .light) ? Color.black : Color.white)
-                        .opacity(showPassword ? 1 : 0)
-                        .focused($focus1)
+                    .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
 
-                    SecureField(
-                        "Password",
-                        text: $password
+                    HStack(spacing: 12) {
+                        Image(systemName: "lock.fill")
+                            .foregroundColor(.gray)
+                            
+                        ZStack(alignment: .trailing) {
+                            if showPassword {
+                                TextField("Password", text: $password)
+                                    .textContentType(.password)
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                                    .disabled(isWaitingWithSpinner)
+                                    .focused($focus1)
+                                    .foregroundStyle(colorScheme == .light ? .black : .white)
+                            } else {
+                                SecureField("Password", text: $password)
+                                    .textContentType(.password)
+                                    .autocapitalization(.none)
+                                    .disableAutocorrection(true)
+                                    .disabled(isWaitingWithSpinner)
+                                    .focused($focus2)
+                                    .foregroundStyle(colorScheme == .light ? .black : .white)
+                            }
+                            
+                            Button(action: {
+                                showPassword.toggle()
+                                if showPassword { focus1 = true } else { focus2 = true }
+                            }) {
+                                Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
+                                    .foregroundColor(.gray)
+                                    .padding(.leading, 8)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
                     )
-                        .textContentType(.password)
-                        .padding()
-                        .background((colorScheme == .light) ? Color(white: 0.851) : Color(white: 0.2))
-                        .clipShape(.rect(cornerRadius: 5))
-                        .modifier(PasswordModifier())
-                        .textContentType(.password)
-                        .foregroundStyle((colorScheme == .light) ? Color.black : Color.white)
-                        .opacity(showPassword ? 0 : 1)
-                        .focused($focus2)
-
-                    Button(action: {
-                        showPassword.toggle()
-                        if showPassword {
-                            focus1 = true
-                        } else {
-                            focus2 = true
-                        }
-                    }, label: {
-                        if colorScheme == .light {
-                            Image(systemName: self.showPassword ? "eye.slash.fill" : "eye.fill")
-                                .font(.system(size: 16, weight: .regular))
-                                .padding()
-                        } else {
-                            Image(systemName: self.showPassword ? "eye.slash.fill" : "eye.fill")
-                                .font(.system(size: 16, weight: .regular))
-                                .padding()
-                                .colorInvert()
-                        }
-                    })
+                    .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
                 }
+                .padding(.horizontal, 24)
+
+                Spacer()
+                    .frame(height: 20)
+
+                Button(action: {
+                    if email.isEmpty || password.isEmpty {
+                        withAnimation {
+                            errorMessage = "Please enter your email and password"
+                        }
+                        return
+                    }
+                    errorMessage = nil
+                    withAnimation { isWaitingWithSpinner = true }
+                    Task { await logIn() }
+                }) {
+                    if isWaitingWithSpinner || isSpinnerComplete {
+                        LoadingSpinnerView(frameSize: CGSize(width: 25, height: 25), isActionComplete: $isSpinnerComplete)
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        Text("Log In")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.vertical, 16)
+                .foregroundColor(colorScheme == .light ? .white : .black)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(colorScheme == .light ? Color.black : Color.white)
+                )
+                .shadow(color: (colorScheme == .light ? Color.black : Color.white).opacity(0.2), radius: 10, x: 0, y: 4)
+                .padding(.horizontal, 24)
+                .disabled(isWaitingWithSpinner || isSpinnerComplete)
+
+                Spacer()
+
+                VStack(spacing: 20) {
+                    NavigationLink(destination: { ForgotPassword() }) {
+                        Text("Forgot Password?")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(colorScheme == .light ? .black : .white)
+                    }
+                    
+                    NavigationLink(destination: { ResendEmail() }) {
+                        Text("Resend verification email")
+                            .font(.footnote)
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.bottom, 30)
             }
-            .padding(.bottom)
-
-            Spacer()
-
-            Button(action: { Task { await logIn() } }) {
-                Text("Log In")
-            }
-                .padding(.vertical, 10)
-                .frame(width: 200.0)
-                .foregroundStyle(.black)
-                .background(Color(white: 0.851))
-                .clipShape(.rect(cornerRadius: 50))
-
-            Spacer()
-
-            NavigationLink("Resend a verification email", destination: { ResendEmail() })
-                .padding(15)
-            
-            NavigationLink("Forgot Password", destination: { ForgotPassword() })
-                .padding(15)
-
-            Spacer()
         }
-        .padding()
         .navigationDestination(isPresented: $needsOnboarding) { // we dont use a link+destination because this will overlay when the user hasn't onboarded
             CreateAccount(onboardingStage: .Username)
         }

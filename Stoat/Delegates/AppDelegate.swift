@@ -26,15 +26,25 @@ func declareNotificationCategoryTypes() {
 }
 
 #if os(iOS)
+@MainActor
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
-        
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         ViewState.application = application
         declareNotificationCategoryTypes()
+        
+        // Ensure we register for remote notifications if permission is already granted
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            }
+        }
+        
         return true
     }
     
@@ -54,10 +64,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 debugPrint("uploading notification token")
                 _ = await state.http.uploadNotificationToken(token: token)
             }
-        } else {
-            SentrySDK.capture(message: "Received notification token without available session token")
-            fatalError("Received notification token without available session token")
         }
+    }
+    
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        // This is called when a push notification is received while the app is in the background
+        // or just been launched from a notification.
+        debugPrint("Received remote notification in background: \(userInfo)")
+        completionHandler(.newData)
     }
 }
 
@@ -135,16 +149,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // TODO: handle notification taps while app is running
-        Task {
-            let viewState = ViewState.shared ?? ViewState()
-            
-            if viewState.userSettingsStore.store.notifications.wantsNotificationsWhileAppRunning {
-                completionHandler([.list, .banner, .sound])
-            } else {
-                completionHandler([])
-            }
-        }
+        // Always show notifications in-app (banner + sound + list)
+        completionHandler([.list, .banner, .sound])
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, openSettingsFor notification: UNNotification?) {

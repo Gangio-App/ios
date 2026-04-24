@@ -143,13 +143,13 @@ class ExperimentOptionsData: Codable {
     }
     
     init(keyWasSet: @escaping () -> Void) {
-        customMarkdown = false
+        customMarkdown = true
         
         self.keyWasSet = keyWasSet
     }
     
     init() {
-        self.customMarkdown = false
+        self.customMarkdown = true
     }
     
     enum CodingKeys: String, CodingKey {
@@ -324,7 +324,7 @@ class UserSettingsData {
     
     func fetchFromApi() async {
         while viewState == nil {
-            try! await Task.sleep(for: .seconds(0.1))
+            try? await Task.sleep(for: .seconds(0.1))
         }
         let state = viewState!
         if await state.state == .signedOut {
@@ -353,7 +353,7 @@ class UserSettingsData {
                     } else {
                         SentrySDK.capture(error: error)
                     }
-                case .HTTPError(let _, let status):
+                case .HTTPError(_, let status):
                     if status == 401 {
                         await state.setSignedOutState()
                     } else {

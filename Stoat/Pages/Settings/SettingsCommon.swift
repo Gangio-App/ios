@@ -127,3 +127,32 @@ struct CheckboxListItem: View {
         .backgroundStyle(viewState.theme.background2)
     }
 }
+
+// MARK: - Premium Settings Container
+struct SettingsSectionView<Content: View>: View {
+    @Environment(\.colorScheme) var colorScheme
+    let title: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(LocalizedStringKey(title.uppercased()))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(.gray.opacity(0.8))
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+
+            VStack(spacing: 0) {
+                content
+            }
+            .background(.ultraThinMaterial.opacity(0.8))
+            .background(colorScheme == .dark ? Color.white.opacity(0.02) : Color.black.opacity(0.01))
+            .cornerRadius(20)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(colorScheme == .dark ? .white.opacity(0.1) : .black.opacity(0.05), lineWidth: 1)
+            )
+        }
+    }
+}
+

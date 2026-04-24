@@ -276,273 +276,218 @@ struct MessageBox: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ForEach($channelReplies) { reply in
-                ReplyView(reply: reply, replies: $channelReplies, channel: channel, server: server)
-                    .padding(.horizontal, 4)
-                    //.transition(.move(edge: .bottom))
+        let isDark = !Theme.isLightOrDark(viewState.theme.background)
+
+        VStack(alignment: .leading, spacing: 0) {
+
+            // ── Reply banners ─────────────────────────────────────────────
+            if !channelReplies.isEmpty {
+                VStack(spacing: 0) {
+                    ForEach($channelReplies) { reply in
+                        ReplyView(reply: reply, replies: $channelReplies, channel: channel, server: server)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 6)
+                    }
+                }
+                .background(isDark ? Color(white: 0.13) : Color(white: 0.93))
+                .animation(.default, value: channelReplies)
             }
-            .animation(.default, value: channelReplies)
-            
-            VStack(alignment: .leading, spacing: 0) {
-                if selectedPhotos.count > 0 {
-                    ScrollView(.horizontal) {
-                        HStack {
-                            ForEach($selectedPhotos, id: \.self) { file in
-                                let file = file.wrappedValue
 
-                                ZStack(alignment: .topTrailing) {
-                                    if let image = file.image {
+            // ── Edit banner ───────────────────────────────────────────────
+            if editing != nil {
+                HStack(spacing: 8) {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(viewState.theme.accent.color)
+                    Text("Editing message")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(viewState.theme.foreground2.color)
+                    Spacer()
+                    Button { editing = nil; content = "" } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 7)
+                .background(isDark ? Color(white: 0.12) : Color(white: 0.94))
+            }
+
+            // ── Photo preview strip ───────────────────────────────────────
+            if selectedPhotos.count > 0 {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach($selectedPhotos, id: \.self) { file in
+                            let file = file.wrappedValue
+                            ZStack(alignment: .topTrailing) {
+                                if let image = file.image {
 #if os(iOS)
-                                        Image(uiImage: image)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(maxWidth: 100, maxHeight: 100)
-                                            .clipShape(RoundedRectangle(cornerRadius: 5.0, style: .circular))
-#else
-                                        Image(nsImage: image)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(maxWidth: 100, maxHeight: 100)
-                                            .clipShape(RoundedRectangle(cornerRadius: 5.0, style: .circular))
+                                    Image(uiImage: image)
+                                        .resizable().scaledToFill()
+                                        .frame(width: 72, height: 72)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
 #endif
-                                    } else {
-                                        ZStack {
-                                            Rectangle()
-                                                .frame(width: 100, height: 100)
-                                                .foregroundStyle(viewState.theme.background.color)
-                                                .clipShape(RoundedRectangle(cornerRadius: 5.0, style: .circular))
-
-                                            Text(verbatim: file.filename)
-                                                .font(.caption)
-                                                .foregroundStyle(viewState.theme.foreground.color)
-                                        }
-                                    }
-                                    Button(action: { selectedPhotos.removeAll(where: { $0.id == file.id }) }) {
-                                        Image(systemName: "xmark.app.fill")
-                                            .resizable()
-                                            .foregroundStyle(.gray)
-                                            .symbolRenderingMode(.hierarchical)
-                                            .opacity(0.9)
-                                            .frame(width: 16, height: 16)
-                                            .frame(width: 24, height: 24)
-                                    }
                                 }
+                                Button { selectedPhotos.removeAll(where: { $0.id == file.id }) } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.white)
+                                        .background(Circle().fill(.black.opacity(0.5)))
+                                        .frame(width: 18, height: 18)
+                                }
+                                .offset(x: 4, y: -4)
                             }
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                 }
+                .background(isDark ? Color(white: 0.11) : Color(white: 0.95))
+            }
 
-                if let type = autoCompleteType {
-                    let values = getAutocompleteValues(fromType: type)
-                    
-                    if !values.isEmpty {
-                        ScrollView(.horizontal) {
-                            LazyHStack {
-                                switch values {
-                                    case .usersAndRoles(let usersOrRoles):
-                                        ForEach(usersOrRoles) { userOrRole in
-                                            Button {
-                                                let value: String
-                                                
-                                                switch userOrRole {
-                                                    case .user(let user):
-                                                        value = "<@\(user.id)>"
-                                                    case .role(let id, _):
-                                                        value = "<%\(id)>"
-                                                    case .everyone:
-                                                        value = "@everyone"
-                                                    case .online:
-                                                        value = "@online"
-                                                }
-                                                
-                                                withAnimation {
-                                                    content = String(content.dropLast(autocompleteSearchValue.count + 1))
-                                                    content.append("\(value) ")
-                                                    autoCompleteType = nil
-                                                }
-                                            } label: {
-                                                HStack(spacing: 8) {
-                                                    switch userOrRole {
-                                                        case .user(let user):
-                                                            Avatar(user: user.user, member: user.member, width: 24, height: 24)
-                                                            Text(verbatim: user.member?.nickname ?? user.user.display_name ?? user.user.username)
-                                                        case .role(_, let role):
-                                                            Text("@\(role.name)")
-                                                                .foregroundStyle(role.colour.map { parseCSSColorToShapeStyle(currentTheme: viewState.theme, input: $0) } ?? AnyShapeStyle(viewState.theme.foreground))
-                                                        case .everyone:
-                                                            Text("@everyone")
-                                                        case .online:
-                                                            Text("@online")
-                                                            
-                                                    }
-                                                }
-                                                .padding(6)
-                                            }
-                                            .background(viewState.theme.background2.color)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+            // ── Autocomplete strip ────────────────────────────────────────
+            if let type = autoCompleteType {
+                let values = getAutocompleteValues(fromType: type)
+                if !values.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: 6) {
+                            switch values {
+                            case .usersAndRoles(let usersOrRoles):
+                                ForEach(usersOrRoles) { userOrRole in
+                                    Button {
+                                        let value: String
+                                        switch userOrRole {
+                                        case .user(let user): value = "<@\(user.id)>"
+                                        case .role(let id, _): value = "<%\(id)>"
+                                        case .everyone: value = "@everyone"
+                                        case .online: value = "@online"
                                         }
-                                    case .channels(let channels):
-                                        ForEach(channels) { channel in
-                                            Button {
-                                                withAnimation {
-                                                    content = String(content.dropLast(autocompleteSearchValue.count + 1))
-                                                    content.append("<#\(channel.id)> ")
-                                                    autoCompleteType = nil
-                                                }
-                                            } label: {
-                                                ChannelIcon(channel: channel)
-                                                    .padding(6)
-                                            }
-                                            .background(viewState.theme.background2.color)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        withAnimation {
+                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(value) "
+                                            autoCompleteType = nil
                                         }
-                                    case .emojis(let emojis):
-                                        ForEach(emojis) { emoji in
-                                            Button {
-                                                let emojiString: String
-                                                
-                                                if let emojiId = emoji.emojiId {
-                                                    emojiString = ":\(emojiId): "
-                                                } else {
-                                                    emojiString = String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))
-                                                }
-                                                
-                                                withAnimation {
-                                                    content = String(content.dropLast(autocompleteSearchValue.count + 1))
-                                                    content.append(emojiString)
-                                                    autoCompleteType = nil
-                                                }
-                                            } label: {
-                                                HStack(spacing: 8) {
-                                                    if let id = emoji.emojiId {
-                                                        let emoji = viewState.emojis[id]!
-                                                        
-                                                        LazyImage(source: .emoji(id), height: 24, width: 24, clipTo: Rectangle())
-                                                        Text(verbatim: emoji.name)
-                                                    } else {
-                                                        let emojiString = String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))
-                                                        let image = convertEmojiToImage(text: emojiString)
-                                                        
-#if os(iOS)
-                                                        Image(uiImage: image)
-                                                            .resizable()
-                                                            .aspectRatio(contentMode: .fit)
-                                                            .frame(width: 24, height: 24)
-#elseif os(macOS)
-                                                        Image(nsImage: image)
-                                                            .resizable()
-                                                            .aspectRatio(contentMode: .fit)
-                                                            .frame(width: 24, height: 24)
-#endif
-                                                        
-                                                        Text(verbatim: emojiString)
-                                                    }
-                                                }
-                                                .padding(6)
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            switch userOrRole {
+                                            case .user(let user):
+                                                Avatar(user: user.user, member: user.member, width: 20, height: 20)
+                                                Text(user.member?.nickname ?? user.user.display_name ?? user.user.username)
+                                            case .role(_, let role):
+                                                Text("@\(role.name)").foregroundStyle(role.colour.map { parseCSSColorToShapeStyle(currentTheme: viewState.theme, input: $0) } ?? AnyShapeStyle(viewState.theme.foreground))
+                                            case .everyone: Text("@everyone")
+                                            case .online: Text("@online")
                                             }
-                                            .background(viewState.theme.background2.color)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
                                         }
+                                        .font(.system(size: 13))
+                                        .padding(.horizontal, 8).padding(.vertical, 5)
+                                    }
+                                    .background(viewState.theme.background2.color)
+                                    .clipShape(Capsule())
+                                }
+                            case .channels(let channels):
+                                ForEach(channels) { ch in
+                                    Button {
+                                        withAnimation {
+                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "<#\(ch.id)> "
+                                            autoCompleteType = nil
+                                        }
+                                    } label: {
+                                        ChannelIcon(channel: ch)
+                                            .font(.system(size: 13))
+                                            .padding(.horizontal, 8).padding(.vertical, 5)
+                                    }
+                                    .background(viewState.theme.background2.color)
+                                    .clipShape(Capsule())
+                                }
+                            case .emojis(let emojis):
+                                ForEach(emojis) { emoji in
+                                    Button {
+                                        let str: String
+                                        if let emojiId = emoji.emojiId { str = ":\(emojiId): " }
+                                        else { str = String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init))) }
+                                        withAnimation {
+                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + str
+                                            autoCompleteType = nil
+                                        }
+                                    } label: {
+                                        if let id = emoji.emojiId {
+                                            LazyImage(source: .emoji(id), height: 20, width: 20, clipTo: Rectangle())
+                                        } else {
+                                            Text(String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))).font(.system(size: 18))
+                                        }
+                                    }
+                                    .frame(width: 36, height: 36)
+                                    .background(viewState.theme.background2.color)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
                                 }
                             }
-                            .frame(height: 42)
-                            .background(.green)
-                            .padding(.bottom, 4)
-                            .background(.red)
                         }
-                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
                     }
+                    .background(isDark ? Color(white: 0.12) : Color(white: 0.94))
                 }
-                
-                if editing != nil {
-                    Button {
-                        editing = nil
-                        content = ""
-                    } label: {
-                        HStack {
-                            Image(systemName: "pencil")
-                                .foregroundStyle(viewState.theme.accent)
-                            
-                            Text("Editing Message")
-                            
-                            Spacer()
-                            
-                            Image(systemName: "xmark")
-                                .foregroundStyle(viewState.theme.foreground2)
-                        }
-                        .bold()
-                    }
-                }
+            }
 
-                HStack(alignment: .top) {
-                    if editing == nil {
-                        UploadButton(showingSelectFile: $showingSelectFile, showingSelectPhoto: $showingSelectPhoto, selectedPhotoItems: $selectedPhotoItems, selectedPhotos: $selectedPhotos)
-                            .frame(alignment: .top)
-                    }
+            // ── Discord-style input bar ───────────────────────────────────
+            HStack(alignment: .center, spacing: 12) {
 
+                // + Attach button (left)
+                UploadButton(
+                    showingSelectFile: $showingSelectFile,
+                    showingSelectPhoto: $showingSelectPhoto,
+                    selectedPhotoItems: $selectedPhotoItems,
+                    selectedPhotos: $selectedPhotos
+                )
+                .frame(width: 36, height: 36)
+                .background(isDark ? Color(white: 0.22) : Color(white: 0.88))
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+
+                // Text field pill
+                HStack(alignment: .center, spacing: 8) {
                     TextField("", text: $content.animation(), axis: .vertical)
                         .focused(focusState)
                         .placeholder(when: content.isEmpty) {
                             Text("Message #\(channel.getName(viewState))")
+                                .foregroundStyle(.secondary.opacity(0.6))
                                 .lineLimit(1)
-                                .foregroundStyle(viewState.theme.foreground2.color)
                         }
+                        .font(.system(size: 16))
+                        .foregroundStyle(isDark ? .white : .black)
+                        .lineLimit(1...6)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 12)
+                        .frame(minHeight: 44)
+                        .background(Color.clear)
                         .onChange(of: content) { _, value in
                             withAnimation {
                                 if let last = value.split(separator: " ").last {
                                     let pre = last.first
                                     autocompleteSearchValue = String(last[last.index(last.startIndex, offsetBy: 1)...])
-
                                     switch pre {
-                                        case "@":
-                                            autoCompleteType = .usersAndRoles
-                                        case "#":
-                                            autoCompleteType = .channel
-                                        case ":":
-                                            autoCompleteType = .emoji
-                                        default:
-                                            autoCompleteType = nil
+                                    case "@": autoCompleteType = .usersAndRoles
+                                    case "#": autoCompleteType = .channel
+                                    case ":": autoCompleteType = .emoji
+                                    default: autoCompleteType = nil
                                     }
-                                } else {
-                                    autoCompleteType = nil
-                                }
+                                } else { autoCompleteType = nil }
                             }
                         }
-                        .onChange(of: focusState.wrappedValue, { _, v in
-                            if v, showingSelectEmoji {
-                                withAnimation {
-                                    showingSelectEmoji = false
-                                }
-                            }
-                        })
-                        .onChange(of: showingSelectEmoji, { b, a in
-                            if b, !a {
-                                withAnimation {
-                                    focusState.wrappedValue = true
-                                }
-                            }
-                        })
-                        .onChange(of: editing, { b, a in
+                        .onChange(of: focusState.wrappedValue) { _, v in
+                            if v, showingSelectEmoji { withAnimation { showingSelectEmoji = false } }
+                        }
+                        .onChange(of: showingSelectEmoji) { b, a in
+                            if b, !a { withAnimation { focusState.wrappedValue = true } }
+                        }
+                        .onChange(of: editing) { _, a in
                             if let a {
-                                selectedPhotos = []
-                                selectedPhotoItems = []
-                                autoCompleteType = nil
-                                autocompleteSearchValue = ""
-                                content = a.content ?? ""
-                            } else {
-                                channelReplies = []
-                                content = ""
-                            }
-                        })
+                                selectedPhotos = []; selectedPhotoItems = []; autoCompleteType = nil; autocompleteSearchValue = ""; content = a.content ?? ""
+                            } else { channelReplies = []; content = "" }
+                        }
                         .sheet(isPresented: $showingSelectEmoji) {
                             EmojiPicker(background: AnyView(viewState.theme.background)) { emoji in
-                                if let id = emoji.emojiId {
-                                    content.append(":\(id):")
-                                } else {
-                                    content.append(String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init))))
-                                }
-
+                                if let id = emoji.emojiId { content.append(":\(id):") }
+                                else { content.append(String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))) }
                                 showingSelectEmoji = false
                             }
                             .padding([.top, .horizontal])
@@ -550,44 +495,46 @@ struct MessageBox: View {
                             .presentationDetents([.large])
                         }
 
-                    Group {
-                        Button {
-                            withAnimation {
-                                focusState.wrappedValue = false
-                                showingSelectEmoji.toggle()
-                            }
-                        } label: {
-                            Image(systemName: "face.smiling")
-                                .resizable()
-                                .frame(width: 24, height: 24)
-                                .foregroundStyle(viewState.theme.foreground3.color)
+                    // Emoji button (inside pill, right side)
+                    Button {
+                        withAnimation {
+                            focusState.wrappedValue = false
+                            showingSelectEmoji.toggle()
                         }
-
-
-                        if !content.isEmpty || !selectedPhotos.isEmpty {
-                            Button(action: sendMessage) {
-                                Image(systemName: "arrow.up.circle.fill")
-                                    .resizable()
-                                    .frame(width: 24, height: 24)
-                                    .foregroundStyle(viewState.theme.foreground3.color)
-                            }
-                        }
+                    } label: {
+                        Image(systemName: "face.smiling")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.secondary.opacity(0.7))
                     }
-                    .frame(alignment: .top)
                 }
+                .background(isDark ? Color(white: 0.15) : Color(white: 0.91))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+                .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
+
+                // Send button (right, Discord blue circle)
+                Button(action: sendMessage) {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .background(content.isEmpty && selectedPhotos.isEmpty ? Color.gray.opacity(0.4) : viewState.theme.accent.color)
+                        .clipShape(Circle())
+                        .shadow(color: content.isEmpty && selectedPhotos.isEmpty ? .clear : viewState.theme.accent.color.opacity(0.3), radius: 4, x: 0, y: 2)
+                }
+                .disabled(content.isEmpty && selectedPhotos.isEmpty)
+                .animation(.easeInOut(duration: 0.2), value: content.isEmpty)
             }
-            .padding(.top, 8)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(isDark ? Color(white: 0.08) : Color(white: 0.97))
+            .background(.ultraThinMaterial, in: Rectangle())
         }
-        .padding(.top, 4)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 12)
-        .background(viewState.theme.messageBox.color)
         .onAppear {
             let member = server.flatMap { viewState.members[$0.id]?[viewState.currentUser!.id] }
-            
             currentPermissions = resolveChannelPermissions(from: viewState.currentUser!, targettingUser: viewState.currentUser!, targettingMember: member, channel: channel, server: server)
         }
     }
+
 }
 
 struct UploadButton: View {
@@ -619,8 +566,8 @@ struct UploadButton: View {
         Image(systemName: "plus")
             .resizable()
             .foregroundStyle(viewState.theme.foreground3.color)
-            .frame(width: 16, height: 16)
-            .frame(width: 20, height: 20)
+            .frame(width: 18, height: 18)
+            .frame(width: 36, height: 36)
 
             .photosPicker(isPresented: $showingSelectPhoto, selection: $selectedPhotoItems)
             .photosPickerStyle(.presentation)

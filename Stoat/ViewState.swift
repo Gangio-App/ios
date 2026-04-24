@@ -8,6 +8,7 @@ import LiveKit
 import Types
 import UserNotifications
 import KeychainAccess
+import AudioToolbox
 
 enum UserStateError: Error {
     case signInError
@@ -76,6 +77,10 @@ struct QueuedMessage {
     var content: String
 }
 
+enum MainTab: String, CaseIterable {
+    case servers, messages, notifications, profile
+}
+
 enum MainSelection: Hashable, Codable {
     case server(String)
     case dms
@@ -118,6 +123,8 @@ enum NavigationDestination: Hashable, Codable {
     case channel_search(String)
     case invite(String)
     case channel_pins(String)
+    case profile_settings
+    case status_settings
 }
 
 struct UserMaybeMember: Identifiable {
@@ -253,7 +260,20 @@ public class ViewState: ObservableObject {
     @Published var currentUserSheet: UserMaybeMember? = nil
     @Published var currentVoiceChannel: String? = nil
     @Published var currentVoice: Room? = nil
+    @Published var profiles: [String: Profile] = [:]
     @Published var atTopOfChannel: Set<String> = []
+
+    func fetchProfile(userId: String) async {
+        // Only fetch if not already in cache or to refresh
+        do {
+            let profile = try await http.fetchProfile(user: userId).get()
+            self.profiles[userId] = profile
+        } catch {
+            print("Failed to fetch profile for \(userId): \(error)")
+        }
+    }
+
+    @Published var selectedTab: MainTab = .servers
 
     @Published var currentSelection: MainSelection {
         didSet {
@@ -281,6 +301,14 @@ public class ViewState: ObservableObject {
     @Published var currentLocale: Locale? {
         didSet {
             UserDefaults.standard.set(try! JSONEncoder().encode(currentLocale), forKey: "locale")
+            // Apply iOS language override so LocalizedStringKey strings change
+            if let locale = currentLocale {
+                let langCode = locale.language.languageCode?.identifier ?? locale.identifier
+                UserDefaults.standard.set([langCode], forKey: "AppleLanguages")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+            }
+            UserDefaults.standard.synchronize()
         }
     }
 
@@ -289,7 +317,42 @@ public class ViewState: ObservableObject {
             UserDefaults.standard.set(try! JSONEncoder().encode(path.codable), forKey: "path")
         }
     }
-    
+
+    /// Extra vertical spacing between message groups (0–20 pt). Default: 4 pt.
+    @Published var messageSpacing: Double {
+        didSet { UserDefaults.standard.set(messageSpacing, forKey: "messageSpacing") }
+    }
+
+    /// Whether scroll feedback haptics are enabled.
+    @Published var scrollHapticEnabled: Bool {
+        didSet { UserDefaults.standard.set(scrollHapticEnabled, forKey: "scrollHapticEnabled") }
+    }
+
+    /// Master volume for voice chats (0.0 to 1.0)
+    @Published var masterVolume: Double {
+        didSet { UserDefaults.standard.set(masterVolume, forKey: "masterVolume") }
+    }
+
+    /// Whether to play a sound when a message is received
+    @Published var messageReceivedSoundEnabled: Bool {
+        didSet { UserDefaults.standard.set(messageReceivedSoundEnabled, forKey: "messageReceivedSoundEnabled") }
+    }
+
+    /// Whether to play a sound when a message is sent
+    @Published var messageSentSoundEnabled: Bool {
+        didSet { UserDefaults.standard.set(messageSentSoundEnabled, forKey: "messageSentSoundEnabled") }
+    }
+
+    /// Preferred audio input device ID
+    @Published var preferredInputDeviceId: String? {
+        didSet { UserDefaults.standard.set(preferredInputDeviceId, forKey: "preferredInputDeviceId") }
+    }
+
+    /// Preferred audio output device ID
+    @Published var preferredOutputDeviceId: String? {
+        didSet { UserDefaults.standard.set(preferredOutputDeviceId, forKey: "preferredOutputDeviceId") }
+    }
+
     var userSettingsStore: UserSettingsData
 
     static func decodeUserDefaults<T: Decodable>(forKey key: String, withDecoder decoder: JSONDecoder = JSONDecoder()) throws -> T? {
@@ -336,7 +399,16 @@ public class ViewState: ObservableObject {
         self.theme = ViewState.decodeUserDefaults(forKey: "theme", withDecoder: decoder, defaultingTo: .dark)
         
         self.currentUser = ViewState.decodeUserDefaults(forKey: "currentUser", withDecoder: decoder, defaultingTo: nil)
+
+        self.messageSpacing = UserDefaults.standard.object(forKey: "messageSpacing") as? Double ?? 8.0
+        self.scrollHapticEnabled = UserDefaults.standard.object(forKey: "scrollHapticEnabled") as? Bool ?? true
         
+        self.masterVolume = UserDefaults.standard.object(forKey: "masterVolume") as? Double ?? 1.0
+        self.messageReceivedSoundEnabled = UserDefaults.standard.object(forKey: "messageReceivedSoundEnabled") as? Bool ?? true
+        self.messageSentSoundEnabled = UserDefaults.standard.object(forKey: "messageSentSoundEnabled") as? Bool ?? true
+        self.preferredInputDeviceId = UserDefaults.standard.string(forKey: "preferredInputDeviceId")
+        self.preferredOutputDeviceId = UserDefaults.standard.string(forKey: "preferredOutputDeviceId")
+
         self.path = NavigationPath()
 //        self.currentSelection = .dms
 //        self.currentChannel = .home
@@ -405,8 +477,8 @@ public class ViewState: ObservableObject {
                 autumn: RevoltFeature(enabled: true, url: "https://cdn.stoatusercontent.com"),
                 january: RevoltFeature(enabled: true, url: "https://proxy.stoatusercontent.com"),
                 livekit: LiveKitFeature(enabled: true, nodes: [])),
-            ws: "wss://events.stoat.chat",
-            app: "https://stoat.chat",
+            ws: "wss://gangio.pro/ws",
+            app: "https://gangio.pro",
             vapid: "BJto1I_OZi8hOkMfQNQJfod2osWBqcOO7eEOqFMvCfqNhqgxqOr7URnxYKTR4N6sR3sTPywfHpEsPXhrU9zfZgg="
         )
 
@@ -443,10 +515,20 @@ public class ViewState: ObservableObject {
 
                 switch response.result {
                     case .success(let data):
-                        if [401, 500].contains(response.response!.statusCode) {
+                        if let statusCode = response.response?.statusCode, !(200..<300).contains(statusCode) {
+                            print("Login failed with status \(statusCode): \(String(data: data, encoding: .utf8) ?? "nil")")
                             return callback(.Invalid)
                         }
-                        let result = try! JSONDecoder().decode(LoginResponse.self, from: data)
+                        
+                        let result: LoginResponse
+                        do {
+                            result = try JSONDecoder().decode(LoginResponse.self, from: data)
+                        } catch {
+                            print("Login decode error: \(error)")
+                            print("Response data: \(String(data: data, encoding: .utf8) ?? "nil")")
+                            return callback(.Invalid)
+                        }
+                        
                         switch result {
                             case .Success(let success):
                                 Task { @MainActor in
@@ -480,7 +562,7 @@ public class ViewState: ObservableObject {
                                 return callback(.Disabled)
                         }
                     case .failure(_):
-                        ()
+                        return callback(.Invalid)
                 }
             }
     }
@@ -601,6 +683,10 @@ public class ViewState: ObservableObject {
 
         queue!.append(QueuedMessage(nonce: nonce, replies: r, content: content))
 
+        if messageSentSoundEnabled {
+            AudioServicesPlaySystemSound(1004) // Sent message
+        }
+
         await http.sendMessage(channel: channel, replies: r, content: content, attachments: attachments, nonce: nonce)
     }
 
@@ -669,6 +755,11 @@ public class ViewState: ObservableObject {
                 ws?.retryCount = 0
                 await verifyStateIntegrity()
                 
+                // Re-register for push notifications on reconnect
+                if !isPreview {
+                    ViewState.application?.registerForRemoteNotifications()
+                }
+                
                 processReadySpan.finish()
                 launchTransaction.finish()
                 
@@ -719,6 +810,65 @@ public class ViewState: ObservableObject {
                 messages[m.id] = m
                 unreads[m.channel]?.last_id = channelMessages[m.channel]?.last
                 channelMessages[m.channel]?.append(m.id)
+                
+                // Sound effect for received messages
+                if messageReceivedSoundEnabled && m.author != currentUser?.id {
+                    AudioServicesPlaySystemSound(1003)
+                }
+                
+                // Local notification for mentions, @everyone, @here, and DMs
+                if m.author != currentUser?.id {
+                    let isCurrentlyViewing: Bool = {
+                        if case .channel(let id) = currentChannel, id == m.channel {
+                            return true
+                        }
+                        return false
+                    }()
+                    
+                    if !isCurrentlyViewing {
+                        let isMentioned = m.mentions?.contains(currentUser?.id ?? "") ?? false
+                        let hasEveryone = m.content?.contains("@everyone") ?? false
+                        let hasHere = m.content?.contains("@here") ?? false
+                        let isDM: Bool = {
+                            if let channel = channels[m.channel] {
+                                switch channel {
+                                case .dm_channel, .group_dm_channel:
+                                    return true
+                                default:
+                                    return false
+                                }
+                            }
+                            return false
+                        }()
+                        
+                        if isMentioned || hasEveryone || hasHere || isDM {
+                            let senderName = m.user?.display_name ?? m.user?.username ?? "Someone"
+                            let channelName = channels[m.channel]?.getName(self) ?? "a channel"
+                            
+                            let content = UNMutableNotificationContent()
+                            content.title = isDM ? senderName : "#\(channelName)"
+                            content.subtitle = isDM ? "" : senderName
+                            content.body = m.content ?? "Sent an attachment"
+                            content.sound = .default
+                            content.categoryIdentifier = "ALERT_MESSAGE"
+                            content.userInfo = [
+                                "channelId": m.channel,
+                                "message": ["_id": m.id, "channel": m.channel],
+                                "serverId": channels[m.channel]?.server ?? ""
+                            ]
+                            
+                            let request = UNNotificationRequest(
+                                identifier: "msg-\(m.id)",
+                                content: content,
+                                trigger: nil // deliver immediately
+                            )
+                            
+                            Task {
+                                try? await UNUserNotificationCenter.current().add(request)
+                            }
+                        }
+                    }
+                }
 
             case .message_update(let event):
                 let message = messages[event.id]
@@ -912,6 +1062,10 @@ public class ViewState: ObservableObject {
                 channels.removeValue(forKey: e.id)
             case .server_create(let e):
                 servers[e.id] = e.server
+                
+                if members[e.id] == nil {
+                    members[e.id] = [:]
+                }
                 
                 for channel in e.channels {
                     channels[channel.id] = channel
@@ -1373,15 +1527,12 @@ public class ViewState: ObservableObject {
     }
     
     func selectDm(withId id: String) {
+        currentSelection = .dms
         currentChannel = .channel(id)
-        let channel = channels[id]!
+        selectedTab = .servers
         
-        switch channel {
-            case .dm_channel, .group_dm_channel:
-                userSettingsStore.store.lastOpenChannels["dms"] = id
-            default:
-                userSettingsStore.store.lastOpenChannels.removeValue(forKey: "dms")
-                
+        if let _ = channels[id] {
+            userSettingsStore.store.lastOpenChannels["dms"] = id
         }
     }
     
@@ -1425,15 +1576,19 @@ extension Channel {
     public func getName(_ viewState: ViewState) -> String {
         switch self {
             case .saved_messages(_):
-                "Saved Messages"
+                return "Saved Messages"
             case .dm_channel(let c):
-                viewState.users[c.recipients.first(where: {$0 != viewState.currentUser!.id})!]!.username
+                if let recipientId = c.recipients.first(where: {$0 != viewState.currentUser?.id}),
+                   let user = viewState.users[recipientId] {
+                    return user.display_name ?? user.username
+                }
+                return "Direct Message"
             case .group_dm_channel(let c):
-                c.name
+                return c.name
             case .text_channel(let c):
-                c.name
+                return c.name
             case .voice_channel(let c):
-                c.name
+                return c.name
         }
     }
 }

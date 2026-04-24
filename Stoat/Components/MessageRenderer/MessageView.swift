@@ -17,9 +17,9 @@ struct MessageView: View {
         var sizes: (CGFloat, CGFloat, CGFloat) {
             switch self {
                 case .regular:
-                    return (32, 16, 4)
+                    return (40, 20, 5)   // Discord: 40pt avatar
                 case .compact:
-                    return (16, 8, 2)
+                    return (18, 9, 2)
             }
         }
     }
@@ -68,7 +68,12 @@ struct MessageView: View {
                     viewState.openUserSheet(withId: viewModel.author.id, server: viewModel.server?.id)
                 }
             }
-            .foregroundStyle(viewModel.member?.displayColour(theme: viewState.theme, server: viewModel.server!) ?? AnyShapeStyle(viewState.theme.foreground.color))
+            .foregroundStyle({
+                if let member = viewModel.member, let server = viewModel.server {
+                    return member.displayColour(theme: viewState.theme, server: server) ?? AnyShapeStyle(viewState.theme.foreground.color)
+                }
+                return AnyShapeStyle(viewState.theme.foreground.color)
+            }())
             .font(.body)
             .fontWeight(.bold)
     }
@@ -120,35 +125,38 @@ struct MessageView: View {
                         }
                     }
                 } else {
-                    HStack(alignment: .top) {
+                    HStack(alignment: .top, spacing: 0) {
+                        // Avatar (Discord: 40pt)
                         pfpView(size: .regular)
-                            .padding(.top, 2)
-                            .padding(.trailing, 8)
-                        
-                        VStack(alignment: .leading, spacing: 0) {
-                            HStack {
+                            .padding(.top, 1)
+                            .padding(.trailing, 12)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            // Name + timestamp row
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
                                 nameView
-                                
+                                    .font(.system(size: 15, weight: .semibold))
+
                                 if viewModel.author.bot != nil {
                                     MessageBadge(text: String(localized: "Bot"), color: viewState.theme.accent.color)
                                 }
-                                
                                 if viewModel.message.webhook != nil {
                                     MessageBadge(text: String(localized: "Webhook"), color: viewState.theme.accent.color)
-                                    
                                 }
-                                
-                                Text(createdAt(id: viewModel.message.id).formatted(Date.FormatStyle().hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))
-                                    .font(.caption)
-                                    .foregroundStyle(viewState.theme.foreground2)
-                                
+
+                                Text(createdAt(id: viewModel.message.id).formatted(
+                                    Date.FormatStyle().hour(.twoDigits(amPM: .abbreviated)).minute(.twoDigits)
+                                ))
+                                .font(.system(size: 11))
+                                .foregroundStyle(viewState.theme.foreground2.color.opacity(0.6))
+
                                 if viewModel.message.edited != nil {
                                     Text("(edited)")
-                                        .font(.caption)
-                                        .foregroundStyle(.gray)
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary.opacity(0.5))
                                 }
                             }
-                            
+
                             MessageContentsView(viewModel: viewModel, onlyShowContent: onlyShowContent)
                         }
                     }

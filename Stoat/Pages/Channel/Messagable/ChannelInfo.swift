@@ -109,7 +109,7 @@ struct ChannelInfo: View {
             if let roles = u.member!.roles {
                 let sorted_member_roles = roles
                     .compactMap { server.roles?[$0] }
-                    .sorted(by: { $0.rank > $1.rank })
+                    .sorted(by: { $0.rank < $1.rank })
                     .map(\.id)
                 
                 if let current_role_pos = sorted_member_roles.firstIndex(of: role),

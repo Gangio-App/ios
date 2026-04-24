@@ -123,6 +123,6 @@ struct ShareInviteSheet: View {
 #Preview {
     let viewState = ViewState.preview()
 
-    return ShareInviteSheet(channel: viewState.channels["0"]!, url: URL(string: "https://stoat.chat")!)
+    return ShareInviteSheet(channel: viewState.channels["0"]!, url: URL(string: "https://gangio.pro")!)
         .applyPreviewModifiers(withState: viewState)
 }

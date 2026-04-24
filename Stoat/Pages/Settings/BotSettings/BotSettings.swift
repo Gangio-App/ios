@@ -11,50 +11,123 @@ import Types
 
 struct BotSettings: View {
     @EnvironmentObject var viewState: ViewState
+    @Environment(\.colorScheme) var colorScheme
     
     @State var bots: [(Bot, User)] = []
     @State var showCreateBotAlert: Bool = false
+    @State var isLoading = true
     
     var body: some View {
-        List {
-            Section {
-                Button {
-                    showCreateBotAlert.toggle()
-                } label: {
-                    Label("Create a bot", systemImage: "plus")
+        ScrollView {
+            VStack(spacing: 20) {
+                // Create Bot Button
+                Button(action: { showCreateBotAlert.toggle() }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("Create a Bot")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color.indigo)
+                    )
+                    .shadow(color: Color.indigo.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
-            }
-            .listRowBackground(viewState.theme.background2)
-            .listSectionSpacing(.zero)
-            
-            Text("By creating a bot, you are agreeing to the [Acceptable Usage Policy](https://stoat.chat/legal/community-guidelines).")
-                .listRowBackground(viewState.theme.background)
 
-            
-            Section("My Bots") {
-                ForEach(bots, id: \.0.id) { (bot, user) in
-                    NavigationLink {
-                        BotSetting(bot: bot, user: user)
-                    } label: {
-                        HStack {
-                            Avatar(user: user)
-                                .frame(width: 32, height: 32)
-                            
-                            Text(verbatim: user.display_name ?? user.username)
-                            
-                            MessageBadge(text: "Bot", color: viewState.theme.accent.color)
-                            
-                            Spacer()
-                            
-                            Image(systemName: bot.isPublic ? "globe" : "lock.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 16, height: 16)
+                // Info Notice
+                HStack(spacing: 10) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(.blue)
+                    Text("By creating a bot, you agree to the [Community Guidelines](https://stoat.chat/legal/community-guidelines).")
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                }
+                .padding(12)
+                .background(colorScheme == .dark ? Color(white: 0.1) : Color.white)
+                .cornerRadius(12)
+                .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
+
+                // My Bots
+                if isLoading {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("Loading bots...")
+                            .font(.subheadline)
+                            .foregroundStyle(.gray)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                } else if bots.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "desktopcomputer")
+                            .font(.system(size: 40))
+                            .foregroundColor(.gray.opacity(0.4))
+                        Text("No bots yet")
+                            .font(.headline)
+                            .foregroundStyle(.gray)
+                        Text("Create your first bot to get started")
+                            .font(.caption)
+                            .foregroundStyle(.gray.opacity(0.7))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                } else {
+                    SettingsSectionView(title: "My Bots (\(bots.count))") {
+                        ForEach(Array(bots.enumerated()), id: \.element.0.id) { index, botPair in
+                            let (bot, user) = botPair
+                            if index > 0 {
+                                Divider().padding(.leading, 52)
+                            }
+                            NavigationLink {
+                                BotSetting(bot: bot, user: user)
+                            } label: {
+                                HStack(spacing: 14) {
+                                    Avatar(user: user)
+                                        .frame(width: 40, height: 40)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        HStack(spacing: 6) {
+                                            Text(verbatim: user.display_name ?? user.username)
+                                                .font(.system(size: 16, weight: .medium))
+                                                .foregroundColor(colorScheme == .dark ? .white : .black)
+                                            
+                                            Text("BOT")
+                                                .font(.system(size: 9, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.indigo)
+                                                .cornerRadius(4)
+                                        }
+                                        
+                                        HStack(spacing: 4) {
+                                            Image(systemName: bot.isPublic ? "globe" : "lock.fill")
+                                                .font(.system(size: 10))
+                                            Text(bot.isPublic ? "Public" : "Private")
+                                                .font(.caption)
+                                        }
+                                        .foregroundStyle(.gray)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.gray.opacity(0.5))
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                            }
                         }
                     }
                 }
             }
-            .listRowBackground(viewState.theme.background2)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
         }
         .task {
             if let response = try? await viewState.http.fetchBots().get() {
@@ -65,11 +138,13 @@ struct BotSettings: View {
                             .map { (bot, $0) }
                     }
             }
+            isLoading = false
         }
-        .scrollContentBackground(.hidden)
-        .background(viewState.theme.background)
+        .background(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96))
         .navigationTitle("Bots")
-        .toolbarBackground(viewState.theme.topBar, for: .automatic)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .alert("Create Bot", isPresented: $showCreateBotAlert) {
             CreateBotAlert(bots: $bots)
         }

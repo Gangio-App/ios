@@ -266,7 +266,7 @@ struct ServerChannelScrollView: View {
                     ZStack(alignment: .bottomLeading) {
                         if let banner = server.banner {
                             LazyImage(source: .file(banner), height: 120, clipTo: Rectangle())
-                                .frame(minWidth: 0)
+                                .frame(maxWidth: .infinity)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                         

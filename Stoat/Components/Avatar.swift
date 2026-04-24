@@ -65,6 +65,9 @@ struct Avatar: View {
             }
         }
         .compositingGroup()
+        .onTapGesture {
+            viewState.openUserSheet(user: user, member: member)
+        }
     }
 }
 
