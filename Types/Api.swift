@@ -1,6 +1,6 @@
 //
 //  Api.swift
-//  Revolt
+//  Gangio
 //
 //  Created by Zomatree on 21/04/2023.
 //
@@ -17,7 +17,7 @@ public struct CaptchaFeature: Codable {
     public var key: String
 }
 
-public struct RevoltFeature: Codable {
+public struct GangioFeature: Codable {
     public init(enabled: Bool, url: String) {
         self.enabled = enabled
         self.url = url
@@ -52,7 +52,7 @@ public struct LiveKitFeature: Codable {
 }
 
 public struct ApiFeatures: Codable {
-    public init(captcha: CaptchaFeature, email: Bool, invite_only: Bool, autumn: RevoltFeature, january: RevoltFeature, livekit: LiveKitFeature) {
+    public init(captcha: CaptchaFeature, email: Bool, invite_only: Bool, autumn: GangioFeature, january: GangioFeature, livekit: LiveKitFeature) {
         self.captcha = captcha
         self.email = email
         self.invite_only = invite_only
@@ -64,25 +64,30 @@ public struct ApiFeatures: Codable {
     public var captcha: CaptchaFeature
     public var email: Bool
     public var invite_only: Bool
-    public var autumn: RevoltFeature
-    public var january: RevoltFeature
+    public var autumn: GangioFeature
+    public var january: GangioFeature
     public var livekit: LiveKitFeature
 }
 
 public struct ApiInfo: Codable {
-    public init(revolt: String, features: ApiFeatures, ws: String, app: String, vapid: String) {
-        self.revolt = revolt
+    public init(gangio: String, features: ApiFeatures, ws: String, app: String, vapid: String) {
+        self.gangio = gangio
         self.features = features
         self.ws = ws
         self.app = app
         self.vapid = vapid
     }
     
-    public var revolt: String
+    public var gangio: String
     public var features: ApiFeatures
     public var ws: String
     public var app: String
     public var vapid: String
+
+    enum CodingKeys: String, CodingKey {
+        case gangio = "revolt"
+        case features, ws, app, vapid
+    }
 }
 
 public struct Session: Codable, Identifiable {

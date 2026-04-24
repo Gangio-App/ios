@@ -1,6 +1,6 @@
 //
 //  Emoji.swift
-//  Revolt
+//  Gangio
 //
 //  Created by Angelo on 14/10/2023.
 //

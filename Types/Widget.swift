@@ -31,5 +31,5 @@ public struct VoiceWidgetAttributes: ActivityAttributes {
     public let channel: Channel
     public let channelName: String
     
-//    public static let preview: Self = .init(us: User(id: "0", username: "Zomatree", discriminator: "0000"), pfp: URL(string: "https://autumn.revolt.chat/avatars/DZdeerdwrU6rvfDOOGdNUptzHZT8Ri0cHCo0Z1sz99/large.png")!, channel: .voice_channel(.init(id: "0", server: "0", name: "Voice General")), channelName: "Voice")
+//    public static let preview: Self = .init(us: User(id: "0", username: "Zomatree", discriminator: "0000"), pfp: URL(string: "https://autumn.gangio.chat/avatars/DZdeerdwrU6rvfDOOGdNUptzHZT8Ri0cHCo0Z1sz99/large.png")!, channel: .voice_channel(.init(id: "0", server: "0", name: "Voice General")), channelName: "Voice")
 }

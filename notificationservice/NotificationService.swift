@@ -10,7 +10,7 @@ import os
 import Intents
 import Types
 
-let logger = Logger(subsystem: "stoat.chat.app", category: "notificationd")
+let logger = Logger(subsystem: "gangio.chat.app", category: "notificationd")
 
 
 func getMessageIntent(_ notification: UNNotificationContent) -> INSendMessageIntent? {

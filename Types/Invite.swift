@@ -1,6 +1,6 @@
 //
 //  Invite.swift
-//  Revolt
+//  Gangio
 //
 //  Created by Angelo on 09/03/2024.
 //

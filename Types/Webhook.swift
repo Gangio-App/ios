@@ -1,6 +1,6 @@
 //
 //  Webhook.swift
-//  Revolt
+//  Gangio
 //
 //  Created by Angelo on 26/03/2025.
 //

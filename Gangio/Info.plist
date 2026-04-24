@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>chat.gangio.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>gangiochat</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Gangio needs access to your camera for video calls.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Gangio needs access to your microphone for voice calls.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>INSendMessageIntent</string>
+		<string>chat.gangio.app.voice-call</string>
+		<string>chat.gangio.app.channel-navigation</string>
+	</array>
+	<key>RTCAppGroupIdentifier</key>
+	<string>group.chat.gangio.app</string>
+	<key>RTCScreenSharingExtension</key>
+	<string>chat.gangio.app.BroadcastExtension</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>voip</string>
+		<string>push-to-talk</string>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>

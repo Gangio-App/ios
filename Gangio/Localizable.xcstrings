@@ -1,0 +1,299 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "" : { },
+    "(edited)" : { },
+    "About" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Über" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hakkında" } }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Erscheinungsbild" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Görünüm" } }
+      }
+    },
+    "Auto" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Automatisch" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Otomatik" } }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Abbrechen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "İptal" } }
+      }
+    },
+    "Connecting..." : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Verbinde..." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bağlanıyor..." } }
+      }
+    },
+    "Conversations" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Unterhaltungen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sohbetler" } }
+      }
+    },
+    "Dark" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Dunkel" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Koyu" } }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Löschen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sil" } }
+      }
+    },
+    "Direct Messages" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Direktnachrichten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Direkt Mesajlar" } }
+      }
+    },
+    "Discovery" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Entdecken" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Keşfet" } }
+      }
+    },
+    "Edit" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Bearbeiten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düzenle" } }
+      }
+    },
+    "Friends" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Freunde" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Arkadaşlar" } }
+      }
+    },
+    "Home" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Home" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ana Sayfa" } }
+      }
+    },
+    "Language" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Sprache" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dil" } }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Hell" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Açık" } }
+      }
+    },
+    "Loading..." : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Laden..." } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yükleniyor..." } }
+      }
+    },
+    "Log In" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Anmelden" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Giriş Yap" } }
+      }
+    },
+    "Logout" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Abmelden" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çıkış Yap" } }
+      }
+    },
+    "Members" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Mitglieder" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Üyeler" } }
+      }
+    },
+    "Message Box" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Nachrichtenbox" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj Kutusu" } }
+      }
+    },
+    "Overview" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Übersicht" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Genel Bakış" } }
+      }
+    },
+    "Profile" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Profil" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Profil" } }
+      }
+    },
+    "Reply" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Antworten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yanıtla" } }
+      }
+    },
+    "Report" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Melden" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Rapor Et" } }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Speichern" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kaydet" } }
+      }
+    },
+    "Saved Messages" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Gespeicherte Nachrichten" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kaydedilen Mesajlar" } }
+      }
+    },
+    "Search" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Suche" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ara" } }
+      }
+    },
+    "Sessions" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Sitzungen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Oturumlar" } }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ayarlar" } }
+      }
+    },
+    "Sign Up" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Registrieren" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kayıt Ol" } }
+      }
+    },
+    "Username" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Benutzername" } },
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kullanıcı Adı" } }
+      }
+    },
+    "Notification Permissions" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bildirim İzinleri" } }
+      }
+    },
+    "Push Notifications" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Anlık Bildirimler" } }
+      }
+    },
+    "Receive notifications when the app is closed" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uygulama kapalıyken bildirim al" } }
+      }
+    },
+    "In-App Notifications" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uygulama İçi Bildirimler" } }
+      }
+    },
+    "Show notifications while using the app" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uygulamayı kullanırken bildirimleri göster" } }
+      }
+    },
+    "Account Preferences" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hesap Tercihleri" } }
+      }
+    },
+    "Global Preferences" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Genel Tercihler" } }
+      }
+    },
+    "DMs, mentions, and server defaults" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "DM'ler, bahsetmeler ve sunucu varsayılanları" } }
+      }
+    },
+    "Troubleshooting" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sorun Giderme" } }
+      }
+    },
+    "System Settings" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sistem Ayarları" } }
+      }
+    },
+    "Open device settings to manage alerts" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Uyarıları yönetmek için cihaz ayarlarını aç" } }
+      }
+    },
+    "Voice & Audio" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses & Görüntü" } }
+      }
+    },
+    "Audio Levels" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Seviyeleri" } }
+      }
+    },
+    "Master Volume" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ana Ses Seviyesi" } }
+      }
+    },
+    "Sound Effects" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Efektleri" } }
+      }
+    },
+    "Message Sent" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj Gönderildi" } }
+      }
+    },
+    "Play a sound when you send a message" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj gönderdiğinde bir ses çal" } }
+      }
+    },
+    "Message Received" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj Alındı" } }
+      }
+    },
+    "Play a sound when you receive a message" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mesaj aldığında bir ses çal" } }
+      }
+    },
+    "Voice Input" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Girişi" } }
+      }
+    },
+    "Voice Output" : {
+      "localizations" : {
+        "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ses Çıkışı" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

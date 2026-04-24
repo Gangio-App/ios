@@ -1,6 +1,6 @@
 //
 //  Embed.swift
-//  Revolt
+//  Gangio
 //
 //  Created by Angelo on 08/07/2024.
 //
