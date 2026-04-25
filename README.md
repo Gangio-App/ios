@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/gangio-chat/.github/main/assets/gangio-logo.png" alt="Gangio Logo" width="120" />
+  <img src="[https://raw.githubusercontent.com/gangio-chat/.github/main/assets/gangio-logo.png](https://gangio.pro/assets/web/wordmark.svg?component-solid)" alt="Gangio Logo" width="120" />
   <h1>Gangio for iOS</h1>
   
   <p><b>The ultimate native iOS experience for Gangio, redefining community communication.</b></p>
