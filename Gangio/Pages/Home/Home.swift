@@ -240,6 +240,9 @@ struct Home: View {
                                 .simultaneousGesture(
                                     DragGesture(minimumDistance: minGestureLength)
                                         .onChanged({ g in
+                                            // Only trigger if swipe is primarily horizontal
+                                            guard abs(g.translation.width) > abs(g.translation.height) else { return }
+                                            
                                             if g.translation.width >= minGestureLength {
                                                 disableScroll = true
                                             }
@@ -941,31 +944,35 @@ struct GlobalVoiceBanner: View {
     @Binding var offset: CGFloat
     
     var body: some View {
-        if let voiceId = viewState.currentVoiceChannel, let room = viewState.currentVoice {
-            let isLookingAtVoice: Bool = {
-                switch currentChannel {
-                case .channel(let id), .force_voicechannel(let id), .force_textchannel(let id):
-                    return id == voiceId && offset == 0
-                default:
-                    return false
-                }
-            }()
-            
-            if !isLookingAtVoice {
+        if let voiceId = viewState.currentVoiceChannel, viewState.currentVoice != nil {
+            // Only show if we are NOT currently viewing the voice channel
+            if currentChannel.id != voiceId || offset > 0 {
                 Button {
-                    // Tap to go back to voice channel
-                    withAnimation {
-                        currentChannel = .force_voicechannel(voiceId)
+                    withAnimation(.spring()) {
+                        viewState.path = NavigationPath()
+                        if let channel = viewState.channels[voiceId] {
+                            if let server = channel.server {
+                                viewState.currentSelection = .server(server)
+                            } else {
+                                viewState.currentSelection = .dms
+                            }
+                            viewState.currentChannel = .channel(voiceId)
+                        }
                         offset = 0
                     }
                 } label: {
-                    HStack {
-                        Image(systemName: "phone.connection")
-                            .foregroundStyle(.green)
+                    HStack(spacing: 12) {
+                        Image(systemName: "phone.fill")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(8)
+                            .background(Circle().fill(Color.green))
                         
-                        VStack(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 2) {
                             Text("Voice Connected")
                                 .font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(viewState.theme.foreground.color)
+                            
                             if let ch = viewState.channels[voiceId] {
                                 Text(ch.getName(viewState))
                                     .font(.system(size: 11))
@@ -976,34 +983,37 @@ struct GlobalVoiceBanner: View {
                         Spacer()
                         
                         Button {
-                            let impact = UIImpactFeedbackGenerator(style: .medium)
-                            impact.impactOccurred()
                             Task {
-                                await room.disconnect()
-                                await MainActor.run {
-                                    viewState.currentVoice = nil
-                                    viewState.currentVoiceChannel = nil
+                                if let room = viewState.currentVoice {
+                                    await room.disconnect()
+                                    await MainActor.run {
+                                        viewState.currentVoice = nil
+                                        viewState.currentVoiceChannel = nil
+                                    }
                                 }
                             }
                         } label: {
                             Image(systemName: "phone.down.fill")
-                                .font(.system(size: 14))
-                                .padding(10)
-                                .background(Circle().fill(.red))
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(.white)
+                                .padding(8)
+                                .background(Circle().fill(Color.red))
                         }
                     }
-                    .padding(.leading, 16)
-                    .padding(.trailing, 8)
+                    .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(viewState.theme.background2.color)
-                    .clipShape(Capsule())
-                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                    .padding(.horizontal, 16)
+                    .background(
+                        Capsule()
+                            .fill(viewState.theme.background2)
+                            .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 5)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(viewState.theme.accent.color.opacity(0.1), lineWidth: 1)
+                    )
                 }
-                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
                 .transition(.move(edge: .top).combined(with: .opacity))
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isLookingAtVoice)
             }
         }
     }

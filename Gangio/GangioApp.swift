@@ -227,34 +227,6 @@ struct InnerApp: View {
                 }
             }
         }
-        .overlay(alignment: .top) {
-            if let voiceId = viewState.currentVoiceChannel, let channel = viewState.channels[voiceId], viewState.currentVoice != nil {
-                Button {
-                    viewState.path = NavigationPath()
-                    if let server = channel.server {
-                        viewState.currentSelection = .server(server)
-                    } else {
-                        viewState.currentSelection = .dms
-                    }
-                    viewState.currentChannel = .channel(voiceId)
-                } label: {
-                    HStack {
-                        Image(systemName: "phone.fill")
-                        Text("Connected to \(channel.getName(viewState))")
-                            .font(.system(size: 14, weight: .bold))
-                            .lineLimit(1)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Capsule().fill(Color.green))
-                    .foregroundColor(.white)
-                    .shadow(radius: 4)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 48)
-            }
         }
     }
 }
