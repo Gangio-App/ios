@@ -156,6 +156,9 @@ struct MessageBox: View {
     @State var autocompleteSearchValue: String = ""
     @State var autocompleteReplacements: [String: String] = [:]
     
+    @State private var autocompleteResults: AutocompleteValues = .usersAndRoles([])
+    @State private var searchTask: Task<Void, Never>? = nil
+
     @State var currentPermissions: Permissions = .default
 
     let channel: Channel
@@ -202,82 +205,97 @@ struct MessageBox: View {
         }
     }
 
-    func getAutocompleteValues(fromType type: AutocompleteType) -> AutocompleteValues {
+    func updateAutocomplete() {
+        searchTask?.cancel()
+        
+        let value = content
+        guard let last = value.split(separator: " ", omittingEmptySubsequences: false).last,
+              let pre = last.first,
+              ["@", "#", ":"].contains(pre) else {
+            autoCompleteType = nil
+            return
+        }
+        
+        let search = String(last.dropFirst())
+        let type: AutocompleteType
+        switch pre {
+        case "@": type = .usersAndRoles
+        case "#": type = .channel
+        case ":": type = .emoji
+        default: return
+        }
+        
+        autoCompleteType = type
+        autocompleteSearchValue = search
+        
+        searchTask = Task.detached(priority: .userInitiated) {
+            let results = await self.computeAutocompleteValues(type: type, search: search)
+            await MainActor.run {
+                self.autocompleteResults = results
+            }
+        }
+    }
+
+    private func computeAutocompleteValues(type: AutocompleteType, search: String) async -> AutocompleteValues {
+        let lowered = search.lowercased()
+        
         switch type {
-            case .usersAndRoles:
-                var usersAndRoles: [UserOrRole]
-
-                switch channel {
-                    case .saved_messages(_):
-                        usersAndRoles = [.user(UserMaybeMember(user: viewState.currentUser!, member: nil))]
-
-                    case .dm_channel(let dMChannel):
-                        usersAndRoles = dMChannel.recipients.map { .user(UserMaybeMember(user: viewState.users[$0]!, member: nil)) }
-
-                    case .group_dm_channel(let groupDMChannel):
-                        usersAndRoles = groupDMChannel.recipients.map { .user(UserMaybeMember(user: viewState.users[$0]!, member: nil)) }
-
-                    case .text_channel(_), .voice_channel(_):
-                        usersAndRoles = viewState.members[server!.id]!.values.compactMap { m in
-                            viewState.users[m.id.user].map { .user(UserMaybeMember(user: $0, member: m)) }
-                        }
-                        
-                        if currentPermissions.contains(.mentionRoles) {
-                            if let roles = server?.roles {
-                                usersAndRoles.append(contentsOf: roles.map { (key, value) in .role(key, value) })
-                            }
-                        }
-                        
-                        if currentPermissions.contains(.mentionEveryone) {
-                            usersAndRoles.append(contentsOf: [.everyone, .online])
-                        }
-                }
-
-                return AutocompleteValues.usersAndRoles(usersAndRoles.filter({ value in
-                    let lowered = autocompleteSearchValue.lowercased()
-                    switch value {
-                        case .user(let user):
-                            return user.user.display_name?.lowercased().starts(with: lowered)
-                                ?? user.member?.nickname?.lowercased().starts(with: lowered)
-                                ?? user.user.username.lowercased().starts(with: lowered)
-                        case .role(_, let role):
-                            return role.name.lowercased().starts(with: lowered)
-                        case .everyone:
-                            return "everyone".starts(with: lowered)
-                        case .online:
-                            return "online".starts(with: lowered)
+        case .usersAndRoles:
+            var usersAndRoles: [UserOrRole] = []
+            switch channel {
+            case .saved_messages(_):
+                usersAndRoles = [.user(UserMaybeMember(user: viewState.currentUser!, member: nil))]
+            case .dm_channel(let dMChannel):
+                usersAndRoles = dMChannel.recipients.compactMap { id in viewState.users[id].map { .user(UserMaybeMember(user: $0, member: nil)) } }
+            case .group_dm_channel(let groupDMChannel):
+                usersAndRoles = groupDMChannel.recipients.compactMap { id in viewState.users[id].map { .user(UserMaybeMember(user: $0, member: nil)) } }
+            case .text_channel(_), .voice_channel(_):
+                if let server = server, let memberDict = viewState.members[server.id] {
+                    usersAndRoles = memberDict.values.compactMap { m -> UserOrRole? in
+                        viewState.users[m.id.user].map { UserOrRole.user(UserMaybeMember(user: $0, member: m)) }
                     }
-                }))
-            case .channel:
-                let channels: [Channel]
-
-                switch channel {
-                    case .saved_messages(_), .dm_channel(_), .group_dm_channel(_):
-                        channels = [channel]
-                    case .text_channel(_), .voice_channel(_):
-                        channels = server!.channels.compactMap({ viewState.channels[$0] })
+                    
+                    if currentPermissions.contains(.mentionRoles), let roles = server.roles {
+                        let roleItems = roles.map { (key: String, value: Role) in UserOrRole.role(key, value) }
+                        usersAndRoles.append(contentsOf: roleItems)
+                    }
+                    if currentPermissions.contains(.mentionEveryone) {
+                        usersAndRoles.append(contentsOf: [UserOrRole.everyone, UserOrRole.online])
+                    }
                 }
-
-                return AutocompleteValues.channels(channels.filter { channel in
-                    channel.getName(viewState).lowercased().starts(with: autocompleteSearchValue.lowercased())
-                })
-            case .emoji:
-                return AutocompleteValues.emojis(loadEmojis(withState: viewState)
-                    .values
-                    .flatMap { $0 }
-                    .filter { emoji in
-                        let names: [String]
-                        
-                        if let emojiId = emoji.emojiId, let emoji = viewState.emojis[emojiId] {
-                            names = [emoji.name]
-                        } else {
-                            var values = emoji.alternates
-                            values.append(emoji.base)
-                            names = values.map { String(String.UnicodeScalarView($0.compactMap(Unicode.Scalar.init))) }
-                        }
-                        
-                        return names.contains(where: { $0.lowercased().starts(with: autocompleteSearchValue.lowercased()) })
-                    })
+            }
+            
+            let filtered = usersAndRoles.filter { value in
+                if lowered.isEmpty { return true }
+                switch value {
+                case .user(let u):
+                    return (u.user.display_name?.lowercased().contains(lowered) ?? false) ||
+                           (u.member?.nickname?.lowercased().contains(lowered) ?? false) ||
+                           u.user.username.lowercased().contains(lowered)
+                case .role(_, let r): return r.name.lowercased().contains(lowered)
+                case .everyone: return "everyone".contains(lowered)
+                case .online: return "online".contains(lowered)
+                }
+            }
+            return .usersAndRoles(Array(filtered.prefix(15)))
+            
+        case .channel:
+            let channels: [Channel] = server?.channels.compactMap { viewState.channels[$0] } ?? []
+            let filtered = channels.filter { $0.getName(viewState).lowercased().contains(lowered) }
+            return .channels(Array(filtered.prefix(10)))
+            
+        case .emoji:
+            let allEmojis = loadEmojis(withState: viewState).values.flatMap { $0 }
+            let filtered = allEmojis.filter { emoji in
+                if lowered.isEmpty { return true }
+                if let emojiId = emoji.emojiId, let e = viewState.emojis[emojiId] {
+                    return e.name.lowercased().contains(lowered)
+                }
+                let baseStr = String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))
+                let alternates = emoji.alternates.map { String(String.UnicodeScalarView($0.compactMap(Unicode.Scalar.init))) }
+                return baseStr.lowercased().contains(lowered) || alternates.contains { $0.lowercased().contains(lowered) }
+            }
+            return .emojis(Array(filtered.prefix(20)))
         }
     }
 
@@ -350,210 +368,223 @@ struct MessageBox: View {
                 .background(isDark ? Color(white: 0.11) : Color(white: 0.95))
             }
 
-            // ── Autocomplete strip ────────────────────────────────────────
-            if let type = autoCompleteType {
-                let values = getAutocompleteValues(fromType: type)
-                if !values.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(spacing: 6) {
-                            switch values {
-                            case .usersAndRoles(let usersOrRoles):
-                                ForEach(usersOrRoles) { userOrRole in
-                                    Button {
-                                        let displayValue: String
-                                        let replacementValue: String
-                                        switch userOrRole {
-                                        case .user(let user):
-                                            displayValue = "@\(user.member?.nickname ?? user.user.display_name ?? user.user.username)"
-                                            replacementValue = "<@\(user.id)>"
-                                        case .role(let id, let role):
-                                            displayValue = "@\(role.name)"
-                                            replacementValue = "<%\(id)>"
-                                        case .everyone:
-                                            displayValue = "@everyone"
-                                            replacementValue = "@everyone"
-                                        case .online:
-                                            displayValue = "@online"
-                                            replacementValue = "@online"
+            // ── Autocomplete List (Vertical) ──────────────────────────────
+            if autoCompleteType != nil && !autocompleteResults.isEmpty {
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 1) {
+                            switch autocompleteResults {
+                            case .usersAndRoles(let items):
+                                ForEach(items) { item in
+                                    AutocompleteRow(icon: {
+                                        switch item {
+                                        case .user(let u): AppAvatar(user: u.user, member: u.member, width: 24, height: 24)
+                                        case .role(_, _): Image(systemName: "number").foregroundStyle(.secondary)
+                                        case .everyone, .online: Image(systemName: "at").foregroundStyle(.secondary)
                                         }
-                                        withAnimation {
-                                            autocompleteReplacements[displayValue] = replacementValue
-                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(displayValue) "
-                                            autoCompleteType = nil
+                                    }, label: {
+                                        switch item {
+                                        case .user(let u): Text(u.member?.nickname ?? u.user.display_name ?? u.user.username).bold()
+                                        case .role(_, let r): Text(r.name).bold().foregroundStyle(r.colour.map { parseCSSColorToShapeStyle(currentTheme: viewState.theme, input: $0) } ?? AnyShapeStyle(viewState.theme.foreground))
+                                        case .everyone: Text("everyone").bold()
+                                        case .online: Text("online").bold()
                                         }
-                                    } label: {
-                                        HStack(spacing: 6) {
-                                            switch userOrRole {
-                                            case .user(let user):
-                                                AppAvatar(user: user.user, member: user.member, width: 20, height: 20)
-                                                Text(user.member?.nickname ?? user.user.display_name ?? user.user.username)
-                                            case .role(_, let role):
-                                                Text("@\(role.name)").foregroundStyle(role.colour.map { parseCSSColorToShapeStyle(currentTheme: viewState.theme, input: $0) } ?? AnyShapeStyle(viewState.theme.foreground))
-                                            case .everyone: Text("@everyone")
-                                            case .online: Text("@online")
-                                            }
-                                        }
-                                        .font(.system(size: 13))
-                                        .padding(.horizontal, 8).padding(.vertical, 5)
+                                    }, sublabel: {
+                                        if case .user(let u) = item { Text("@\(u.user.username)").font(.caption).foregroundStyle(.secondary) }
+                                    }) {
+                                        applyAutocomplete(item)
                                     }
-                                    .background(viewState.theme.background2.color)
-                                    .clipShape(Capsule())
                                 }
                             case .channels(let channels):
                                 ForEach(channels) { ch in
-                                    Button {
-                                        let displayValue = "#\(ch.getName(viewState))"
-                                        let replacementValue = "<#\(ch.id)>"
-                                        withAnimation {
-                                            autocompleteReplacements[displayValue] = replacementValue
-                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(displayValue) "
-                                            autoCompleteType = nil
-                                        }
-                                    } label: {
+                                    AutocompleteRow(icon: { 
                                         ChannelIcon(channel: ch)
-                                            .font(.system(size: 13))
-                                            .padding(.horizontal, 8).padding(.vertical, 5)
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(.secondary)
+                                    }, label: { 
+                                        Text(ch.getName(viewState))
+                                            .fontWeight(.semibold) 
+                                    }) {
+                                        applyAutocomplete(ch)
                                     }
-                                    .background(viewState.theme.background2.color)
-                                    .clipShape(Capsule())
                                 }
                             case .emojis(let emojis):
-                                ForEach(emojis) { emoji in
-                                    Button {
-                                        let str: String
-                                        if let emojiId = emoji.emojiId { str = ":\(emojiId): " }
-                                        else { str = String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init))) }
-                                        withAnimation {
-                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + str
-                                            autoCompleteType = nil
-                                        }
-                                    } label: {
-                                        if let id = emoji.emojiId {
-                                            LazyImage(source: .emoji(id), height: 20, width: 20, clipTo: Rectangle())
-                                        } else {
-                                            Text(String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))).font(.system(size: 18))
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 10) {
+                                        ForEach(emojis) { emoji in
+                                            Button { applyAutocomplete(emoji) } label: {
+                                                if let id = emoji.emojiId { LazyImage(source: .emoji(id), height: 28, width: 28, clipTo: Rectangle()) }
+                                                else { Text(String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))).font(.system(size: 24)) }
+                                            }
+                                            .frame(width: 44, height: 44)
+                                            .background(viewState.theme.background2.color)
+                                            .clipShape(RoundedRectangle(cornerRadius: 10))
                                         }
                                     }
-                                    .frame(width: 36, height: 36)
-                                    .background(viewState.theme.background2.color)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .padding(12)
                                 }
                             }
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 4)
                     }
-                    .background(isDark ? Color(white: 0.12) : Color(white: 0.94))
+                    .frame(maxHeight: 280)
                 }
+                .background(.ultraThinMaterial)
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
+                .overlay(
+                    VStack {
+                        Divider()
+                        Spacer()
+                    }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
 
             // ── Discord-style input bar ───────────────────────────────────
-            HStack(alignment: .center, spacing: 12) {
-
-                // + Attach button (left)
+            HStack(alignment: .bottom, spacing: 10) {
+                // + Attach button
                 UploadButton(
                     showingSelectFile: $showingSelectFile,
                     showingSelectPhoto: $showingSelectPhoto,
                     selectedPhotoItems: $selectedPhotoItems,
                     selectedPhotos: $selectedPhotos
                 )
-                .frame(width: 36, height: 36)
-                .background(isDark ? Color(white: 0.22) : Color(white: 0.88))
-                .clipShape(Circle())
-                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                .frame(width: 38, height: 38)
+                .background(Circle().fill(isDark ? Color(white: 0.18) : Color(white: 0.90)))
+                .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                .padding(.bottom, 3)
 
-                // Text field pill
-                HStack(alignment: .center, spacing: 8) {
+                // Main input pill
+                HStack(alignment: .bottom, spacing: 8) {
                     TextField("", text: $content.animation(), axis: .vertical)
                         .focused(focusState)
                         .placeholder(when: content.isEmpty) {
                             Text("Message #\(channel.getName(viewState))")
-                                .foregroundStyle(.secondary.opacity(0.6))
-                                .lineLimit(1)
+                                .foregroundStyle(.secondary.opacity(0.5))
                         }
                         .font(.system(size: 16))
-                        .foregroundStyle(isDark ? .white : .black)
-                        .lineLimit(1...6)
+                        .lineLimit(1...8)
                         .padding(.vertical, 10)
-                        .padding(.horizontal, 12)
-                        .frame(minHeight: 44)
-                        .background(Color.clear)
-                        .onChange(of: content) { _, value in
-                            withAnimation {
-                                if let last = value.split(separator: " ").last {
-                                    let pre = last.first
-                                    autocompleteSearchValue = String(last[last.index(last.startIndex, offsetBy: 1)...])
-                                    switch pre {
-                                    case "@": autoCompleteType = .usersAndRoles
-                                    case "#": autoCompleteType = .channel
-                                    case ":": autoCompleteType = .emoji
-                                    default: autoCompleteType = nil
-                                    }
-                                } else { autoCompleteType = nil }
-                            }
-                        }
-                        .onChange(of: focusState.wrappedValue) { _, v in
-                            if v, showingSelectEmoji { withAnimation { showingSelectEmoji = false } }
-                        }
-                        .onChange(of: showingSelectEmoji) { b, a in
-                            if b, !a { withAnimation { focusState.wrappedValue = true } }
-                        }
-                        .onChange(of: editing) { _, a in
-                            if let a {
-                                selectedPhotos = []; selectedPhotoItems = []; autoCompleteType = nil; autocompleteSearchValue = ""; content = a.content ?? ""
-                            } else { channelReplies = []; content = "" }
-                        }
-                        .sheet(isPresented: $showingSelectEmoji) {
-                            EmojiPicker(background: AnyView(viewState.theme.background)) { emoji in
-                                if let id = emoji.emojiId { content.append(":\(id):") }
-                                else { content.append(String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init)))) }
-                                showingSelectEmoji = false
-                            }
-                            .padding([.top, .horizontal])
-                            .background(viewState.theme.background.ignoresSafeArea(.all))
-                            .presentationDetents([.large])
-                        }
+                        .padding(.leading, 14)
+                        .onChange(of: content) { _, _ in updateAutocomplete() }
 
-                    // Emoji button (inside pill, right side)
                     Button {
-                        withAnimation {
-                            focusState.wrappedValue = false
-                            showingSelectEmoji.toggle()
-                        }
+                        focusState.wrappedValue = false
+                        showingSelectEmoji.toggle()
                     } label: {
                         Image(systemName: "face.smiling")
-                            .font(.system(size: 18))
+                            .font(.system(size: 20))
                             .foregroundStyle(.secondary.opacity(0.7))
+                            .padding(.bottom, 10)
+                            .padding(.trailing, 10)
                     }
                 }
-                .background(isDark ? Color(white: 0.15) : Color(white: 0.91))
-                .clipShape(RoundedRectangle(cornerRadius: 24))
-                .shadow(color: .black.opacity(0.05), radius: 3, x: 0, y: 2)
+                .background(RoundedRectangle(cornerRadius: 22).fill(isDark ? Color(white: 0.12) : Color(white: 0.94)))
+                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.secondary.opacity(0.1), lineWidth: 0.5))
 
-                // Send button (right, Discord blue circle)
+                // Send button
                 Button(action: sendMessage) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                    Image(systemName: "arrow.up.circle.fill")
+                        .resizable()
                         .frame(width: 36, height: 36)
-                        .background(content.isEmpty && selectedPhotos.isEmpty ? Color.gray.opacity(0.4) : viewState.theme.accent.color)
-                        .clipShape(Circle())
-                        .shadow(color: content.isEmpty && selectedPhotos.isEmpty ? .clear : viewState.theme.accent.color.opacity(0.3), radius: 4, x: 0, y: 2)
+                        .foregroundStyle(content.isEmpty && selectedPhotos.isEmpty ? .secondary.opacity(0.3) : viewState.theme.accent.color)
                 }
                 .disabled(content.isEmpty && selectedPhotos.isEmpty)
-                .animation(.easeInOut(duration: 0.2), value: content.isEmpty)
+                .padding(.bottom, 4)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(isDark ? Color(white: 0.08) : Color(white: 0.97))
-            .background(.ultraThinMaterial, in: Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(.ultraThinMaterial)
         }
         .onAppear {
             let member = server.flatMap { viewState.members[$0.id]?[viewState.currentUser!.id] }
             currentPermissions = resolveChannelPermissions(from: viewState.currentUser!, targettingUser: viewState.currentUser!, targettingMember: member, channel: channel, server: server)
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("InsertEmoji"))) { note in
+            if let emoji = note.userInfo?["emoji"] as? PickerEmoji {
+                let str: String
+                if let id = emoji.emojiId { str = ":\(id): " }
+                else { str = String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init))) + " " }
+                content += str
+            }
+        }
     }
 
+    private func applyAutocomplete(_ value: Any) {
+        withAnimation {
+            if let item = value as? UserOrRole {
+                let display: String
+                let replace: String
+                switch item {
+                case .user(let u):
+                    display = "@\(u.member?.nickname ?? u.user.display_name ?? u.user.username)"
+                    replace = "<@\(u.id)>"
+                case .role(let id, let r):
+                    display = "@\(r.name)"
+                    replace = "<%\(id)>"
+                case .everyone: display = "@everyone"; replace = "@everyone"
+                case .online: display = "@online"; replace = "@online"
+                }
+                autocompleteReplacements[display] = replace
+                content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(display) "
+            } else if let ch = value as? Channel {
+                let display = "#\(ch.getName(viewState))"
+                autocompleteReplacements[display] = "<#\(ch.id)>"
+                content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(display) "
+            } else if let emoji = value as? PickerEmoji {
+                let str: String
+                if let id = emoji.emojiId { str = ":\(id): " }
+                else { str = String(String.UnicodeScalarView(emoji.base.compactMap(Unicode.Scalar.init))) + " " }
+                content = String(content.dropLast(autocompleteSearchValue.count + 1)) + str
+            }
+            autoCompleteType = nil
+        }
+    }
+}
+
+struct AutocompleteRow<I: View, L: View, S: View>: View {
+    let icon: I
+    let label: L
+    var sublabel: S? = nil
+    let action: () -> Void
+    
+    init(@ViewBuilder icon: () -> I, @ViewBuilder label: () -> L, @ViewBuilder sublabel: () -> S, action: @escaping () -> Void) {
+        self.icon = icon()
+        self.label = label()
+        self.sublabel = sublabel()
+        self.action = action
+    }
+    
+    init(@ViewBuilder icon: () -> I, @ViewBuilder label: () -> L, action: @escaping () -> Void) where S == EmptyView {
+        self.icon = icon()
+        self.label = label()
+        self.sublabel = nil
+        self.action = action
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                icon.frame(width: 28, height: 28)
+                    .background(Color.secondary.opacity(0.1))
+                    .clipShape(Circle())
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    label.font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.primary)
+                    if let sub = sublabel { 
+                        sub.font(.system(size: 12))
+                           .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
 }
 
 struct UploadButton: View {

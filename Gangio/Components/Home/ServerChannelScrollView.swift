@@ -310,6 +310,10 @@ struct ServerChannelScrollView: View {
                 ForEach(server.categories ?? []) { category in
                     CategoryListItem(server: server, category: category, toggleSidebar: toggleSidebar)
                 }
+                
+                // Buffer to prevent BottomBar overlap
+                Spacer()
+                    .frame(height: 120)
             }
             .padding(.horizontal, 8)
             .scrollContentBackground(.hidden)

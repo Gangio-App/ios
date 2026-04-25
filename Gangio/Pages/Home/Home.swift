@@ -1,14 +1,14 @@
 //
-//  HomeRewritten.swift
+//  Home.swift
 //  Gangio
 //
-//  Created by Angelo on 25/11/2023.
+//  Created by benyigit on 25/04/2026.
 //
 import SwiftUI
 import Types
 
 struct MaybeChannelView: View {
-    @EnvironmentObject var viewState: AppViewState
+    @EnvironmentObject var viewState: ViewState
     @Binding var currentChannel: ChannelSelection
     @Binding var currentSelection: MainSelection
     var toggleSidebar: () -> ()
@@ -130,7 +130,7 @@ struct MaybeChannelView: View {
 }
 
 struct Home: View {
-    @EnvironmentObject var viewState: AppViewState
+    @EnvironmentObject var viewState: ViewState
     
     @Binding var currentSelection: MainSelection
     @Binding var currentChannel: ChannelSelection
@@ -158,6 +158,16 @@ struct Home: View {
             } else {
                 offset = targetWidth
             }
+        }
+    }
+    
+    var isChatOpen: Bool {
+        if viewState.selectedTab != .servers { return false }
+        switch currentChannel {
+        case .channel, .force_textchannel, .force_voicechannel, .home:
+            return offset == 0 // Only hide if chat is full screen
+        default:
+            return false
         }
     }
     
@@ -273,17 +283,12 @@ struct Home: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .ignoresSafeArea(edges: .bottom)
+                .overlay(alignment: .top) {
+                    GlobalVoiceBanner(currentChannel: $currentChannel, offset: $offset)
+                        .padding(.top, 4) // Top padding to avoid Dynamic Island (SafeArea handles the rest usually, but we can tweak if needed)
+                }
 
                 // Tab bar: only hide when inside an active chat channel AND sidebar is closed
-                let isChatOpen: Bool = {
-                    if viewState.selectedTab != .servers { return false }
-                    switch currentChannel {
-                    case .channel, .force_textchannel, .force_voicechannel, .home: 
-                        return offset == 0 // Only hide if chat is full screen
-                    default: 
-                        return false
-                    }
-                }()
                 if !isChatOpen { BottomBar() }
                 }
                 .ignoresSafeArea(.keyboard)
@@ -329,7 +334,7 @@ struct Home: View {
     }
 
 struct BottomBar: View {
-    @EnvironmentObject var viewState: AppViewState
+    @EnvironmentObject var viewState: ViewState
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -387,7 +392,7 @@ struct BottomBar: View {
             Image(systemName: "bell.fill")
         case .profile:
             if let user = viewState.currentUser {
-                AppAvatar(user: user, width: 24, height: 24)
+                Avatar(user: user, width: 24, height: 24)
             } else {
                 Image(systemName: "person.fill")
             }
@@ -405,7 +410,7 @@ struct BottomBar: View {
 }
 
 struct YouView: View {
-    @EnvironmentObject var viewState: AppViewState
+    @EnvironmentObject var viewState: ViewState
     @Environment(\.colorScheme) var colorScheme
     @Binding var currentSelection: MainSelection
     @Binding var currentChannel: ChannelSelection
@@ -440,7 +445,7 @@ struct YouView: View {
                 VStack(spacing: 16) {
                     let user = viewState.currentUser!
                     
-                    // Top Section: Banner + AppAvatar + Badges + Info
+                    // Top Section: Banner + Avatar + Badges + Info
                     VStack(spacing: 0) {
                         // Banner Area with Settings Button
                         ZStack(alignment: .topTrailing) {
@@ -467,9 +472,9 @@ struct YouView: View {
                             .padding(.trailing, 16)
                         }
                         
-                        // AppAvatar and Badges
+                        // Avatar and Badges
                         HStack(alignment: .bottom) {
-                            AppAvatar(user: user, width: 76, height: 76, withPresence: true)
+                            Avatar(user: user, width: 76, height: 76, withPresence: true)
                                 .offset(y: -24)
                                 .padding(.leading, 20)
                             
@@ -610,7 +615,7 @@ struct YouView: View {
                             
                             HStack(spacing: -14) {
                                 ForEach(realFriends.prefix(5)) { friend in
-                                    AppAvatar(user: friend, width: 34, height: 34)
+                                    Avatar(user: friend, width: 34, height: 34)
                                         .overlay(Circle().stroke(cardBackgroundColor, lineWidth: 2))
                                 }
                                 
@@ -751,7 +756,7 @@ extension Color {
 }
 
 struct NotificationView: View {
-    @EnvironmentObject var viewState: AppViewState
+    @EnvironmentObject var viewState: ViewState
     
     struct NotificationItem: Identifiable {
         let id: String
@@ -777,23 +782,23 @@ struct NotificationView: View {
         }
         
         // Server Invites (Mock/Actual if available)
-        // items.append(...) 
+        // items.append(...)
 
         // Mentions from all sources
-        for (_, unread) in viewState.unreads {
+        for (channelId, unread) in viewState.unreads {
             if let mentions = unread.mentions {
                 for messageId in mentions {
                     if let message = viewState.messages[messageId] {
                         items.append(NotificationItem(
-                            id: "mention-\(messageId)", 
-                            type: .mention, 
-                            user: viewState.users[message.author], 
-                            message: message.content, 
+                            id: "mention-\(messageId)",
+                            type: .mention,
+                            user: viewState.users[message.author],
+                            message: message.content,
                             date: createdAt(id: messageId)
                         ))
                     } else {
                         // Placeholder for missing message data
-                        // In a real app, we'd trigger a fetch here or have it handled by AppViewState
+                        // In a real app, we'd trigger a fetch here or have it handled by ViewState
                     }
                 }
             }
@@ -855,13 +860,13 @@ struct NotificationView: View {
 }
 
 struct NotificationRow: View {
-    @EnvironmentObject var viewState: AppViewState
+    @EnvironmentObject var viewState: ViewState
     let item: NotificationView.NotificationItem
     
     var body: some View {
         HStack(spacing: 12) {
             if let user = item.user {
-                AppAvatar(user: user, width: 44, height: 44)
+                Avatar(user: user, width: 44, height: 44)
             } else {
                 Circle().fill(.gray.opacity(0.3)).frame(width: 44, height: 44)
             }
@@ -930,8 +935,83 @@ struct NotificationRow: View {
     }
 }
 
+struct GlobalVoiceBanner: View {
+    @EnvironmentObject var viewState: ViewState
+    @Binding var currentChannel: ChannelSelection
+    @Binding var offset: CGFloat
+    
+    var body: some View {
+        if let voiceId = viewState.currentVoiceChannel, let room = viewState.currentVoice {
+            let isLookingAtVoice: Bool = {
+                switch currentChannel {
+                case .channel(let id), .force_voicechannel(let id), .force_textchannel(let id):
+                    return id == voiceId && offset == 0
+                default:
+                    return false
+                }
+            }()
+            
+            if !isLookingAtVoice {
+                Button {
+                    // Tap to go back to voice channel
+                    withAnimation {
+                        currentChannel = .force_voicechannel(voiceId)
+                        offset = 0
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "phone.connection")
+                            .foregroundStyle(.green)
+                        
+                        VStack(alignment: .leading) {
+                            Text("Voice Connected")
+                                .font(.system(size: 13, weight: .bold))
+                            if let ch = viewState.channels[voiceId] {
+                                Text(ch.getName(viewState))
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button {
+                            let impact = UIImpactFeedbackGenerator(style: .medium)
+                            impact.impactOccurred()
+                            Task {
+                                await room.disconnect()
+                                await MainActor.run {
+                                    viewState.currentVoice = nil
+                                    viewState.currentVoiceChannel = nil
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "phone.down.fill")
+                                .font(.system(size: 14))
+                                .padding(10)
+                                .background(Circle().fill(.red))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding(.leading, 16)
+                    .padding(.trailing, 8)
+                    .padding(.vertical, 8)
+                    .background(viewState.theme.background2.color)
+                    .clipShape(Capsule())
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                    .padding(.horizontal, 16)
+                }
+                .buttonStyle(.plain)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isLookingAtVoice)
+            }
+        }
+    }
+}
+
 #Preview {
-    @Previewable @StateObject var state = AppViewState.preview().applySystemScheme(theme: .dark)
-    return Home(currentSelection: $state.currentSelection, currentChannel: $state.currentChannel)
+    @Previewable @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    Home(currentSelection: $state.currentSelection, currentChannel: $state.currentChannel)
             .environmentObject(state)
 }
+

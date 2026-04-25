@@ -80,18 +80,21 @@ struct PickerEmojiCategory {
 
 @MainActor
 func loadEmojis(withState viewState: AppViewState) -> OrderedDictionary<PickerEmojiParent, [PickerEmoji]> {
-    let file = Bundle.main.url(forResource: "emoji_15_1_ordering.json", withExtension: nil)!
-    let data = try! Data(contentsOf: file)
-    
-    let baseEmojis = try! JSONDecoder().decode([EmojiGroup].self, from: data)
+    guard let file = Bundle.main.url(forResource: "emoji_15_1_ordering.json", withExtension: nil),
+          let data = try? Data(contentsOf: file),
+          let baseEmojis = try? JSONDecoder().decode([EmojiGroup].self, from: data) else {
+        print("⚠️ Warning: Could not load emoji_15_1_ordering.json")
+        return [:]
+    }
     
     var emojis: OrderedDictionary<PickerEmojiParent, [PickerEmoji]> = [:]
     
+    // Custom emojis
     for emoji in viewState.emojis.values {
         if case .server(let id) = emoji.parent {
-            let server = viewState.servers[id.id]!
+            guard let server = viewState.servers[id.id] else { continue }
             let parent = PickerEmojiParent.server(server)
-            let emoji = PickerEmoji(
+            let pickerEmoji = PickerEmoji(
                 base: [],
                 emojiId: emoji.id,
                 alternates: [],
@@ -105,10 +108,11 @@ func loadEmojis(withState viewState: AppViewState) -> OrderedDictionary<PickerEm
                 emojis[parent] = []
             }
             
-            emojis[parent]!.append(emoji)
+            emojis[parent]!.append(pickerEmoji)
         }
     }
     
+    // Unicode emojis
     for category in baseEmojis {
         let parent = PickerEmojiParent.unicode(category.group)
         emojis[parent] = category.emoji

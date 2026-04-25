@@ -35,7 +35,7 @@ struct TokenResponse: Decodable {
 }
 
 struct VoiceChannelView: View {
-    @EnvironmentObject var viewState: AppViewState
+    @EnvironmentObject var viewState: ViewState
     
     var channel: Channel
     var server: Server?
@@ -54,6 +54,10 @@ struct VoiceChannelView: View {
     
     @MainActor
     func connect() async {
+        if let existingRoom = viewState.currentVoice {
+            await existingRoom.disconnect()
+        }
+        
         let node = viewState.apiInfo!.features.livekit.nodes.first!
         
         let token = try! await viewState.http.joinVoiceChannel(channel: channel.id, node: node.name).get()
@@ -217,7 +221,7 @@ struct VoiceChannelView: View {
                                 }
                                 
                                 VoiceChannelBox(title: title) {
-                                    AppAvatar(user: user.user, member: user.member, width: 48, height: 48)
+                                    Avatar(user: user.user, member: user.member, width: 48, height: 48)
                                 } trailing: {
                                     if !participant.audioTracks.contains { track in
                                         track.source == .microphone && track.kind == .audio && !track.isMuted
@@ -345,13 +349,15 @@ struct VoiceChannelView: View {
         })
         .onChange(of: updater, { _, _ in })
         .task {
-            // resync state when view is reopened
+            // Automatically join the channel when the view opens
             if viewState.currentVoiceChannel == channel.id {
                 inCall = true
                 if let room = viewState.currentVoice {
                     room.add(delegate: VoiceChannelDelegate(updater: $updater))
                     self.updater.toggle() // Force an immediate refresh
                 }
+            } else {
+                inCall = true
             }
         }
     }
@@ -411,7 +417,7 @@ class VoiceChannelDelegate: RoomDelegate {
 }
 
 #Preview {
-    let state = AppViewState.preview()
+    let state = ViewState.preview()
     
     VoiceChannelView(
         channel: state.channels["1"]!,

@@ -83,7 +83,9 @@ struct ServerScrollView: View {
                     }
                 }
                 
-                
+                // Buffer to prevent BottomBar overlap
+                Spacer()
+                    .frame(height: 120)
             }
             .scrollContentBackground(.hidden)
             .scrollIndicators(.hidden)

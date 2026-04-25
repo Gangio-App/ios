@@ -14,18 +14,34 @@ struct DMScrollView: View {
     @Binding var currentChannel: ChannelSelection
     var toggleSidebar: () -> Void
 
+    @State private var searchText = ""
+
     var body: some View {
-        ScrollView {
+        VStack(spacing: 0) {
+            // Search Bar
+            HStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Search messages...", text: $searchText)
+                    .font(.system(size: 16))
+            }
+            .padding(12)
+            .background(viewState.theme.background2.color.opacity(0.8))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal)
+            .padding(.top, 8)
+            
+            ScrollView {
             VStack(spacing: 8) {
                 // Top Utilities
                 VStack(spacing: 1) {
                     DMUtilityRow(title: "Home", icon: "house.fill", color: .blue) {
-                        toggleSidebar()
+                        viewState.selectedTab = .servers
                         currentChannel = .home
                     }
                     
                     DMUtilityRow(title: "Friends", icon: "person.2.fill", color: .green) {
-                        toggleSidebar()
+                        viewState.selectedTab = .servers
                         currentChannel = .friends
                     }
                     
@@ -34,7 +50,7 @@ struct DMScrollView: View {
                             if let user = viewState.currentUser {
                                 let channel = try? await viewState.http.openDm(user: user.id).get()
                                 if let id = channel?.id {
-                                    toggleSidebar()
+                                    viewState.selectedTab = .servers
                                     currentChannel = .channel(id)
                                 }
                             }
@@ -79,10 +95,11 @@ struct DMScrollView: View {
                     .padding(.horizontal)
                 }
             }
-            .padding(.bottom, 100)
+            .padding(.bottom, 120)
         }
         .background(viewState.theme.background.color)
     }
+}
 }
 
 struct DMUtilityRow: View {
@@ -144,13 +161,13 @@ struct DMRow: View {
                     }()
                     
                     Text(channelName)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(viewState.theme.foreground.color)
                     
                     if channel.last_message_id != nil {
-                        // In a real app we'd fetch the preview, for now just show a status
                         Text("Active conversation")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: 12))
+                            .foregroundStyle(viewState.theme.accent.color.opacity(0.8))
                     }
                 }
                 
