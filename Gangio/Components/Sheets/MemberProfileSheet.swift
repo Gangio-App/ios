@@ -25,7 +25,7 @@ struct MemberProfileSheet: View {
     @State var showAvatarPhotoPicker: Bool = false
     @State var avatarPhoto: PhotosPickerItem? = nil
     
-    static func fromViewState(_ viewState: AppViewState, server: Server) -> Self {
+    static func fromAppViewState(_ viewState: AppViewState, server: Server) -> Self {
         let member = viewState.members[server.id]![viewState.currentUser!.id]!
         
         return .init(server: server, existingMember: member, member: member)

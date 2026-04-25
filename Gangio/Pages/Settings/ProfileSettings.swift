@@ -16,7 +16,7 @@ struct ProfileSettings: View {
     @State var profile: Profile? = nil
     @State var avatarItem: PhotosPickerItem? = nil
     @State var bannerItem: PhotosPickerItem? = nil
-    @State var isUploadingAvatar = false
+    @State var isUploadingAppAvatar = false
     @State var isUploadingBanner = false
     @State var uploadSuccess: String? = nil
     @State var uploadError: String? = nil
@@ -78,7 +78,7 @@ struct ProfileSettings: View {
                                     
                                     ZStack {
                                         Circle().fill(Color.purple).frame(width: 28, height: 28)
-                                        if isUploadingAvatar {
+                                        if isUploadingAppAvatar {
                                             ProgressView().scaleEffect(0.6).tint(.white)
                                         } else {
                                             Image(systemName: "pencil")
@@ -89,7 +89,7 @@ struct ProfileSettings: View {
                                     .offset(x: 4, y: 4)
                                 }
                             }
-                            .disabled(isUploadingAvatar)
+                            .disabled(isUploadingAppAvatar)
                             .offset(y: -30)
                             
                             VStack(alignment: .leading, spacing: 4) {
@@ -190,13 +190,13 @@ struct ProfileSettings: View {
         .onChange(of: avatarItem) { _, newItem in
             guard let newItem else { return }
             Task { @MainActor in
-                isUploadingAvatar = true
+                isUploadingAppAvatar = true
                 uploadError = nil
                 uploadSuccess = nil
                 do {
                     guard let data = try await newItem.loadTransferable(type: Data.self) else {
                         uploadError = "Could not load image"
-                        isUploadingAvatar = false
+                        isUploadingAppAvatar = false
                         return
                     }
                     let uploadResp = try await viewState.http.uploadFile(data: data, name: "avatar.png", category: .avatar).get()
@@ -206,7 +206,7 @@ struct ProfileSettings: View {
                 } catch {
                     uploadError = "Failed to upload avatar"
                 }
-                isUploadingAvatar = false
+                isUploadingAppAvatar = false
                 avatarItem = nil
             }
         }

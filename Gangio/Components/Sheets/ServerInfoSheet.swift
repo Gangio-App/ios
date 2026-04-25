@@ -119,7 +119,7 @@ struct ServerInfoSheet: View {
         .contentMargins(.top, 0, for: .scrollContent)
         .presentationDetents([.medium, .large])
         .sheet(isPresented: $showMemberProfileSheet) {
-            MemberProfileSheet.fromViewState(viewState, server: server)
+            MemberProfileSheet.fromAppViewState(viewState, server: server)
         }
         .confirmationDialog("Are you sure you want to leave?", isPresented: $showLeaveServerDialog) {
             Button("Leave", role: .destructive) {

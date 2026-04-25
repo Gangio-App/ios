@@ -35,7 +35,7 @@ struct TokenResponse: Decodable {
 }
 
 struct VoiceChannelView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var channel: Channel
     var server: Server?
@@ -97,58 +97,56 @@ struct VoiceChannelView: View {
     }
     
     func partipants(room: Room) -> [(Participant, UserMaybeMember)] {
-        return room.allParticipants.values
-            .compactMap({ participant in
-                if let identity = participant.identity?.stringValue {
-                    if let user = viewState.users[identity] {
-                        return (participant, user)
-                    } else if let metadata = participant.metadata?.data(using: .utf8), let user = try? JSONDecoder().decode(User.self, from: metadata) {
-                        DispatchQueue.main.async {
-                            if viewState.users[identity] == nil {
-                                viewState.users[identity] = user
-                            }
-                            if viewState.users[user.id] == nil {
-                                viewState.users[user.id] = user
-                            }
-                        }
-                        
-                        return (participant, user)
-                    } else {
-                        return nil
+        let allParticipants = room.allParticipants.values
+        let usersWithParticipants: [(Participant, Types.User)] = allParticipants.compactMap { (participant: Participant) -> (Participant, Types.User)? in
+            guard let identity = participant.identity?.stringValue else { return nil }
+            
+            if let user = viewState.users[identity] {
+                return (participant, user)
+            } else if let metadata = participant.metadata?.data(using: .utf8), 
+                      let user = try? JSONDecoder().decode(User.self, from: metadata) {
+                DispatchQueue.main.async {
+                    if viewState.users[identity] == nil {
+                        viewState.users[identity] = user
+                    }
+                    if viewState.users[user.id] == nil {
+                        viewState.users[user.id] = user
                     }
                 }
-                
-                return nil
-            })
-            .map({ (p, user) in
-                let member = server.flatMap { server in
-                    if let member = viewState.members[server.id]?[user.id] {
-                        return member as Member?
-                    } else {
-                        DispatchQueue.main.async {
-                            if viewState.members[server.id] == nil {
-                                viewState.members[server.id] = [:]
+                return (participant, user)
+            }
+            return nil
+        }
+        
+        let results: [(Participant, UserMaybeMember)] = usersWithParticipants.map { (p, user) in
+            var member: Member? = nil
+            if let server = self.server {
+                if let existingMember = viewState.members[server.id]?[user.id] {
+                    member = existingMember
+                } else {
+                    DispatchQueue.main.async {
+                        if viewState.members[server.id] == nil {
+                            viewState.members[server.id] = [:]
+                        }
+                    }
+                    Task {
+                        if let fetchedMember = try? await viewState.http.fetchMember(server: server.id, member: user.id).get() {
+                            await MainActor.run {
+                                viewState.members[server.id]?[user.id] = fetchedMember
                             }
                         }
-                        Task {
-                            if let member = try? await viewState.http.fetchMember(server: server.id, member: user.id).get() {
-                                await MainActor.run {
-                                    viewState.members[server.id]?[user.id] = member
-                                }
-                            }
-                        }
-                        
-                        return nil
                     }
                 }
-                
-                return (p, UserMaybeMember(user: user, member: member))
-            })
-            .sorted(by: { p1, p2 in
-                if p1.0 is LocalParticipant { return true }
-                if p2.0 is LocalParticipant { return false }
-                return (p1.0.joinedAt ?? Date()) < (p2.0.joinedAt ?? Date())
-            })
+            }
+            
+            return (p, UserMaybeMember(user: user, member: member))
+        }
+        
+        return results.sorted { p1, p2 in
+            if p1.0 is LocalParticipant { return true }
+            if p2.0 is LocalParticipant { return false }
+            return (p1.0.joinedAt ?? Date()) < (p2.0.joinedAt ?? Date())
+        }
     }
     
     var body: some View {
@@ -221,7 +219,7 @@ struct VoiceChannelView: View {
                                 }
                                 
                                 VoiceChannelBox(title: title) {
-                                    Avatar(user: user.user, member: user.member, width: 48, height: 48)
+                                    AppAvatar(user: user.user, member: user.member, width: 48, height: 48)
                                 } trailing: {
                                     if !participant.audioTracks.contains { track in
                                         track.source == .microphone && track.kind == .audio && !track.isMuted
@@ -417,7 +415,7 @@ class VoiceChannelDelegate: RoomDelegate {
 }
 
 #Preview {
-    let state = ViewState.preview()
+    let state = AppViewState.preview()
     
     VoiceChannelView(
         channel: state.channels["1"]!,

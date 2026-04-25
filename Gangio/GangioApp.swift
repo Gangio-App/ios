@@ -266,6 +266,20 @@ struct MainApp: View {
     #else
     @State var alphaAlert = false
     #endif
+
+    var currentServer: Server? {
+        if let id = viewState.currentSelection.id {
+            return viewState.servers[id]
+        }
+        return nil
+    }
+    
+    var currentChannel: Channel? {
+        if let id = viewState.currentChannel.id {
+            return viewState.channels[id]
+        }
+        return nil
+    }
     
     var body: some View {
         Home(
@@ -314,8 +328,8 @@ struct MainApp: View {
 
             }
         }
-        .environment(\.currentServer, viewState.currentSelection.id.flatMap { viewState.servers[$0] })
-        .environment(\.currentChannel, viewState.currentChannel.id.flatMap { viewState.channels[$0] })
+        .environment(\.currentServer, currentServer)
+        .environment(\.currentChannel, currentChannel)
         .sheet(item: $viewState.currentUserSheet) { (v) in
             UserSheet(user: v.user, member: v.member)
         }
