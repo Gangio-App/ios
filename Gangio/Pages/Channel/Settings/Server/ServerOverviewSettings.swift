@@ -11,7 +11,7 @@ import PhotosUI
 import Types
 
 struct ServerOverviewSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     struct ServerSettingsValues: Equatable {
         var icon: SettingImage
@@ -249,7 +249,7 @@ struct ServerOverviewSettings: View {
 }
 
 struct SystemChannelSelector: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var title: String
     var server: Server
@@ -280,7 +280,7 @@ struct SystemChannelSelector: View {
 
 
 #Preview {
-    @StateObject var viewState = ViewState.preview()
+    @Previewable @StateObject var viewState = AppViewState.preview()
     let server = Binding($viewState.servers["0"])!
     
     return NavigationStack {

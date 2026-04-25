@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct MessageReactionsSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @ObservedObject var viewModel: MessageContentsViewModel
     @State var selection: String
@@ -58,7 +58,7 @@ struct MessageReactionsSheet: View {
                             viewState.openUserSheet(user: user, member: member)
                         } label: {
                             HStack(spacing: 8) {
-                                Avatar(user: user, member: member)
+                                AppAvatar(user: user, member: member)
                                 
                                 Text(verbatim: member?.nickname ?? user.display_name ?? user.username)
                             }

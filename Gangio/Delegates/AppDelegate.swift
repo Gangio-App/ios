@@ -39,12 +39,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
-        ViewState.application = application
+        AppViewState.application = application
         declareNotificationCategoryTypes()
         
-        // Always register for remote notifications if permission is granted
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            if settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional {
+        // Always request permission and register for remote notifications
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if granted {
                 DispatchQueue.main.async {
                     application.registerForRemoteNotifications()
                 }
@@ -63,7 +63,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let state = ViewState.shared ?? ViewState()
+        let state = AppViewState.shared ?? AppViewState()
         let token = deviceToken.reduce("", {$0 + String(format: "%02x", $1)})
         
         debugPrint("received notification token: \(token)")
@@ -95,7 +95,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func applicationDidBecomeActive(_ application: UIApplication) {
         // App returned to foreground — ensure WebSocket is connected
-        let state = ViewState.shared
+        let state = AppViewState.shared
         if let state = state, state.sessionToken != nil {
             if state.ws?.currentState != .connected {
                 state.ws?.forceConnect()
@@ -108,13 +108,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func applicationWillResignActive(_ application: UIApplication) {
         // App going to background — flush pending data
-        let state = ViewState.shared
+        let state = AppViewState.shared
         state?.flushPersistence()
     }
     
     func applicationDidEnterBackground(_ application: UIApplication) {
         // Flush any pending persistence before going to background
-        let state = ViewState.shared
+        let state = AppViewState.shared
         state?.flushPersistence()
     }
 }
@@ -132,7 +132,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let state = ViewState.shared ?? ViewState()
+        let state = AppViewState.shared ?? AppViewState()
         let token = deviceToken.reduce("", {$0 + String(format: "%02x", $1)})
 
         if state.http.token != nil {
@@ -150,7 +150,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 @MainActor
 extension AppDelegate: UNUserNotificationCenterDelegate {
     /*func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        let state = ViewState.shared ?? ViewState()
+        let state = AppViewState.shared ?? AppViewState()
 
         if state.sessionToken == nil {
             return
@@ -166,7 +166,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     }*/
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        let state = ViewState.shared ?? ViewState()
+        let state = AppViewState.shared ?? AppViewState()
 
         if state.sessionToken == nil {
             return
@@ -201,7 +201,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         print("notification settings")
         guard let notification = notification else {return} // TODO: app-wide settings?
         
-        let state = ViewState.shared ?? ViewState()
+        let state = AppViewState.shared ?? AppViewState()
         if state.sessionToken == nil {
             return
         }

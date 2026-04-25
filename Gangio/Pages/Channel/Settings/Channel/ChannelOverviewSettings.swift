@@ -11,7 +11,7 @@ import PhotosUI
 import Types
 
 struct ChannelOverviewSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     struct ChannelSettingsValues: Equatable {
         var icon: Icon
@@ -28,7 +28,7 @@ struct ChannelOverviewSettings: View {
     @Binding var channel: Channel
     
     @MainActor
-    static func fromState(viewState: ViewState, channel c: Binding<Channel>) -> Self {
+    static func fromState(viewState: AppViewState, channel c: Binding<Channel>) -> Self {
         let settings = ChannelSettingsValues(
             icon: .remote(c.wrappedValue.icon),
             name: c.wrappedValue.getName(viewState),
@@ -120,7 +120,7 @@ struct ChannelOverviewSettings: View {
 
 
 #Preview {
-    let viewState = ViewState.preview()
+    let viewState = AppViewState.preview()
     let channel = viewState.channels["0"]!
     
     return NavigationStack {

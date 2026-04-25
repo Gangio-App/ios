@@ -11,7 +11,7 @@ import SwiftUI
 
 
 struct RoleSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server
     var roleId: String

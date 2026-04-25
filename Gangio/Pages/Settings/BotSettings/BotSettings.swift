@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct BotSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     @State var bots: [(Bot, User)] = []
@@ -86,7 +86,7 @@ struct BotSettings: View {
                                 BotSetting(bot: bot, user: user)
                             } label: {
                                 HStack(spacing: 14) {
-                                    Avatar(user: user)
+                                    AppAvatar(user: user)
                                         .frame(width: 40, height: 40)
                                     
                                     VStack(alignment: .leading, spacing: 2) {
@@ -153,7 +153,7 @@ struct BotSettings: View {
 
 
 struct CreateBotAlert: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var bots: [(Bot, User)]
     @State var name: String = ""

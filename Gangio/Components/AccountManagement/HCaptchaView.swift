@@ -67,7 +67,7 @@ struct HCaptchaView: View {
 }
 
 #Preview {
-    var viewState = ViewState.preview()
+    let viewState = AppViewState.preview()
     return HCaptchaView(apiKey: viewState.apiInfo!.features.captcha.key, baseURL: "https://gangio.pro/api", result: .constant(nil))
 }
 

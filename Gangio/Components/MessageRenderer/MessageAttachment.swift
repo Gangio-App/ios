@@ -13,7 +13,7 @@ import Types
 var fmt = ByteCountFormatter()
 
 struct MessageAttachment: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     var attachment: File
     
         
@@ -54,6 +54,8 @@ struct MessageAttachment: View {
                 }
                 .background(viewState.theme.background2.color)
                 .clipShape(RoundedRectangle(cornerRadius: 5))
+            @unknown default:
+                EmptyView()
         }
     }
 }

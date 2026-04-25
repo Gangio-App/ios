@@ -11,7 +11,7 @@ import Types
 import PhotosUI
 
 struct MemberProfileSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var server: Server
     
@@ -25,7 +25,7 @@ struct MemberProfileSheet: View {
     @State var showAvatarPhotoPicker: Bool = false
     @State var avatarPhoto: PhotosPickerItem? = nil
     
-    static func fromViewState(_ viewState: ViewState, server: Server) -> Self {
+    static func fromViewState(_ viewState: AppViewState, server: Server) -> Self {
         let member = viewState.members[server.id]![viewState.currentUser!.id]!
         
         return .init(server: server, existingMember: member, member: member)
@@ -101,10 +101,10 @@ struct MemberProfileSheet: View {
                         showAvatarPhotoPicker = true
                     } label: {
                         if member.avatar != nil {
-                            Avatar(user: user, member: member, width: 64, height: 64)
+                            AppAvatar(user: user, member: member, width: 64, height: 64)
                         } else {
                             ZStack {
-                                Avatar(user: user, width: 64, height: 64)
+                                AppAvatar(user: user, width: 64, height: 64)
                                 
                                 Circle()
                                     .fill(.black.opacity(0.5))

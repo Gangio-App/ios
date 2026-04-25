@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ServerBanSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server
     
@@ -75,7 +75,7 @@ struct ServerBanSettings: View {
                                 banPopout = (user, ban)
                             } label: {
                                 HStack {
-                                    Avatar(user: user)
+                                    AppAvatar(user: user)
                                         .frame(width: 32, height: 32)
                                     
                                     Text(verbatim: user.username)

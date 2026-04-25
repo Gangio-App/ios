@@ -197,7 +197,7 @@ struct EditBotPayload: Encodable {
 struct EditMemberPayload: Encodable {
     enum Remove: String, Encodable {
         case nickname = "Nickname"
-        case avatar = "Avatar"
+        case avatar = "AppAvatar"
         case roles = "Roles"
         case timeout = "Timeout"
     }

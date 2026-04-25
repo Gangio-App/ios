@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct MessageReplyView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var dead: Bool = false
 
@@ -50,7 +50,7 @@ struct MessageReplyView: View {
 }
 
 struct InnerMessageReplyView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var mentions: [String]?
     var channelScrollPosition: ChannelScrollController
@@ -67,7 +67,7 @@ struct InnerMessageReplyView: View {
                 let author = viewState.users[message.author] ?? User(id: "0", username: "Unknown User", discriminator: "0000")
                 let member = server.flatMap { viewState.members[$0.id] }.flatMap { $0[message.author] }
                 
-                Avatar(user: author, member: member, masquerade: message.masquerade, width: 16, height: 16)
+                AppAvatar(user: author, member: member, masquerade: message.masquerade, width: 16, height: 16)
                 
                 Text(formatName(message: message, author: author, member: member))
                     .lineLimit(1)

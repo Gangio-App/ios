@@ -8,7 +8,7 @@ import SwiftUI
 import Types
 
 struct MaybeChannelView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var currentChannel: ChannelSelection
     @Binding var currentSelection: MainSelection
     var toggleSidebar: () -> ()
@@ -130,7 +130,7 @@ struct MaybeChannelView: View {
 }
 
 struct Home: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var currentSelection: MainSelection
     @Binding var currentChannel: ChannelSelection
@@ -329,7 +329,7 @@ struct Home: View {
     }
 
 struct BottomBar: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
@@ -387,7 +387,7 @@ struct BottomBar: View {
             Image(systemName: "bell.fill")
         case .profile:
             if let user = viewState.currentUser {
-                Avatar(user: user, width: 24, height: 24)
+                AppAvatar(user: user, width: 24, height: 24)
             } else {
                 Image(systemName: "person.fill")
             }
@@ -405,7 +405,7 @@ struct BottomBar: View {
 }
 
 struct YouView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @Binding var currentSelection: MainSelection
     @Binding var currentChannel: ChannelSelection
@@ -440,7 +440,7 @@ struct YouView: View {
                 VStack(spacing: 16) {
                     let user = viewState.currentUser!
                     
-                    // Top Section: Banner + Avatar + Badges + Info
+                    // Top Section: Banner + AppAvatar + Badges + Info
                     VStack(spacing: 0) {
                         // Banner Area with Settings Button
                         ZStack(alignment: .topTrailing) {
@@ -467,9 +467,9 @@ struct YouView: View {
                             .padding(.trailing, 16)
                         }
                         
-                        // Avatar and Badges
+                        // AppAvatar and Badges
                         HStack(alignment: .bottom) {
-                            Avatar(user: user, width: 76, height: 76, withPresence: true)
+                            AppAvatar(user: user, width: 76, height: 76, withPresence: true)
                                 .offset(y: -24)
                                 .padding(.leading, 20)
                             
@@ -610,7 +610,7 @@ struct YouView: View {
                             
                             HStack(spacing: -14) {
                                 ForEach(realFriends.prefix(5)) { friend in
-                                    Avatar(user: friend, width: 34, height: 34)
+                                    AppAvatar(user: friend, width: 34, height: 34)
                                         .overlay(Circle().stroke(cardBackgroundColor, lineWidth: 2))
                                 }
                                 
@@ -751,7 +751,7 @@ extension Color {
 }
 
 struct NotificationView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     struct NotificationItem: Identifiable {
         let id: String
@@ -780,7 +780,7 @@ struct NotificationView: View {
         // items.append(...) 
 
         // Mentions from all sources
-        for (channelId, unread) in viewState.unreads {
+        for (_, unread) in viewState.unreads {
             if let mentions = unread.mentions {
                 for messageId in mentions {
                     if let message = viewState.messages[messageId] {
@@ -793,7 +793,7 @@ struct NotificationView: View {
                         ))
                     } else {
                         // Placeholder for missing message data
-                        // In a real app, we'd trigger a fetch here or have it handled by ViewState
+                        // In a real app, we'd trigger a fetch here or have it handled by AppViewState
                     }
                 }
             }
@@ -855,13 +855,13 @@ struct NotificationView: View {
 }
 
 struct NotificationRow: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     let item: NotificationView.NotificationItem
     
     var body: some View {
         HStack(spacing: 12) {
             if let user = item.user {
-                Avatar(user: user, width: 44, height: 44)
+                AppAvatar(user: user, width: 44, height: 44)
             } else {
                 Circle().fill(.gray.opacity(0.3)).frame(width: 44, height: 44)
             }
@@ -931,7 +931,7 @@ struct NotificationRow: View {
 }
 
 #Preview {
-    @Previewable @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    @Previewable @StateObject var state = AppViewState.preview().applySystemScheme(theme: .dark)
     return Home(currentSelection: $state.currentSelection, currentChannel: $state.currentChannel)
             .environmentObject(state)
 }

@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ShareInviteSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var channel: Channel
     @State var url: URL
@@ -93,7 +93,7 @@ struct ShareInviteSheet: View {
                 List {
                     ForEach(getFriends().filter { user in friendSearch.isEmpty || (user.username.contains(friendSearch) || (user.display_name?.contains(friendSearch) ?? false))}) { user in
                         HStack(spacing: 12) {
-                            Avatar(user: user)
+                            AppAvatar(user: user)
                                 .frame(width: 16, height: 16)
                                 .frame(width: 24, height: 24)
                             
@@ -121,7 +121,7 @@ struct ShareInviteSheet: View {
 }
 
 #Preview {
-    let viewState = ViewState.preview()
+    let viewState = AppViewState.preview()
 
     return ShareInviteSheet(channel: viewState.channels["0"]!, url: URL(string: "https://gangio.pro")!)
         .applyPreviewModifiers(withState: viewState)

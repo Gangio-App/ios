@@ -9,7 +9,7 @@ import SwiftUI
 import Sentry
 
 struct NotificationSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @State var pushNotificationsEnabled = false
     @State var notificationsWhileAppRunningEnabled = false
@@ -185,7 +185,7 @@ struct NotificationSettings: View {
 }
 
 struct GlobalNotificationPreferenceView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {

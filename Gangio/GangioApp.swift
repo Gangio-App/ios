@@ -13,7 +13,7 @@ struct GangioApp: App {
     #endif
     
     @Environment(\.locale) var systemLocale: Locale
-    @StateObject var state = ViewState.shared ?? ViewState()
+    @StateObject var state = AppViewState.shared ?? AppViewState()
 
     init() {
         if !isPreview {
@@ -85,7 +85,7 @@ struct GangioApp: App {
 
 struct ApplicationSwitcher: View {
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @State var wasSignedOut = false
     @State var banner: WsState? = nil
     /// Track whether initial connection has completed (don't show banner on first connect)
@@ -104,45 +104,13 @@ struct ApplicationSwitcher: View {
                         }
                     }
                 }
-                .alertPopup(show: banner !=  nil) {
+                .overlay(alignment: .top) {
                     if let banner = banner {
-                        HStack {
-                            switch banner {
-                                case .disconnected:
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                    Text("Disconnected")
-                                        .bold()
-                                    Text("Tap to reconnect")
-
-                                case .connecting:
-                                    Image(systemName: "arrow.clockwise")
-                                    Text("Reconnecting")
-                                case .connected:
-                                    Image(systemName: "checkmark")
-                                    Text("Connected")
-                            }
-                        }
-                        .padding(8)
-                        .foregroundStyle(.black)
-                        .background {
-                            let colour: Color
-
-                            let _ = switch banner {
-                                case .disconnected:
-                                    colour = Color.red
-                                case .connecting:
-                                    colour = Color.yellow
-                                case .connected:
-                                    colour = Color.green
-                            }
-                            
-                            RoundedRectangle(cornerRadius: 20).foregroundStyle(colour)
-                        }
-                        .onTapGesture {
-                            if case .disconnected = banner {
-                                viewState.ws?.forceConnect()
-                            }
-                        }
+                        connectionBanner(banner)
+                            .padding(.top, 54)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                            .zIndex(100)
+                            .animation(.spring(response: 0.45, dampingFraction: 0.75), value: banner)
                     }
                 }
                 .onChange(of: colorScheme) { before, after in
@@ -189,10 +157,49 @@ struct ApplicationSwitcher: View {
                 }
         }
     }
+
+    @ViewBuilder
+    func connectionBanner(_ state: WsState) -> some View {
+        let config: (icon: String, label: String, color: Color, spinning: Bool) = {
+            switch state {
+            case .disconnected: return ("wifi.slash", "No connection — tap to retry", Color.red, false)
+            case .connecting:   return ("arrow.clockwise", "Reconnecting…", Color.orange, true)
+            case .connected:    return ("checkmark.circle.fill", "Back online", Color.green, false)
+            }
+        }()
+
+        Button {
+            if case .disconnected = state { viewState.ws?.forceConnect() }
+        } label: {
+            HStack(spacing: 10) {
+                if config.spinning {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(.white)
+                        .scaleEffect(0.8)
+                } else {
+                    Image(systemName: config.icon)
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                Text(config.label)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .background(
+                Capsule()
+                    .fill(config.color)
+                    .shadow(color: config.color.opacity(0.45), radius: 8, x: 0, y: 4)
+            )
+        }
+        .buttonStyle(.plain)
+        .allowsHitTesting(state == .disconnected)
+    }
 }
 
 struct InnerApp: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     var body: some View {
         NavigationStack(path: $viewState.path) {
@@ -220,11 +227,40 @@ struct InnerApp: View {
                 }
             }
         }
+        .overlay(alignment: .top) {
+            if let voiceId = viewState.currentVoiceChannel, let channel = viewState.channels[voiceId], viewState.currentVoice != nil {
+                Button {
+                    viewState.path = NavigationPath()
+                    if let server = channel.server {
+                        viewState.currentSelection = .server(server)
+                    } else {
+                        viewState.currentSelection = .dms
+                    }
+                    viewState.currentChannel = .channel(voiceId)
+                } label: {
+                    HStack {
+                        Image(systemName: "phone.fill")
+                        Text("Connected to \(channel.getName(viewState))")
+                            .font(.system(size: 14, weight: .bold))
+                            .lineLimit(1)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(Color.green))
+                    .foregroundColor(.white)
+                    .shadow(radius: 4)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 48)
+            }
+        }
     }
 }
 
 struct MainApp: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     #if !DEBUG
     @State var alphaAlert = true
     #else
@@ -273,7 +309,7 @@ struct MainApp: View {
                 case .profile_settings:
                     ProfileSettings()
                 case .status_settings:
-                    Settings() // For now, status editor is a sheet in Settings, so going to settings is the closest path. 
+                    Settings() // For now, status editor is a sheet in Settings, so going to settings is the closest path.
                     // Or I could make a dedicated StatusScreen.
 
             }
@@ -327,3 +363,4 @@ func copyUrl(url: URL) {
     UIPasteboard.general.url = url
 #endif
 }
+

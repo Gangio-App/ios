@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct ViewInvite: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var code: String
     
@@ -22,7 +22,7 @@ struct ViewInvite: View {
                     LoadingSpinnerView(frameSize: CGSize(width: 32, height: 32), isActionComplete: .constant(false))
                 case .some(.none):
                     Text("Invalid invite")
-                case .group(let groupInfo):
+                case .group:
                     Text("Group TODO")
                 case .server(let serverInfo):
                     if let banner = serverInfo.server_banner {

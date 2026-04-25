@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct About: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -131,6 +131,6 @@ struct InfoRow: View {
 struct About_Preview: PreviewProvider {
     static var previews: some View {
         About()
-            .environmentObject(ViewState.preview())
+            .environmentObject(AppViewState.preview())
     }
 }

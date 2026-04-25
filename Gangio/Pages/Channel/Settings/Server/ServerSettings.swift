@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ServerSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var server: Server
     
     @State var userPermissions: Permissions = Permissions.all
@@ -117,7 +117,7 @@ struct ServerSettings: View {
 
 
 #Preview {
-    let viewState = ViewState.preview()
+    let viewState = AppViewState.preview()
 
     return NavigationStack {
         ServerSettings(server: .constant(viewState.servers["0"]!))

@@ -15,7 +15,7 @@ struct CreateAccount: View {
         case Username
     }
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     @State private var email = ""
     @State private var password = ""
@@ -409,7 +409,7 @@ struct CreateAccount: View {
 }
 
 #Preview {
-    var viewState = ViewState.preview()
+    let viewState = AppViewState.preview()
     
     return CreateAccount()
             .environmentObject(viewState)

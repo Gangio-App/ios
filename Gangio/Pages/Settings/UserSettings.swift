@@ -42,7 +42,7 @@ func maybeGetPasteboardValue(_ callback: (String?, String?) -> ()) {
 // MARK: - MFA stuff
 
 fileprivate struct CreateMFATicketView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @State private var fieldIsIncorrect = false
     @State private var fieldShake = false
@@ -207,7 +207,7 @@ fileprivate struct CreateMFATicketView: View {
 
 fileprivate struct AddTOTPSheet: View {
     private enum Phase { case Password, Code, Verify, FatalError}
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @State private var currentPhase: Phase = .Password
     @Binding var showSheet: Bool
@@ -380,7 +380,7 @@ fileprivate struct AddTOTPSheet: View {
 
 
 fileprivate struct RemoveTOTPSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var showSheet: Bool
     @State var errorOccurred = false
     
@@ -409,7 +409,7 @@ fileprivate struct RemoveTOTPSheet: View {
 }
 
 fileprivate struct GenerateRecoveryCodesSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @Binding var showSheet: Bool
     @Binding var sheetIsNotDismissable: Bool
@@ -490,7 +490,7 @@ fileprivate struct GenerateRecoveryCodesSheet: View {
 // MARK: - Account fields
 
 fileprivate struct UsernameUpdateSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @Binding var showSheet: Bool
     
@@ -499,7 +499,7 @@ fileprivate struct UsernameUpdateSheet: View {
     @State var isSaving = false
     @State var errorText: String? = nil
     
-    init(viewState: ViewState, showSheet sheet: Binding<Bool>) {
+    init(viewState: AppViewState, showSheet sheet: Binding<Bool>) {
         _showSheet = sheet
         _value = State(initialValue: viewState.userSettingsStore.cache.user?.username ?? "")
     }
@@ -583,7 +583,7 @@ fileprivate struct UsernameUpdateSheet: View {
 
 
 fileprivate struct PasswordUpdateSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @Binding var showSheet: Bool
     
@@ -667,7 +667,7 @@ fileprivate struct PasswordUpdateSheet: View {
 }
 
 fileprivate struct DisableAccountSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var showSheet: Bool
     @State var ticket: MFATicketResponse? = nil
     @State var isDeleting = false
@@ -717,7 +717,7 @@ fileprivate struct DisableAccountSheet: View {
 
 
 fileprivate struct DeleteAccountSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var showSheet: Bool
     @State var ticket: MFATicketResponse? = nil
     @State var isDeleting = false
@@ -766,7 +766,7 @@ fileprivate struct DeleteAccountSheet: View {
 }
 
 struct UserSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     // Everything here should be a sheet, no making navlinks!

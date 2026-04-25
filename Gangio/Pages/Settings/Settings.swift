@@ -19,8 +19,18 @@ enum CurrentSettingsPage: Hashable {
     case about
 }
 
+struct LazyView<Content: View>: View {
+    let build: () -> Content
+    init(_ build: @autoclosure @escaping () -> Content) {
+        self.build = build
+    }
+    var body: Content {
+        build()
+    }
+}
+
 struct Settings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
 
     @State var presentLogoutDialog = false
@@ -46,9 +56,9 @@ struct Settings: View {
 
                     // ── Profile Card ──────────────────────────────────────────
                     if let user = viewState.currentUser {
-                        NavigationLink(destination: ProfileSettings()) {
+                        NavigationLink(destination: LazyView(ProfileSettings())) {
                             HStack(spacing: 14) {
-                                Avatar(user: user, width: 54, height: 54, withPresence: true)
+                                AppAvatar(user: user, width: 54, height: 54, withPresence: true)
 
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(user.display_name ?? user.username)
@@ -81,46 +91,46 @@ struct Settings: View {
 
                     // ── Account ───────────────────────────────────────────────
                     settingsGroup(isDark: isDark, header: "Account", items: [
-                        AnyView(NavigationLink(destination: UserSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(UserSettings())) {
                             settingsRowContent(icon: "person.badge.key.fill", label: "My Account", color: .blue, isDark: isDark)
                         }),
-                        AnyView(NavigationLink(destination: ProfileSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(ProfileSettings())) {
                             settingsRowContent(icon: "paintpalette.fill", label: "Edit Profile", color: .green, isDark: isDark)
                         }),
-                        AnyView(NavigationLink(destination: SessionsSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(SessionsSettings())) {
                             settingsRowContent(icon: "lock.shield.fill", label: "Sessions", color: .purple, isDark: isDark)
                         }),
                     ])
 
                     // ── Preferences ───────────────────────────────────────────
                     settingsGroup(isDark: isDark, header: "Preferences", items: [
-                        AnyView(NavigationLink(destination: AppearanceSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(AppearanceSettings())) {
                             settingsRowContent(icon: "sparkles", label: "Appearance", color: .orange, isDark: isDark)
                         }),
-                        AnyView(NavigationLink(destination: NotificationSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(NotificationSettings())) {
                             settingsRowContent(icon: "bell.badge.fill", label: "Notifications", color: .red, isDark: isDark)
                         }),
-                        AnyView(NavigationLink(destination: LanguageSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(LanguageSettings())) {
                             settingsRowContent(icon: "character.bubble.fill", label: "Language", color: .teal, isDark: isDark)
                         }),
-                        AnyView(NavigationLink(destination: AudioSettingsView()) {
+                        AnyView(NavigationLink(destination: LazyView(AudioSettingsView())) {
                             settingsRowContent(icon: "speaker.wave.3.fill", label: "Voice & Audio", color: .purple, isDark: isDark)
                         }),
                     ])
 
                     // ── Advanced ──────────────────────────────────────────────
                     settingsGroup(isDark: isDark, header: "Advanced", items: [
-                        AnyView(NavigationLink(destination: BotSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(BotSettings())) {
                             settingsRowContent(icon: "cpu.fill", label: "Bots", color: .indigo, isDark: isDark)
                         }),
-                        AnyView(NavigationLink(destination: ExperimentsSettings()) {
+                        AnyView(NavigationLink(destination: LazyView(ExperimentsSettings())) {
                             settingsRowContent(icon: "testtube.2", label: "Experiments", color: .mint, isDark: isDark)
                         }),
                     ])
 
                     // ── Support ───────────────────────────────────────────────
                     settingsGroup(isDark: isDark, header: "Support", items: [
-                        AnyView(NavigationLink(destination: About()) {
+                        AnyView(NavigationLink(destination: LazyView(About())) {
                             settingsRowContent(icon: "info.circle.fill", label: "About Gangio", color: .gray, isDark: isDark)
                         }),
                     ])
@@ -248,7 +258,7 @@ struct Settings: View {
 
 // MARK: - Audio Settings View
 public struct AudioSettingsView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     @State private var availableInputs: [AVAudioSessionPortDescription] = []
@@ -435,7 +445,7 @@ public struct AudioSettingsView: View {
 
 // MARK: - Status Editor Sheet
 struct StatusEditorSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @Binding var statusText: String
     @Binding var selectedPresence: Presence
@@ -625,5 +635,5 @@ struct SettingsRow<Destination: View>: View {
 
 #Preview {
     Settings()
-        .applyPreviewModifiers(withState: ViewState.preview())
+        .applyPreviewModifiers(withState: AppViewState.preview())
 }

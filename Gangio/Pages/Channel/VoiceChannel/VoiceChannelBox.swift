@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct VoiceChannelBox<Title: View, Contents: View, Trailing: View, Overlay: View>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var title: Title
     var contents: Contents
@@ -26,39 +26,36 @@ struct VoiceChannelBox<Title: View, Contents: View, Trailing: View, Overlay: Vie
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            HStack(alignment: .center) {
-                Spacer()
-                VStack(alignment: .center) {
-                    Spacer()
-                    contents
-                    Spacer()
-                }
-                Spacer()
-            }
-            .zIndex(0)
+            // Main content
+            contents
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .zIndex(0)
             
+            // Info Bar
             HStack {
                 title
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                
                 Spacer()
                 
                 if let trailing {
                     trailing
                 }
             }
-            .frame(alignment: .bottom)
+            .padding(10)
+            .background(LinearGradient(colors: [.clear, .black.opacity(0.6)], startPoint: .top, endPoint: .bottom))
             .zIndex(1)
             
-            
-            if selected {
+            if selected && overlay != nil {
                 overlay
-                    .frame(alignment: .topLeading)
+                    .transition(.opacity)
                     .zIndex(2)
             }
         }
-        .aspectRatio(16/9, contentMode: .fill)
-        .padding(8)
-        .background(viewState.theme.background2)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .background(viewState.theme.background2.color)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
         .onTapGesture { withAnimation { selected.toggle() } }
     }
 }

@@ -18,7 +18,7 @@ struct Reply: Identifiable, Equatable {
 }
 
 struct ReplyView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var reply: Reply
     
@@ -46,7 +46,7 @@ struct ReplyView: View {
                     .bold()
             }
             
-            Avatar(user: user, width: 16, height: 16)
+            AppAvatar(user: user, width: 16, height: 16)
             
             Text(reply.message.masquerade?.name ?? member?.nickname ?? user.display_name ?? user.username)
                 .font(.caption)
@@ -134,7 +134,7 @@ struct MessageBox: View {
         let filename: String
     }
 
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     @Binding var channelReplies: [Reply]
     var focusState: FocusState<Bool>.Binding
@@ -154,6 +154,7 @@ struct MessageBox: View {
 
     @State var autoCompleteType: AutocompleteType? = nil
     @State var autocompleteSearchValue: String = ""
+    @State var autocompleteReplacements: [String: String] = [:]
     
     @State var currentPermissions: Permissions = .default
 
@@ -174,7 +175,12 @@ struct MessageBox: View {
     }
 
     func sendMessage() {
-        let c = content
+        var c = content
+        // Apply autocomplete replacements (e.g. @korybantes -> <@user_id>)
+        for (display, replacement) in autocompleteReplacements {
+            c = c.replacingOccurrences(of: display, with: replacement)
+        }
+        
         content = ""
         let replies = channelReplies
         channelReplies = []
@@ -354,22 +360,32 @@ struct MessageBox: View {
                             case .usersAndRoles(let usersOrRoles):
                                 ForEach(usersOrRoles) { userOrRole in
                                     Button {
-                                        let value: String
+                                        let displayValue: String
+                                        let replacementValue: String
                                         switch userOrRole {
-                                        case .user(let user): value = "<@\(user.id)>"
-                                        case .role(let id, _): value = "<%\(id)>"
-                                        case .everyone: value = "@everyone"
-                                        case .online: value = "@online"
+                                        case .user(let user):
+                                            displayValue = "@\(user.member?.nickname ?? user.user.display_name ?? user.user.username)"
+                                            replacementValue = "<@\(user.id)>"
+                                        case .role(let id, let role):
+                                            displayValue = "@\(role.name)"
+                                            replacementValue = "<%\(id)>"
+                                        case .everyone:
+                                            displayValue = "@everyone"
+                                            replacementValue = "@everyone"
+                                        case .online:
+                                            displayValue = "@online"
+                                            replacementValue = "@online"
                                         }
                                         withAnimation {
-                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(value) "
+                                            autocompleteReplacements[displayValue] = replacementValue
+                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(displayValue) "
                                             autoCompleteType = nil
                                         }
                                     } label: {
                                         HStack(spacing: 6) {
                                             switch userOrRole {
                                             case .user(let user):
-                                                Avatar(user: user.user, member: user.member, width: 20, height: 20)
+                                                AppAvatar(user: user.user, member: user.member, width: 20, height: 20)
                                                 Text(user.member?.nickname ?? user.user.display_name ?? user.user.username)
                                             case .role(_, let role):
                                                 Text("@\(role.name)").foregroundStyle(role.colour.map { parseCSSColorToShapeStyle(currentTheme: viewState.theme, input: $0) } ?? AnyShapeStyle(viewState.theme.foreground))
@@ -386,8 +402,11 @@ struct MessageBox: View {
                             case .channels(let channels):
                                 ForEach(channels) { ch in
                                     Button {
+                                        let displayValue = "#\(ch.getName(viewState))"
+                                        let replacementValue = "<#\(ch.id)>"
                                         withAnimation {
-                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "<#\(ch.id)> "
+                                            autocompleteReplacements[displayValue] = replacementValue
+                                            content = String(content.dropLast(autocompleteSearchValue.count + 1)) + "\(displayValue) "
                                             autoCompleteType = nil
                                         }
                                     } label: {
@@ -538,7 +557,7 @@ struct MessageBox: View {
 }
 
 struct UploadButton: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     @Binding var showingSelectFile: Bool
     @Binding var showingSelectPhoto: Bool
@@ -614,7 +633,7 @@ struct UploadButton: View {
 }
 
 struct MessageBox_Previews: PreviewProvider {
-    static var viewState: ViewState = ViewState.preview().applySystemScheme(theme: .dark)
+    static var viewState: AppViewState = AppViewState.preview().applySystemScheme(theme: .dark)
     @State static var replies: [Reply] = []
     @State static var showingSelectEmoji = false
     @FocusState static var focused: Bool
@@ -627,3 +646,4 @@ struct MessageBox_Previews: PreviewProvider {
             .applyPreviewModifiers(withState: viewState)
     }
 }
+

@@ -17,7 +17,7 @@ struct InviteUrl: Identifiable {
 }
 
 struct UserDisplay: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var server: Server?
     var user: User
@@ -28,7 +28,7 @@ struct UserDisplay: View {
             viewState.openUserSheet(user: user, member: member)
         } label: {
             HStack(spacing: 12) {
-                Avatar(user: user, member: member, withPresence: true)
+                AppAvatar(user: user, member: member, withPresence: true)
                 
                 VStack(alignment: .leading) {
                     Text(verbatim: member?.nickname ?? user.display_name ?? user.username)
@@ -86,7 +86,7 @@ struct UserDisplay: View {
 }
 
 struct ChannelInfo: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var channel: Channel
     @State var showInviteSheet: InviteUrl? = nil
@@ -323,7 +323,7 @@ struct ChannelInfo: View {
 
 
 #Preview {
-    let viewState = ViewState.preview()
+    let viewState = AppViewState.preview()
 
     return ChannelInfo(channel: .constant(viewState.channels["0"]!))
         .applyPreviewModifiers(withState: viewState)

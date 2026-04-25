@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct AlertPopup<C: View, P: View>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var show: Bool
     var inner: C

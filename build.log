@@ -1,0 +1,526 @@
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageEmbed.swift:40:9: warning: switch covers known cases, but 'Embed' may have additional unknown values; this is an error in the Swift 6 language mode
+        switch embed {
+        ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageEmbed.swift:40:9: note: handle unknown values using "@unknown default"
+        switch embed {
+        ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: note: Add '@Previewable'
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var action = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: note: Add '@Previewable'
+    @State var action = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var showingSelectEmoji: Bool = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: note: Add '@Previewable'
+    @State var showingSelectEmoji: Bool = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview()
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview()
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: note: Add '@Previewable'
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var action = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: note: Add '@Previewable'
+    @State var action = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var showingSelectEmoji: Bool = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: note: Add '@Previewable'
+    @State var showingSelectEmoji: Bool = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview()
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview()
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/VoiceChannel/VoiceChannelView.swift:320:7: warning: non-final class 'VoiceChannelDelegate' cannot conform to 'Sendable'; use '@unchecked Sendable'; this is an error in the Swift 6 language mode
+class VoiceChannelDelegate: RoomDelegate {
+      ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/VoiceChannel/VoiceChannelView.swift:321:18: warning: stored property '_updater' of 'Sendable'-conforming class 'VoiceChannelDelegate' is mutable; this is an error in the Swift 6 language mode
+    @Binding var updater: Bool
+                 ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:13:51: warning: conformance of 'MessageContentsViewModel' to protocol 'Equatable' crosses into main actor-isolated code and can cause data races; this is an error in the Swift 6 language mode
+class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
+                                                  ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:13:51: note: isolate this conformance to the main actor with '@MainActor'
+class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
+                                                  ^
+                                                  @MainActor 
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:13:7: note: mark all declarations used in the conformance 'nonisolated'
+class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
+      ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:13:51: note: turn data races into runtime errors with '@preconcurrency'
+class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
+                                                  ^
+                                                  @preconcurrency 
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:38:17: note: main actor-isolated operator function '==' cannot satisfy nonisolated requirement
+    static func == (lhs: MessageContentsViewModel, rhs: MessageContentsViewModel) -> Bool {
+                ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:13:62: warning: conformance of 'MessageContentsViewModel' to protocol 'Identifiable' crosses into main actor-isolated code and can cause data races; this is an error in the Swift 6 language mode
+class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
+                                                             ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:13:62: note: isolate this conformance to the main actor with '@MainActor'
+class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
+                                                             ^
+                                                             @MainActor 
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:13:62: note: turn data races into runtime errors with '@preconcurrency'
+class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
+                                                             ^
+                                                             @preconcurrency 
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift:42:9: note: main actor-isolated property 'id' cannot satisfy nonisolated requirement
+    var id: String {
+        ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:166:69: warning: capture of 'apiInfo' with non-Sendable type 'ApiInfo?' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(apiInfo), forKey: "apiInfo")
+                                                                    ^
+Types.ApiInfo:1:15: note: struct 'ApiInfo' does not conform to the 'Sendable' protocol
+public struct ApiInfo : Codable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:8:1: warning: add '@preconcurrency' to suppress 'Sendable'-related warnings from module 'Types'
+import Types
+^
+@preconcurrency 
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:180:69: warning: capture of 'users' with non-Sendable type '[String : User]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(users), forKey: "users")
+                                                                    ^
+Types.User:1:15: note: struct 'User' does not conform to the 'Sendable' protocol
+public struct User : Identifiable, Codable, Equatable, Hashable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:188:69: warning: capture of 'servers' with non-Sendable type 'OrderedDictionary<String, Server>' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(servers), forKey: "servers")
+                                                                    ^
+Types.Server:1:15: note: struct 'Server' does not conform to the 'Sendable' protocol
+public struct Server : Codable, Identifiable, Equatable, Hashable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:196:69: warning: capture of 'channels' with non-Sendable type '[String : Channel]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(channels), forKey: "channels")
+                                                                    ^
+Types.Channel:1:21: note: enum 'Channel' does not conform to the 'Sendable' protocol
+@frozen public enum Channel : Identifiable, Equatable, Hashable {
+                    ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:204:69: warning: capture of 'messages' with non-Sendable type '[String : Message]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(messages), forKey: "messages")
+                                                                    ^
+Types.Message:1:15: note: struct 'Message' does not conform to the 'Sendable' protocol
+public struct Message : Identifiable, Codable, Equatable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:220:69: warning: capture of 'members' with non-Sendable type '[String : [String : Member]]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(members), forKey: "members")
+                                                                    ^
+Types.Member:1:15: note: struct 'Member' does not conform to the 'Sendable' protocol
+public struct Member : Codable, Equatable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:228:69: warning: capture of 'dms' with non-Sendable type '[Channel]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(dms), forKey: "dms")
+                                                                    ^
+Types.Channel:1:21: note: enum 'Channel' does not conform to the 'Sendable' protocol
+@frozen public enum Channel : Identifiable, Equatable, Hashable {
+                    ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:236:69: warning: capture of 'emojis' with non-Sendable type '[String : Emoji]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(emojis), forKey: "emojis")
+                                                                    ^
+Types.Emoji:1:15: note: struct 'Emoji' does not conform to the 'Sendable' protocol
+public struct Emoji : Codable, Equatable, Identifiable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:245:69: warning: capture of 'currentUser' with non-Sendable type 'User?' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(currentUser), forKey: "currentUser")
+                                                                    ^
+Types.User:1:15: note: struct 'User' does not conform to the 'Sendable' protocol
+public struct User : Identifiable, Codable, Equatable, Hashable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift:93:24: warning: conformance of 'AppDelegate' to protocol 'UNUserNotificationCenterDelegate' crosses into main actor-isolated code and can cause data races; this is an error in the Swift 6 language mode
+extension AppDelegate: UNUserNotificationCenterDelegate {
+                       ^
+/Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift:93:24: note: isolate this conformance to the main actor with '@MainActor'
+extension AppDelegate: UNUserNotificationCenterDelegate {
+                       ^
+                       @MainActor 
+/Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift:93:1: note: mark all declarations used in the conformance 'nonisolated'
+extension AppDelegate: UNUserNotificationCenterDelegate {
+^
+/Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift:93:24: note: turn data races into runtime errors with '@preconcurrency'
+extension AppDelegate: UNUserNotificationCenterDelegate {
+                       ^
+                       @preconcurrency 
+/Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift:137:10: note: main actor-isolated instance method 'userNotificationCenter(_:willPresent:withCompletionHandler:)' cannot satisfy nonisolated requirement
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+         ^
+/Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift:110:10: note: main actor-isolated instance method 'userNotificationCenter(_:didReceive:withCompletionHandler:)' cannot satisfy nonisolated requirement
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+         ^
+/Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift:150:10: note: main actor-isolated instance method 'userNotificationCenter(_:openSettingsFor:)' cannot satisfy nonisolated requirement
+    func userNotificationCenter(_ center: UNUserNotificationCenter, openSettingsFor notification: UNNotification?) {
+         ^
+@__swiftmacro_5Stoat0024CreateAccountswift_ynAHffMX410_0_33_DAEDCF2BBEDCFB7631E21DD609BDD9AELl7PreviewfMf_.swift:19:21: warning: variable 'viewState' was never mutated; consider changing to 'let' constant
+                var viewState = ViewState.preview()
+                    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/CreateAccount.swift:411:1: note: in expansion of macro 'Preview' here
+#Preview {
+^~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/CreateAccount.swift:411:1: note: in expansion of macro 'Preview' here
+#Preview {
+^~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: note: Add '@Previewable'
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var action = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: note: Add '@Previewable'
+    @State var action = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var showingSelectEmoji: Bool = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: note: Add '@Previewable'
+    @State var showingSelectEmoji: Bool = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview()
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview()
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+@__swiftmacro_5Stoat0024CreateAccountswift_ynAHffMX410_0_33_DAEDCF2BBEDCFB7631E21DD609BDD9AELl7PreviewfMf_.swift:19:21: warning: variable 'viewState' was never mutated; consider changing to 'let' constant
+                var viewState = ViewState.preview()
+                    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/CreateAccount.swift:411:1: note: in expansion of macro 'Preview' here
+#Preview {
+^~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/CreateAccount.swift:411:1: note: in expansion of macro 'Preview' here
+#Preview {
+^~~~~~~~~~
+@__swiftmacro_5Stoat0024CreateAccountswift_ynAHffMX410_0_33_DAEDCF2BBEDCFB7631E21DD609BDD9AELl7PreviewfMf_.swift:19:21: warning: variable 'viewState' was never mutated; consider changing to 'let' constant
+                var viewState = ViewState.preview()
+                    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/CreateAccount.swift:411:1: note: in expansion of macro 'Preview' here
+#Preview {
+^~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/CreateAccount.swift:411:1: note: in expansion of macro 'Preview' here
+#Preview {
+^~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelPermissionsSettings/ChannelRolePermissionsSettings.swift:76:58: warning: immutable value 'permissions' was never used; consider replacing with '_' or removing it
+                                    case .permission(let permissions):
+                                                     ~~~~^~~~~~~~~~~
+                                                     _
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelPermissionsSettings/ChannelRolePermissionsSettings.swift:90:48: warning: immutable value 'channel' was never used; consider replacing with '_' or removing it
+                            if let output, let channel = try? output.get() {
+                                           ~~~~^~~~~~~
+                                           _
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: note: Add '@Previewable'
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var action = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: note: Add '@Previewable'
+    @State var action = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var showingSelectEmoji: Bool = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: note: Add '@Previewable'
+    @State var showingSelectEmoji: Bool = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview()
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview()
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Messagable/MessageableChannel.swift:572:46: warning: result of call to 'reactMessage(channel:message:emoji:)' is unused
+                        await viewState.http.reactMessage(channel: viewModel.message.channel, message: viewModel.message.id, emoji: emoji.id)
+                                             ^           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:166:69: warning: capture of 'apiInfo' with non-Sendable type 'ApiInfo?' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(apiInfo), forKey: "apiInfo")
+                                                                    ^
+Types.ApiInfo:1:15: note: struct 'ApiInfo' does not conform to the 'Sendable' protocol
+public struct ApiInfo : Codable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:8:1: warning: add '@preconcurrency' to suppress 'Sendable'-related warnings from module 'Types'
+import Types
+^
+@preconcurrency 
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:180:69: warning: capture of 'users' with non-Sendable type '[String : User]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(users), forKey: "users")
+                                                                    ^
+Types.User:1:15: note: struct 'User' does not conform to the 'Sendable' protocol
+public struct User : Identifiable, Codable, Equatable, Hashable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:188:69: warning: capture of 'servers' with non-Sendable type 'OrderedDictionary<String, Server>' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(servers), forKey: "servers")
+                                                                    ^
+Types.Server:1:15: note: struct 'Server' does not conform to the 'Sendable' protocol
+public struct Server : Codable, Identifiable, Equatable, Hashable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:196:69: warning: capture of 'channels' with non-Sendable type '[String : Channel]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(channels), forKey: "channels")
+                                                                    ^
+Types.Channel:1:21: note: enum 'Channel' does not conform to the 'Sendable' protocol
+@frozen public enum Channel : Identifiable, Equatable, Hashable {
+                    ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:204:69: warning: capture of 'messages' with non-Sendable type '[String : Message]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(messages), forKey: "messages")
+                                                                    ^
+Types.Message:1:15: note: struct 'Message' does not conform to the 'Sendable' protocol
+public struct Message : Identifiable, Codable, Equatable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:220:69: warning: capture of 'members' with non-Sendable type '[String : [String : Member]]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(members), forKey: "members")
+                                                                    ^
+Types.Member:1:15: note: struct 'Member' does not conform to the 'Sendable' protocol
+public struct Member : Codable, Equatable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:228:69: warning: capture of 'dms' with non-Sendable type '[Channel]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(dms), forKey: "dms")
+                                                                    ^
+Types.Channel:1:21: note: enum 'Channel' does not conform to the 'Sendable' protocol
+@frozen public enum Channel : Identifiable, Equatable, Hashable {
+                    ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:236:69: warning: capture of 'emojis' with non-Sendable type '[String : Emoji]' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(emojis), forKey: "emojis")
+                                                                    ^
+Types.Emoji:1:15: note: struct 'Emoji' does not conform to the 'Sendable' protocol
+public struct Emoji : Codable, Equatable, Identifiable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:245:69: warning: capture of 'currentUser' with non-Sendable type 'User?' in a '@Sendable' closure
+                UserDefaults.standard.set(try! JSONEncoder().encode(currentUser), forKey: "currentUser")
+                                                                    ^
+Types.User:1:15: note: struct 'User' does not conform to the 'Sendable' protocol
+public struct User : Identifiable, Codable, Equatable, Hashable {
+              ^
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:509:19: warning: value 'status' was defined but never used; consider replacing with boolean test
+        guard let status = status else { return .failure(.signOutError)}
+              ~~~~^~~~~~~~~
+                                  != nil
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:622:20: warning: result of call to 'sendMessage(channel:replies:content:attachments:nonce:)' is unused
+        await http.sendMessage(channel: channel, replies: r, content: content, attachments: attachments, nonce: nonce)
+                   ^          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:724:21: warning: variable 'newChannelIds' was never mutated; consider changing to 'let' constant
+                var newChannelIds = event.channels.map(\.id)
+                ~~~ ^
+                let
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:847:28: warning: immutable value 'e' was never used; consider replacing with '_' or removing it
+            case .pong(let e):
+                       ~~~~^
+                       _
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:1019:42: warning: immutable value 'e' was never used; consider replacing with '_' or removing it
+            case .server_member_join(let e):
+                                     ~~~~^
+                                     _
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:1166:44: warning: immutable value 'e' was never used; consider replacing with '_' or removing it
+            case .user_settings_update(let e):
+                                       ~~~~^
+                                       _
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:1175:38: warning: immutable value 'e' was never used; consider replacing with '_' or removing it
+            case .webhook_create(let e):
+                                 ~~~~^
+                                 _
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:1177:38: warning: immutable value 'e' was never used; consider replacing with '_' or removing it
+            case .webhook_delete(let e):
+                                 ~~~~^
+                                 _
+/Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift:1179:38: warning: immutable value 'e' was never used; consider replacing with '_' or removing it
+            case .webhook_update(let e):
+                                 ~~~~^
+                                 _
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: note: Add '@Previewable'
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var action = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: note: Add '@Previewable'
+    @State var action = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var showingSelectEmoji: Bool = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: note: Add '@Previewable'
+    @State var showingSelectEmoji: Bool = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview()
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview()
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/MessageBox.swift:186:38: warning: result of call to 'editMessage(channel:message:edits:)' is unused
+                await viewState.http.editMessage(channel: channel.id, message: message.id, edits: MessageEdit(content: c))
+                                     ^          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: note: Add '@Previewable'
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var action = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: note: Add '@Previewable'
+    @State var action = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var showingSelectEmoji: Bool = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: note: Add '@Previewable'
+    @State var showingSelectEmoji: Bool = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview()
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview()
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift:717:5: note: Add '@Previewable'
+    @StateObject var state = ViewState.preview().applySystemScheme(theme: .dark)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift:71:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var action = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift:108:5: note: Add '@Previewable'
+    @State var action = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: warning: '@State' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @State var showingSelectEmoji: Bool = false
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift:252:5: note: Add '@Previewable'
+    @State var showingSelectEmoji: Bool = false
+    ^~~~~~
+    @Previewable @State
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: warning: '@StateObject' used inline will not work unless tagged with '@Previewable' (from macro 'Preview')
+    @StateObject var viewState = ViewState.preview()
+    ^
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift:283:5: note: Add '@Previewable'
+    @StateObject var viewState = ViewState.preview()
+    ^~~~~~~~~~~~
+    @Previewable @StateObject
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/NotificationSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/ExperimentsSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/BotSettings/BotSettings.swift -primary-file /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/SettingsCommon.swift -primary-file /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/UserSettings.swift -primary-file /Users/admin/Desktop/gangio-ios/Stoat/Api/Responses.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/ViewInvite.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Sheets/ColorSheet.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Messagable/ChannelSearch.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/VoiceChannel/VoiceChannelView.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/AnyTransition.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/BotSettings/AddBot.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/HomeWelcome.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Settings/AllPermissionsSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/UIImage.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/AddFriend.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerBanSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/Welcome.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Image.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/VoiceChannel/VoiceChannelBox.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/About.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerRoles/DefaultRoleSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/BotSettings/BotSetting.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerEmojiSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Messagable/MessageableChannel.swift /Users/admin/Desktop/gangio-ios/Stoat/Api/Websocket.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageBox.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Home.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageReactions.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Sheets/AddServerSheet.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Sheets/ShareInviteSheet.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Member.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageBadge.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/LazyImage.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/SystemMessageView.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/SessionsSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/CheckboxStyle.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/EnvironmentValues.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelWebhooks/ChannelWebhookSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelWebhooks/WebhookSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Api/Payloads.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/LoadingSpinnerView.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Home/ServerScrollView.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/Login.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageReactionsSheet.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/AccountManagement/HCaptchaView.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/Settings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Messagable/ChannelPins.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/ProfileSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Api/Http.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/View.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/PreferenceKey.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/ResendEmail.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageAttachment.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageView.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Array.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Section.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/DeveloperSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/OptionSet.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageContentsView.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Optional.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/ServerIcon.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Settings/PermissionToggle.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/CreateServer.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/UIFont.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Tile.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Binding.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/IteratorProtocol.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/UnreadCounter.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/CreateGroup.swift /Users/admin/Desktop/gangio-ios/Stoat/Api/PermissionsCalculator.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/CreateAccount.swift /Users/admin/Desktop/gangio-ios/Stoat/StoatApp.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/ServerBadges.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Bundle.swift /Users/admin/Desktop/gangio-ios/Stoat/ViewState.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Home/ServerChannelScrollView.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/AppearanceSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/CommonElements/AlertPopup.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/Discovery.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelPermissionsSettings/ChannelPermissionsSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Delegates/AppDelegate.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Login/ForgotPassword.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Sheets/UserSheet.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerRoles/ServerRolesSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelOverviewSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/ChannelIcon.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Contents.swift /Users/admin/Desktop/gangio-ios/Stoat/Api/UserSettingsStore.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Markdown.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelPermissionsSettings/ChannelRolePermissionsSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Theme.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageEmbed.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Avatar.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Home/FriendsList.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/LanguageSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/PresenceIndicator.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Sheets/MemberProfileSheet.swift /Users/admin/Desktop/gangio-ios/Stoat/Api/Utils.swift /Users/admin/Desktop/gangio-ios/Stoat/Extensions/Collection.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Home/PageToolbar.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/EmojiPicker.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerOverviewSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Sheets/ServerInfoSheet.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/ReportMessageSheetView.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/MessageRenderer/MessageReply.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Server/ServerRoles/RoleSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Components/Home/DMScrollView.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Settings/Channel/ChannelPermissionsSettings/GroupDMChannelPermissionsSettings.swift /Users/admin/Desktop/gangio-ios/Stoat/Pages/Channel/Messagable/ChannelInfo.swift /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/DerivedSources/GeneratedAssetSymbols.swift -supplementary-output-file-map /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/supplementaryOutputs-1 -emit-localized-strings -emit-localized-strings-path /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64 -target arm64-apple-ios18.0-simulator -module-can-import-version DeveloperToolsSupport 23.0.4 23.0.4 -module-can-import-version SwiftUI 7.2.5.1 7.2.5 -module-can-import-version UIKit 9126.2.4.1 9126.2.4 -disable-cross-import-overlay-search -swift-module-cross-import AVKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/AVKit.framework/Modules/AVKit.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AVKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/AVKit.framework/Modules/AVKit.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/WidgetKit.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/WidgetKit.swiftoverlay -swift-module-cross-import WebKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Cryptexes/OS/System/Library/Frameworks/WebKit.framework/Modules/WebKit.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import WebKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/WebKit.framework/Modules/WebKit.swiftcrossimport/SwiftUI.swiftoverlay -load-resolved-plugin \#/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug/CasePathsMacros\#CasePathsMacros -load-resolved-plugin \#/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug/CodableWrapperMacros\#CodableWrapperMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libFoundationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#FoundationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libObservationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#ObservationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libPreviewsMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#PreviewsMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftUIMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftUIMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libTipKitMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#TipKitMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/Stoat-dependencies-1.json -Xllvm -aarch64-use-tbi -enable-objc-interop -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -I /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator -no-color-diagnostics -Xcc -fno-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=5 -module-cache-path /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -swift-version 5 -enforce-exclusivity\=checked -Onone -D DEBUG -serialize-debugging-options -load-plugin-executable /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug/CasePathsMacros\#CasePathsMacros -load-plugin-executable /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug/CodableWrapperMacros\#CodableWrapperMacros -const-gather-protocols-file /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/Stoat_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/admin/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/admin/Desktop/gangio-ios -enable-anonymous-context-mangled-names -file-compilation-dir /Users/admin/Desktop/gangio-ios -Xcc -fmodule-map-file\=/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/GeneratedModuleMaps-iphonesimulator/LKObjCHelpers.modulemap -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /Users/admin/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.2-23C57-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Stoat-generated-files.hmap -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Stoat-own-target-headers.hmap -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Stoat-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat-3beb37899f7dee59426800262ecfc1f4-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Stoat-project-headers.hmap -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/SourcePackages/checkouts/client-sdk-swift/Sources/LKObjCHelpers/include -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/DerivedSources-normal/arm64 -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/DerivedSources/arm64 -Xcc -I/Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/DerivedSources -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name Stoat -frontend-parseable-output -disable-clang-spi -target-sdk-version 26.2 -target-sdk-name iphonesimulator26.2 -clang-target arm64-apple-ios26.2-simulator -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -o /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/SettingsCommon.o -o /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/UserSettings.o -o /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Build/Intermediates.noindex/Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/Responses.o -index-unit-output-path /Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/SettingsCommon.o -index-unit-output-path /Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/UserSettings.o -index-unit-output-path /Stoat.build/Debug-iphonesimulator/Stoat.build/Objects-normal/arm64/Responses.o -index-store-path /Users/admin/Library/Developer/Xcode/DerivedData/Stoat-gkcjzpwlmlwmbwhffonxnnkycljy/Index.noindex/DataStore -index-system-modules
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/UserSettings.swift:697:41: warning: result of call to 'signOut()' is unused
+                        await viewState.signOut()
+                                        ^      ~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/UserSettings.swift:747:41: warning: result of call to 'signOut()' is unused
+                        await viewState.signOut()
+                                        ^      ~~
+/Users/admin/Desktop/gangio-ios/Stoat/Pages/Settings/UserSettings.swift:871:81: error: value of type 'AccountSettingsMFAStatus' has no member 'totp_active'
+                    if viewState.userSettingsStore.cache.accountData!.mfaStatus.totp_active {
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ^~~~~~~~~~~
+/Users/admin/Desktop/gangio-ios/Stoat/Components/Contents.swift:1368:20: warning: immutable value 'server' was never used; consider replacing with '_' or removing it
+            if let server = viewState.servers[serverId],
+               ~~~~^~~~~~
+               _
+/Users/admin/Desktop/gangio-ios/Stoat/Api/UserSettingsStore.swift:356:33: warning: 'let' pattern has no effect; sub-pattern didn't bind any variables
+                case .HTTPError(let _, let status):
+                                ^~~ ~
+                                
+eyJibHVlcHJpbnRfYmx1ZXByaW50SWRlbnRpZmllciI6IlN3aWZ0eUNyb3AiLCJibHVlcHJpbnRfcHJvdmlkZXJGaWxlUGF0aFN0cmluZyI6IlwvVXNlcnNcL2FkbWluXC9MaWJyYXJ5XC9EZXZlbG9wZXJcL1hjb2RlXC9EZXJpdmVkRGF0YVwvU3RvYXQtZ2tjanpwd2xtbHdtYndoZmZvbnhubmt5Y2xqeVwvU291cmNlUGFja2FnZXNcL2NoZWNrb3V0c1wvU3dpZnR5Q3JvcCIsInR5cGUiOnsiYmx1ZXByaW50Ijp7fX19
+/Users/admin/Desktop/gangio-ios/Stoat.xcodeproj: warning: DEFINES_MODULE was set, but no umbrella header could be found to generate the module map (in target 'Types' from project 'Stoat')
+** BUILD FAILED **
+

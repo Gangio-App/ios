@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct BotSetting: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.dismiss) var dismiss
     
     struct Values: Equatable {
@@ -50,7 +50,7 @@ struct BotSetting: View {
         List {
             Section {
                 HStack(spacing: 16) {
-                    Avatar(user: initial.user, width: 64, height: 64)
+                    AppAvatar(user: initial.user, width: 64, height: 64)
                         .frame(width: 64, height: 64)
                     
                     VStack(alignment: .leading) {

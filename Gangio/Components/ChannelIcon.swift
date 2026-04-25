@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ChannelIcon: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var channel: Channel
     var withUserPresence: Bool = false
@@ -78,7 +78,7 @@ struct ChannelIcon: View {
                        let recipientId = c.recipients.first(where: { $0 != currentUserId }),
                        let recipient = viewState.users[recipientId] {
                         
-                        Avatar(user: recipient, withPresence: withUserPresence)
+                        AppAvatar(user: recipient, withPresence: withUserPresence)
                             .frame(width: initialSize.0, height: initialSize.1)
                             .frame(width: frameSize.0, height: frameSize.1)
                         
@@ -111,7 +111,7 @@ struct ChannelIcon: View {
 }
 
 struct ChannelIcon_Preview: PreviewProvider {
-    static var viewState: ViewState = ViewState.preview()
+    static var viewState: AppViewState = AppViewState.preview()
     
     static var previews: some View {
         ChannelIcon(channel: viewState.channels["0"]!)

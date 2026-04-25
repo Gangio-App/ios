@@ -10,7 +10,7 @@ import Types
 
 struct WebhookSettings: View {
     @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var channel: Channel
     @Binding var webhook: Webhook

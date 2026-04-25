@@ -12,7 +12,7 @@ import PhotosUI
 import SwiftyCrop
 
 struct ServerEmojiSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server
     
@@ -126,7 +126,7 @@ struct ServerEmojiSettings: View {
                                 Text(verbatim: user.display_name ?? user.username)
                                     .foregroundStyle(viewState.theme.foreground2)
                                 
-                                Avatar(user: user)
+                                AppAvatar(user: user)
                                     .frame(width: 24, height: 24)
                             }
                         } else {

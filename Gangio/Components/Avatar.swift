@@ -1,5 +1,5 @@
 //
-//  Avatar.swift
+//  AppAvatar.swift
 //  Gangio
 //
 //  Created by Angelo on 14/10/2023.
@@ -10,8 +10,8 @@ import SwiftUI
 import Kingfisher
 import Types
 
-struct Avatar: View {
-    @EnvironmentObject var viewState: ViewState
+struct AppAvatar: View {
+    @EnvironmentObject var viewState: AppViewState
     
     public var user: User
     public var member: Member? = nil
@@ -72,15 +72,15 @@ struct Avatar: View {
 }
 
 class Avatar_Preview: PreviewProvider {
-    static var viewState: ViewState = ViewState.preview()
+    static var viewState: AppViewState = AppViewState.preview()
     
     static var previews: some View {
-        Avatar(user: viewState.currentUser!, withPresence: true)
+        AppAvatar(user: viewState.currentUser!, width: 32, height: 32, withPresence: true)
             .environmentObject(viewState)
             .previewLayout(.sizeThatFits)
             .background(Theme.light.background.color)
         
-        Avatar(user: viewState.currentUser!, withPresence: true)
+        AppAvatar(user: viewState.currentUser!, width: 32, height: 32, withPresence: true)
             .environmentObject(viewState)
             .previewLayout(.sizeThatFits)
             .background(Theme.dark.background.color)

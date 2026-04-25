@@ -9,7 +9,7 @@ import SwiftUI
 import Types
 
 struct Welcome: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @State private var path = NavigationPath()
     @State private var mfaTicket = ""
     @State private var mfaMethods: [String] = []
@@ -176,5 +176,5 @@ struct Welcome: View {
     @Previewable @State var signedOut = true
     
     Welcome(wasSignedOut: $signedOut)
-        .environmentObject(ViewState.preview())
+        .environmentObject(AppViewState.preview())
 }

@@ -19,7 +19,7 @@ enum LazyImageSource {
 }
 
 struct LazyImage<S: Shape>: View {
-    @EnvironmentObject private var viewState: ViewState
+    @EnvironmentObject private var viewState: AppViewState
 
     public var source: LazyImageSource
     public var height: CGFloat?

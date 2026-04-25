@@ -212,7 +212,7 @@ class UserSettingsData {
         case fetching, failed, cached
     }
     
-    var viewState: ViewState?
+    var viewState: AppViewState?
     
     var cache: DiscardableUserStore
     var cacheState: SettingsFetchState
@@ -237,7 +237,7 @@ class UserSettingsData {
         return nil
     }
 
-    init(viewState: ViewState?, cache: DiscardableUserStore, store: PersistentUserSettingsStore) {
+    init(viewState: AppViewState?, cache: DiscardableUserStore, store: PersistentUserSettingsStore) {
         self.viewState = viewState
         self.cache = cache
         self.cacheState = .cached
@@ -245,7 +245,7 @@ class UserSettingsData {
         self.store.updateDecodeWithCallback(keyWasSet: storeKeyWasSet)
     }
     
-    init(viewState: ViewState?, store: PersistentUserSettingsStore) {
+    init(viewState: AppViewState?, store: PersistentUserSettingsStore) {
         self.viewState = viewState
         self.cache = DiscardableUserStore()
         self.cacheState = .fetching
@@ -256,7 +256,7 @@ class UserSettingsData {
         createFetchTask()
     }
     
-    init(viewState: ViewState?) {
+    init(viewState: AppViewState?) {
         self.viewState = viewState
         self.cache = DiscardableUserStore()
         self.cacheState = .fetching
@@ -267,7 +267,7 @@ class UserSettingsData {
         createFetchTask()
     }
     
-    class func maybeRead(viewState: ViewState?) -> UserSettingsData {
+    class func maybeRead(viewState: AppViewState?) -> UserSettingsData {
         var cache: DiscardableUserStore? = nil
         var store: PersistentUserSettingsStore? = nil
         

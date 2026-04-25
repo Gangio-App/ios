@@ -255,7 +255,7 @@ struct ServerMemberUpdateEventData: Decodable {
 struct ServerMemberUpdate: Decodable {
     enum Clear: String, Decodable {
         case nickname = "Nickname"
-        case avatar = "Avatar"
+        case avatar = "AppAvatar"
         case roles = "Roles"
         case timeout = "Timeout"
     }
@@ -318,7 +318,7 @@ struct UserUpdateEventData: Decodable {
 
 struct UserUpdate: Decodable {
     enum Clear: String, Decodable {
-        case avatar = "Avatar"
+        case avatar = "AppAvatar"
         case status_text = "StatusText"
         case status_presence = "StatusPresence"
         case profile_content = "ProfileContent"
@@ -358,7 +358,7 @@ struct WebhookUpdateEventData: Decodable {
 
 struct WebhookUpdate: Decodable {
     enum Remove: String, Decodable {
-        case avatar = "Avatar"
+        case avatar = "AppAvatar"
     }
     
     var id: String
@@ -572,6 +572,9 @@ class WebSocketStream: ObservableObject {
     @Published public var currentState: WsState = .disconnected
     public var retryCount: Int = 0
     
+    /// Debounce timer so very short blips (< 2s) don't flash the banner
+    private var disconnectDebounceTask: Task<Void, Never>? = nil
+    
     /// Maximum backoff delay in seconds (30s cap)
     private let maxBackoffDelay: Double = 30.0
 
@@ -597,6 +600,8 @@ class WebSocketStream: ObservableObject {
 
     public func stop() {
         stopPingTimer()
+        disconnectDebounceTask?.cancel()
+        disconnectDebounceTask = nil
         isReconnecting = false
         client.disconnect(closeCode: .zero)
     }
@@ -630,21 +635,27 @@ class WebSocketStream: ObservableObject {
     public func didReceive(event: WebSocketEvent) {
         switch event {
             case .connected(_):
-                currentState = .connecting
+                // TCP connected — send auth. Don't update WsState yet;
+                // wait for Authenticated message before claiming "connected".
+                // This avoids the "Connecting..." flash on every reconnect.
                 isReconnecting = false
+                disconnectDebounceTask?.cancel()
+                disconnectDebounceTask = nil
                 let payload = Authenticate(token: token)
                 print(payload.description)
-
                 let s = try! encoder.encode(payload)
                 client.write(string: String(data: s, encoding: .utf8)!)
                     
             case .disconnected(let reason, _):
                 print("disconnect \(reason)")
                 stopPingTimer()
-                currentState = .disconnected
-                
-                Task {
-                    await tryReconnect()
+                // Debounce: only report disconnect after 2s so transient blips are silent
+                disconnectDebounceTask?.cancel()
+                disconnectDebounceTask = Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(2))
+                    guard let self, !Task.isCancelled else { return }
+                    self.currentState = .disconnected
+                    await self.tryReconnect()
                 }
 
             case .text(let string):
@@ -653,10 +664,11 @@ class WebSocketStream: ObservableObject {
                 do {
                     let e = try decoder.decode(WsMessage.self, from: string.data(using: .utf8)!)
                     
-                    // On successful authentication, reset retry count and start keepalive
+                    // On successful authentication, mark as fully connected
                     if case .authenticated = e {
                         retryCount = 0
                         isReconnecting = false
+                        currentState = .connected
                         startPingTimer()
                     }
 
@@ -670,20 +682,29 @@ class WebSocketStream: ObservableObject {
             case .viabilityChanged(let viability):
                 if !viability {
                     stopPingTimer()
-                    currentState = .disconnected
-                    Task {
-                        await tryReconnect()
+                    // Debounce viability changes — they often flap briefly on Wi-Fi handoffs
+                    disconnectDebounceTask?.cancel()
+                    disconnectDebounceTask = Task { [weak self] in
+                        try? await Task.sleep(for: .seconds(2))
+                        guard let self, !Task.isCancelled else { return }
+                        self.currentState = .disconnected
+                        await self.tryReconnect()
                     }
+                } else {
+                    disconnectDebounceTask?.cancel()
+                    disconnectDebounceTask = nil
                 }
 
             case .error(let error):
                 stopPingTimer()
-                currentState = .disconnected
                 self.stop()
                 print("error \(String(describing: error))")
-                
-                Task {
-                    await tryReconnect()
+                disconnectDebounceTask?.cancel()
+                disconnectDebounceTask = Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(1))
+                    guard let self, !Task.isCancelled else { return }
+                    self.currentState = .disconnected
+                    await self.tryReconnect()
                 }
             
             case .pong(_):
@@ -723,14 +744,15 @@ class WebSocketStream: ObservableObject {
         try? await Task.sleep(for: .seconds(delay))
         
         // Only proceed if we're still disconnected
-        guard currentState == .disconnected || currentState == .connecting else {
+        guard currentState == .disconnected else {
             isReconnecting = false
             return
         }
         
+        // Set connecting state only right before actually trying
         currentState = .connecting
         forceConnect()
-        
         retryCount += 1
     }
 }
+

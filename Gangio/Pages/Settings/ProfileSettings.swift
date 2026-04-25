@@ -11,7 +11,7 @@ import PhotosUI
 import Types
 
 struct ProfileSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @State var profile: Profile? = nil
     @State var avatarItem: PhotosPickerItem? = nil
@@ -69,12 +69,12 @@ struct ProfileSettings: View {
                         }
                         .disabled(isUploadingBanner)
                         
-                        // Avatar + Info
+                        // AppAvatar + Info
                         HStack(alignment: .top, spacing: 16) {
-                            // Avatar Area - Tap to Edit
+                            // AppAvatar Area - Tap to Edit
                             PhotosPicker(selection: $avatarItem, matching: .images) {
                                 ZStack(alignment: .bottomTrailing) {
-                                    Avatar(user: user, width: 80, height: 80, withPresence: false)
+                                    AppAvatar(user: user, width: 80, height: 80, withPresence: false)
                                     
                                     ZStack {
                                         Circle().fill(Color.purple).frame(width: 28, height: 28)
@@ -202,7 +202,7 @@ struct ProfileSettings: View {
                     let uploadResp = try await viewState.http.uploadFile(data: data, name: "avatar.png", category: .avatar).get()
                     let _ : Types.User = try await viewState.http.req(method: .patch, route: "/users/@me", parameters: ["avatar": uploadResp.id]).get()
                     await viewState.userSettingsStore.fetchFromApi()
-                    uploadSuccess = "Avatar updated!"
+                    uploadSuccess = "AppAvatar updated!"
                 } catch {
                     uploadError = "Failed to upload avatar"
                 }

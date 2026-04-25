@@ -9,7 +9,7 @@ import SwiftUI
 import Types
 
 struct ServerInfoSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.dismiss) var dismiss
     
     @State var showLeaveServerDialog: Bool = false

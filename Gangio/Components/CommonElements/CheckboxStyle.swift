@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CheckboxStyle: ToggleStyle {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     func makeBody(configuration: Self.Configuration) -> some View {
         return HStack {

@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct PageToolbar<C: View, T: View>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     var toggleSidebar: () -> ()
     
     var contents: () -> C
@@ -68,5 +68,5 @@ extension PageToolbar where T == EmptyView {
     } trailing: {
         Text("Ending")
     }
-    .applyPreviewModifiers(withState: ViewState.preview())
+    .applyPreviewModifiers(withState: AppViewState.preview())
 }

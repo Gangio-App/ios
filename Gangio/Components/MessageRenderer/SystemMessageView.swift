@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct SystemMessageView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var message: Message
 
     var body: some View {
@@ -26,7 +26,7 @@ struct SystemMessageView: View {
                                 .scaledToFit()
                                 .frame(width: 16, height: 16)
                             
-                            Avatar(user: user, member: member, masquerade: message.masquerade, width: 24, height: 24)
+                            AppAvatar(user: user, member: member, masquerade: message.masquerade, width: 24, height: 24)
                             
                             Text("\(member?.nickname ?? user.display_name ?? user.username) joined")
                         }
@@ -40,7 +40,7 @@ struct SystemMessageView: View {
                                 .scaledToFit()
                                 .frame(width: 16, height: 16)
 
-                            Avatar(user: user, member: member, masquerade: message.masquerade, width: 24, height: 24)
+                            AppAvatar(user: user, member: member, masquerade: message.masquerade, width: 24, height: 24)
                             
                             Text("\(member?.nickname ?? user.display_name ?? user.username) pinned a message")
                         }
@@ -54,7 +54,7 @@ struct SystemMessageView: View {
                                 .scaledToFit()
                                 .frame(width: 16, height: 16)
 
-                            Avatar(user: user, member: member, masquerade: message.masquerade, width: 24, height: 24)
+                            AppAvatar(user: user, member: member, masquerade: message.masquerade, width: 24, height: 24)
                             
                             Text("\(member?.nickname ?? user.display_name ?? user.username) unpinned a message")
                         }

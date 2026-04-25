@@ -10,6 +10,7 @@ import SwiftUI
 import Flow
 import Types
 import ExyteGrid
+import Gangio
 
 enum Badges: Int, CaseIterable {
     case developer = 1
@@ -26,7 +27,7 @@ enum Badges: Int, CaseIterable {
 }
 
 struct UserSheetHeader: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     var user: User
     var member: Member?
     var profile: Profile
@@ -38,7 +39,7 @@ struct UserSheetHeader: View {
             }
             
             HStack(alignment: .center, spacing: 16) {
-                Avatar(user: user, width: 48, height: 48, withPresence: true)
+                AppAvatar(user: user, width: 48, height: 48, withPresence: true)
 
                 VStack(alignment: .leading) {
                     if let display_name = user.display_name {
@@ -60,10 +61,10 @@ struct UserSheetHeader: View {
 }
 
 struct UserSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
-    @State var user: User
-    @State var member: Member?
+    var user: User
+    var member: Member?
     
     @State var profile: Profile?
     @State var owner: User = .init(id: String(repeating: "0", count: 26), username: "Unknown", discriminator: "0000")
@@ -109,7 +110,7 @@ struct UserSheet: View {
                         }
                     }
                     
-                    Tile("Joined") { 
+                    Tile("Joined") {
                         VStack(alignment: .leading) {
                             Text(createdAt(id: user.id), style: .date)
                             Text("Gangio")
@@ -146,7 +147,7 @@ struct UserSheet: View {
                     if let bot = user.bot {
                         Tile("Owner") {
                             HStack(spacing: 12) {
-                                Avatar(user: owner)
+                                AppAvatar(user: owner)
                                 
                                 Text(owner.display_name ?? owner.username)
                             }
@@ -173,7 +174,7 @@ struct UserSheet: View {
                                             viewState.openUserSheet(user: user)
                                         } label: {
                                             HStack(spacing: 8) {
-                                                Avatar(user: user, width: 16, height: 16, withPresence: true)
+                                                AppAvatar(user: user, width: 16, height: 16, withPresence: true)
                                                 
                                                 Text(verbatim: user.display_name ?? user.username)
                                                     .lineLimit(1)
@@ -294,7 +295,9 @@ struct UserSheet: View {
                             Button("Block") {
                                 Task {
                                     if case .success(let blockedUser) = await viewState.http.blockUser(user: user.id) {
-                                        user = blockedUser
+                                        DispatchQueue.main.async {
+                                            viewState.users[user.id] = blockedUser
+                                        }
                                     }
                                 }
                             }
@@ -333,14 +336,14 @@ struct UserSheet: View {
         .sheet(isPresented: $showReportSheet) {
             ReportUserSheetView(showSheet: $showReportSheet, user: user)
         }
-        .task {
+        .task(id: user.id) {
             if let profile = user.profile {
                 self.profile = profile
             } else {
                 profile = try? await viewState.http.fetchProfile(user: user.id).get()
             }
         }
-        .task {
+        .task(id: user.id) {
             if user.id != viewState.currentUser!.id,
                let mutuals = try? await viewState.http.fetchMutuals(user: user.id).get()
             {
@@ -368,7 +371,7 @@ struct Badge: View {
 }
 
 struct UserSheetPreview: PreviewProvider {
-    @StateObject static var viewState: ViewState = ViewState.preview()
+    @StateObject static var viewState: AppViewState = AppViewState.preview()
         
     static var previews: some View {
         Text("foo")
@@ -379,119 +382,11 @@ struct UserSheetPreview: PreviewProvider {
     }
 }
 struct ReportUserSheetView: View {
-    @EnvironmentObject var viewState: ViewState
-    @Environment(\.colorScheme) var colorScheme: ColorScheme
-    
-    @State var userContext: String = ""
-    @State var error: String? = nil
-    @State var reason: ContentReportPayload.ContentReportReason = .NoneSpecified
-    
     @Binding var showSheet: Bool
     var user: User
-    
-    func submit() -> () {
-        if reason == .NoneSpecified {
-            error = "Please select a category"
-        } else { error = nil }
-        if userContext.isEmpty {
-            if error != nil {
-                error! += " and add a reason"
-                
-            } else {
-                error = "Please add a reason"
-            }
-        }
-        if error != nil {
-            return
-        }
-        
-        Task {
-            viewState.http.logger.debug("Start report task")
-            print(await viewState.http.reportUser(id: user.id, reason: reason, userContext: userContext))
-        }
-        showSheet.toggle()
-    }
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 30) {
-            Spacer()
-                .frame(maxHeight: 20)
-
-            VStack(alignment: .center) {
-                Text("Tell us what's wrong with this user")
-                    .font(.title)
-                    .multilineTextAlignment(.center)
-                
-                Text("Please note that this does not get sent to this server's moderators")
-                    .font(.caption)
-                    .foregroundStyle(viewState.theme.error)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 4)
-            }
-            .frame(maxWidth: .infinity)
-
-            HStack(spacing: 12) {
-                Avatar(user: user, width: 40, height: 40)
-                Text(user.display_name ?? user.username)
-                    .font(.headline)
-            }
-            .padding(.horizontal, 5)
-            .padding(.vertical, 10)
-
-            VStack {
-                Text("Pick a category")
-                    .font(.caption)
-    
-                Picker("Report reason", selection: $reason) {
-                    ForEach(ContentReportPayload.ContentReportReason.allCases, id: \.rawValue) { reason in
-                        Text(reason.rawValue)
-                            .tag(reason)
-                    }
-                }
-                .padding(.vertical, 2)
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(viewState.theme.foreground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 5)
-                        .stroke((error != nil && userContext.isEmpty) ? viewState.theme.error : viewState.theme.foreground, lineWidth: 1)
-                )
-            }
-
-            VStack {
-                Text("Give us some detail")
-                    .font(.caption)
-                    .foregroundStyle(viewState.theme.foreground.color)
-
-                TextField("", text: $userContext, axis: .vertical)
-                    .padding(.vertical, 15)
-                    .padding(.leading)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke((error != nil && userContext.isEmpty) ? viewState.theme.error : viewState.theme.foreground, lineWidth: 1)
-                    )
-                    .placeholder(when: userContext.isEmpty) {
-                        Text("What's wrong...")
-                            .padding()
-                    }
-                    .frame(minHeight: 50)
-            }
-            
-            if error != nil {
-                Text(error!)
-                    .font(.subheadline)
-                    .foregroundStyle(viewState.theme.error)
-            }
-            Button(action: submit, label: {
-                Text("Submit")
-            })
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(viewState.theme.accent)
-                .clipShape(.rect(cornerRadius: 5))
-
-            Spacer()
-        }
-        .padding(.horizontal, 32)
-        .background(viewState.theme.background)
+        ReportSheet(target: .user(user))
     }
 }
+

@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct AddServerSheet: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.dismiss) var dismiss
 
     @State var showJoinServerAlert: Bool = false
@@ -66,7 +66,7 @@ struct AddServerSheet: View {
 }
 
 struct JoinServerAlert: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var text: String = ""
     
@@ -96,5 +96,5 @@ struct JoinServerAlert: View {
 
 #Preview {
     AddServerSheet()
-        .applyPreviewModifiers(withState: ViewState.preview())
+        .applyPreviewModifiers(withState: AppViewState.preview())
 }

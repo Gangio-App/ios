@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ChannelPermissionsSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server?
     @Binding var channel: Channel
@@ -18,11 +18,11 @@ struct ChannelPermissionsSettings: View {
     var body: some View {
         List {
             switch channel {
-                case .saved_messages(let savedMessages):
+                case .saved_messages:
                     EmptyView()
-                case .dm_channel(let dMChannel):
+                case .dm_channel:
                     EmptyView()
-                case .group_dm_channel(var groupDMChannel):
+                case .group_dm_channel(let groupDMChannel):
                     GroupDMChannelPermissionsSettings(channel: groupDMChannel)
                 case .text_channel, .voice_channel:
                     Section {

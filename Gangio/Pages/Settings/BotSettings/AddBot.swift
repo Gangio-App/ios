@@ -23,7 +23,7 @@ enum AddTarget: Identifiable, Hashable, Equatable {
 }
 
 struct AddBot: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var user: User
     var bot: Bot
@@ -33,7 +33,7 @@ struct AddBot: View {
 
     var body: some View {
         VStack(alignment: .center, spacing: 12) {
-            Avatar(user: user, width: 64, height: 64)
+            AppAvatar(user: user, width: 64, height: 64)
             
             VStack {
                 Text(verbatim: user.display_name ?? user.username)

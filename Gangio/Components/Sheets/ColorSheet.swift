@@ -10,7 +10,7 @@ import SwiftUI
 
 struct ColorSheet: View {
     @Environment(\.self) var environment
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     enum Selection {
         case linear, simple, variable

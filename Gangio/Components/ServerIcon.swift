@@ -11,7 +11,7 @@ import Types
 
 
 struct ServerIcon<S: Shape>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var server: Server
     var height: CGFloat? = nil
@@ -28,7 +28,7 @@ struct ServerIcon<S: Shape>: View {
 }
 
 struct FallbackServerIcon<S: Shape>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var name: String
     var width: CGFloat?
@@ -50,7 +50,7 @@ struct FallbackServerIcon<S: Shape>: View {
 }
 
 struct ServerListIcon: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var server: Server
     var height: CGFloat? = nil

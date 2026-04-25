@@ -11,7 +11,7 @@ import Types
 
 
 struct AddFriend: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var username: String = ""
     @State var error: String? = nil

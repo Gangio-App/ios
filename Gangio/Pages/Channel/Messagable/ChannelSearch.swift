@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ChannelSearch: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var channel: Channel
     

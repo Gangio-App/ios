@@ -11,7 +11,7 @@ import Types
 
 @MainActor
 class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
-    var viewState: ViewState
+    var viewState: AppViewState
 
     @Binding var message: Message
     @Binding var author: User
@@ -23,7 +23,7 @@ class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
 
     var channelScrollPosition: ChannelScrollController
 
-    init(viewState: ViewState, message: Binding<Message>, author: Binding<User>, member: Binding<Member?>, server: Binding<Server?>, channel: Binding<Channel>, replies: Binding<[Reply]>, channelScrollPosition: ChannelScrollController, editing: Binding<Message?>) {
+    init(viewState: AppViewState, message: Binding<Message>, author: Binding<User>, member: Binding<Member?>, server: Binding<Server?>, channel: Binding<Channel>, replies: Binding<[Reply]>, channelScrollPosition: ChannelScrollController, editing: Binding<Message?>) {
         self.viewState = viewState
         self._message = message
         self._author = author
@@ -65,7 +65,7 @@ class MessageContentsViewModel: ObservableObject, Equatable, Identifiable {
 }
 
 struct MessageContentsView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @ObservedObject var viewModel: MessageContentsViewModel
 
     @Environment(\.channelMessageSelection) @Binding var channelMessageSelection
@@ -75,7 +75,7 @@ struct MessageContentsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             if let content = Binding(viewModel.$message.content), !content.wrappedValue.isEmpty {
-                Contents(text: content, fontSize: 16)
+                Contents(text: content, fontSize: CGFloat(viewState.messageFontSize))
                 //.font(.body)
             }
             
@@ -107,3 +107,4 @@ struct MessageContentsView: View {
         .environment(\.currentMessage, viewModel)
     }
 }
+

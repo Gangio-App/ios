@@ -18,7 +18,7 @@ struct Friends {
 }
 
 struct FriendsList: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @State private var searchText = ""
 
     func getFriends() -> Friends {
@@ -143,12 +143,12 @@ struct FriendActionCard: View {
 }
 
 struct FriendRow: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     let user: User
     
     var body: some View {
         HStack(spacing: 12) {
-            Avatar(user: user, width: 44, height: 44, withPresence: true)
+            AppAvatar(user: user, width: 44, height: 44, withPresence: true)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(user.display_name ?? user.username)
@@ -200,6 +200,6 @@ struct FriendRow: View {
 
 
 #Preview {
-    return FriendsList()
-        .applyPreviewModifiers(withState: ViewState.preview())
+    FriendsList()
+        .applyPreviewModifiers(withState: AppViewState.preview())
 }

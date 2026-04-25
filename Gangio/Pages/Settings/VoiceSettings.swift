@@ -9,7 +9,7 @@ import SwiftUI
 import AVKit
 
 public struct AudioSettingsView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     @State private var availableInputs: [AVAudioSessionPortDescription] = []

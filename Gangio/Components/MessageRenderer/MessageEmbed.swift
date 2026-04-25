@@ -11,7 +11,7 @@ import AVKit
 import WebKit
 
 struct MessageEmbed: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var embed: Embed
     
     func parseEmbedColor(color: String?) -> AnyShapeStyle {
@@ -31,7 +31,7 @@ struct MessageEmbed: View {
                     default:
                         return false
                 }
-            default:
+            @unknown default:
                 return false
         }
     }
@@ -135,6 +135,8 @@ struct MessageEmbed: View {
 
             case .none:
                 EmptyView()
+            @unknown default:
+                EmptyView()
         }
     }
 }
@@ -204,7 +206,7 @@ struct SpecialEmbed: View {
                 return 480/460
             case .bandcamp:
                 return CGFloat(embed.video?.width ?? 16)/CGFloat(embed.video?.height ?? 9)
-            default:
+            @unknown default:
                 return 0
         }
     }
@@ -227,7 +229,7 @@ struct SpecialEmbed: View {
                 return "https://bandcamp.com/EmbeddedPlayer/\(special.content_type.rawValue.lowercased())=\(special.id)/size=large/bgcol=181a1b/linkcol=056cc4/tracklist=false/transparent=true/"
             case .streamable(let special):
                 return "https://streamable.com/e/\(special.id)?loop=0"
-            default:
+            @unknown default:
                 return nil
         }
     }

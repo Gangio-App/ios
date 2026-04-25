@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import Types
+import Gangio
 
 struct MessageView: View {
     private enum AvatarSize {
@@ -25,7 +26,7 @@ struct MessageView: View {
     }
     @ObservedObject var viewModel: MessageContentsViewModel
     
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var showReportSheet: Bool = false
     @State var isStatic: Bool = false
@@ -42,10 +43,10 @@ struct MessageView: View {
             }
         } label: {
             ZStack(alignment: .topLeading) {
-                Avatar(user: viewModel.author, member: viewModel.member, masquerade: viewModel.message.masquerade, webhook: viewModel.message.webhook, width: size.sizes.0, height: size.sizes.0)
+                AppAvatar(user: viewModel.author, member: viewModel.member, masquerade: viewModel.message.masquerade, webhook: viewModel.message.webhook, width: size.sizes.0, height: size.sizes.0)
                 
                 if viewModel.message.masquerade != nil {
-                    Avatar(user: viewModel.author, member: viewModel.member, webhook: viewModel.message.webhook, width: size.sizes.1, height: size.sizes.1)
+                    AppAvatar(user: viewModel.author, member: viewModel.member, webhook: viewModel.message.webhook, width: size.sizes.1, height: size.sizes.1)
                         .padding(.leading, -size.sizes.2)
                         .padding(.top, -size.sizes.2)
                 }
@@ -126,7 +127,7 @@ struct MessageView: View {
                     }
                 } else {
                     HStack(alignment: .top, spacing: 0) {
-                        // Avatar (Discord: 40pt)
+                        // AppAvatar (Discord: 40pt)
                         pfpView(size: .regular)
                             .padding(.top, 1)
                             .padding(.trailing, 12)
@@ -168,13 +169,13 @@ struct MessageView: View {
 }
 
 //struct GhostMessageView: View {
-//    @EnvironmentObject var viewState: ViewState
+//    @EnvironmentObject var viewState: AppViewState
 //    
 //    var message: QueuedMessage
 //    
 //    var body: some View {
 //        HStack(alignment: .top) {
-//            Avatar(user: viewState.currentUser!, width: 16, height: 16)
+//            AppAvatar(user: viewState.currentUser!, width: 16, height: 16)
 //            VStack(alignment: .leading) {
 //                HStack {
 //                    Text(viewState.currentUser!.username)
@@ -191,7 +192,7 @@ struct MessageView: View {
 //}
 
 struct MessageView_Previews: PreviewProvider {
-    static var viewState: ViewState = ViewState.preview()
+    static var viewState: AppViewState = AppViewState.preview()
     @State static var message = viewState.messages["01HDEX6M2E3SHY8AC2S6B9SEAW"]!
     @State static var author = viewState.users[message.author]!
     @State static var member = viewState.members["0"]!["0"]

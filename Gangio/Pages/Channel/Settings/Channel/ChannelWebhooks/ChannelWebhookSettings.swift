@@ -9,7 +9,7 @@ import SwiftUI
 import Types
 
 struct ChannelWebhookSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server
     @Binding var channel: Channel
@@ -81,7 +81,7 @@ struct ChannelWebhookSettings: View {
 }
 
 struct CreateWebhookAlert: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var webhooks: [Webhook]
     @Binding var channel: Channel

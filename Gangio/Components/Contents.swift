@@ -186,7 +186,7 @@ parser = many1 node
 //}
 
 //struct Contents: View {
-//    @EnvironmentObject var viewState: ViewState
+//    @EnvironmentObject var viewState: AppViewState
 //
 //    var text: String
 //
@@ -250,7 +250,7 @@ parser = many1 node
 ////                            Text(attr)
 ////                        case .user_mention(let user, let member):
 ////                            HStack(spacing: 2) {
-////                                Avatar(user: user, member: member, width: 16, height: 16)
+////                                AppAvatar(user: user, member: member, width: 16, height: 16)
 ////                                Text(verbatim: member?.nickname ?? user.display_name ?? user.username)
 ////                                    .bold()
 ////                                    .foregroundStyle(memberColour(member: member) ?? viewState.theme.foreground.color)
@@ -281,7 +281,7 @@ parser = many1 node
 
 //
 //struct SubviewTextView: UIViewRepresentable {
-//    @EnvironmentObject var viewState: ViewState
+//    @EnvironmentObject var viewState: AppViewState
 //
 //    var fixedWidth: CGFloat
 //    var parts: [ContentPart]
@@ -336,7 +336,7 @@ parser = many1 node
 //
 //                case .user_mention(let user, let member):
 //                    view = HStack(spacing: 2) {
-//                        Avatar(user: user, member: member, width: 16, height: 16)
+//                        AppAvatar(user: user, member: member, width: 16, height: 16)
 //                        Text(verbatim: member?.nickname ?? user.display_name ?? user.username)
 //                            .bold()
 //                            .foregroundStyle(memberColour(member: member) ?? viewState.theme.foreground.color)
@@ -362,7 +362,7 @@ parser = many1 node
 //}
 
 //struct Contents: View {
-//    @EnvironmentObject var viewState: ViewState
+//    @EnvironmentObject var viewState: AppViewState
 //
 //    var text: String
 //
@@ -372,7 +372,7 @@ parser = many1 node
 //}
 
 //struct InnerContents: UIViewRepresentable {
-//    var viewState: ViewState
+//    var viewState: AppViewState
 //    var text: String
 //
 //    func makeUIView(context: Context) -> some UIView {
@@ -419,25 +419,25 @@ parser = many1 node
 
 
 //struct Contents: View {
-//    @EnvironmentObject var viewState: ViewState
+//    @EnvironmentObject var viewState: AppViewState
 //    @Binding var text: String
-//    
+//
 //    var lock: NSRecursiveLock = NSRecursiveLock()
 //    @State var images: [URL: UIImage] = [:]
-//    
+//
 //    @State var cached: Text? = nil
 //    @State var loading: Bool = false
-//    
+//
 //    var fontSize: CGFloat
-//    
+//
 //    func addImageToState(url: URL, image: UIImage, round: Bool) {
 //        var image = round ? image.roundedImage : image
 //
 //        image = image.imageWith(newSize: CGSize(width: fontSize, height: fontSize), contentMode: .contentAspectFit)!
-//        
+//
 //        lock.withLock { images[url] = image }
 //    }
-//    
+//
 //    func getImage(url: URL, round: Bool = false) -> UIImage {
 //        if let image = lock.withLock({ images[url] }) {
 //            return image
@@ -460,7 +460,7 @@ parser = many1 node
 //                    }
 //                }
 //            }
-//            
+//
 //            return UIImage().imageWith(newSize: CGSize(width: fontSize, height: fontSize))
 //        }
 //    }
@@ -481,10 +481,10 @@ parser = many1 node
 //
 //                        let mention = NSAttributedString(string: name, attributes: [.foregroundColor: viewState.theme.accent.color, .font: boldFont, .link: "gangiochat://users?user=\(string)"])
 //                        let pfpUrl = (member?.avatar ?? user.avatar).map { viewState.formatUrl(with: $0) } ?? "\(viewState.http.baseURL)/users/\(user.id)/default_avatar"
-//                        
+//
 //                        let image = getImage(url: URL(string: pfpUrl)!, round: true)
 //                        let text = Text(Image(uiImage: image)) + Text(AttributedString(mention))
-//                        
+//
 //                        textParts.append(text)
 //                    } else {
 //                        textParts.append(Text(AttributedString(NSAttributedString(string: "@Unknown", attributes: [.foregroundColor: viewState.theme.accent.color, .font: boldFont]))))
@@ -517,7 +517,7 @@ parser = many1 node
 //                case .custom_emoji(let id):
 //                    let url = viewState.formatUrl(fromEmoji: id)
 //                    let image = getImage(url: URL(string: url)!)
-//                    
+//
 //                    textParts.append(Text(Image(uiImage: image)))
 //            }
 //        }
@@ -529,28 +529,28 @@ parser = many1 node
 //            return nil
 //        }
 //    }
-//    
+//
 //    func loadBody() -> Text {
 //        if let cached {
 //            return cached
 //        } else {
 //            if !loading {
 //                loading = true
-//                
+//
 //                DispatchQueue.global(qos: .userInteractive).async {
 //                    let parts = parseMentions(text: text)
-//                    
+//
 //                    DispatchQueue.main.async {
 //                        cached = buildContent(parts: parts)
 //                    }
 //                }
 //            }
-//            
+//
 //            return Text(verbatim: text)
 //                .font(Font.system(size: fontSize))
 //        }
 //    }
-//    
+//
 //    var body: some View {
 ////        ZStack {
 ////            cached ?? Text(verbatim: text).font(Font.system(size: fontSize))
@@ -558,7 +558,7 @@ parser = many1 node
 ////            let text = text
 ////            DispatchQueue.global(qos: .userInteractive).async {
 ////                let parts = parseMentions(text: text)
-////                
+////
 ////                DispatchQueue.main.async {
 ////                    cached = buildContent(parts: parts)
 ////                }
@@ -573,17 +573,17 @@ parser = many1 node
 //class EmojiView: UIView {
 //    var imageView: UIImageView!
 //    var label: UILabel!
-//    
+//
 //    init(imageSize: CGSize) {
 //        super.init(frame: .zero)
 //        self.imageView = UIImageView(frame: .zero)
 //        addSubview(imageView)
 //    }
-//    
+//
 //    required init?(coder: NSCoder) {
 //        fatalError("init(coder:) has not been implemented")
 //    }
-//    
+//
 //    override func layoutSubviews() {
 //        super.layoutSubviews()
 //        label.frame = self.bounds
@@ -595,26 +595,26 @@ parser = many1 node
 //    var imageView: UIImageView!
 //    var nameView: UILabel!
 //    var tapHandler: (() -> Void)!
-//    
+//
 //    init(tapHandler: @escaping () -> Void) {
 //        super.init(frame: .zero)
-//        
+//
 //        self.imageView = UIImageView()
-//        
+//
 //        self.imageView.layer.masksToBounds = false
 //        self.imageView.layer.borderWidth = 1
 //        self.imageView.layer.borderColor = UIColor.clear.cgColor
 //        self.imageView.clipsToBounds = true
-//        
+//
 //        self.nameView = UILabel()
 //        self.nameView.numberOfLines = 1
-//        
+//
 //        self.tapHandler = tapHandler
 //        let gestureRecog = UITapGestureRecognizer(target: self, action: #selector(self.handleTap(_:)))
 //
 //        addSubview(imageView)
 //        addSubview(nameView)
-//        
+//
 //        imageView.snp.makeConstraints { make in
 //            make.width.equalTo(imageView.snp.height)
 //            //make.leading.equalTo(self.snp.leading)
@@ -622,26 +622,26 @@ parser = many1 node
 //            make.bottom.equalTo(self.snp.bottom).offset(-2)
 //            make.trailing.equalTo(nameView.snp.leading).offset(-8)
 //        }
-//        
+//
 //        nameView.snp.makeConstraints { make in
 //            //make.trailing.equalTo(self.snp.trailing)
 //            make.centerY.equalTo(imageView.snp.centerY)
 //        }
-//        
+//
 //        self.snp.makeConstraints { make in
 //            make.leading.equalTo(imageView.snp.leading).offset(-2).priority(.required)
 //            make.trailing.equalTo(nameView.snp.trailing).offset(6).priority(.required)
 //        }
 //    }
-//    
+//
 //    required init(coder: NSCoder) {
 //        fatalError("init(coder:) has not been implemented")
 //    }
-//    
+//
 //    override func layoutSubviews() {
 //        imageView.layer.cornerRadius = imageView.frame.height / 2
 //    }
-//    
+//
 //    @objc func handleTap(_ sender: UITapGestureRecognizer? = nil) {
 //        self.tapHandler()
 //    }
@@ -651,28 +651,28 @@ parser = many1 node
 //
 //
 //struct InnerContents: UIViewRepresentable {
-//    @EnvironmentObject var viewState: ViewState
+//    @EnvironmentObject var viewState: AppViewState
 //    typealias UIViewType = SubviewAttachingTextView
-//    
+//
 //    @Binding var text: String
 //    @Binding var calculatedHeight: CGFloat
-//    
+//
 //    var currentServer: String?
-//    
+//
 //    var fontSize: CGFloat
 //    var font: UIFont
 //    var foregroundColor: UIColor
 //    var lineLimit: Int?
-//    
+//
 //    func makeUIView(context: Context) -> UIViewType {
 //        let textview = SubviewAttachingTextView()
 //        textview.isEditable = false
-//        
+//
 //        if let lineLimit {
 //            textview.textContainer.maximumNumberOfLines = lineLimit
 //            textview.textContainer.lineBreakMode = .byTruncatingTail
 //        }
-//        
+//
 //        textview.isSelectable = false
 //        textview.font = .systemFont(ofSize: fontSize)
 //        textview.backgroundColor = nil
@@ -682,44 +682,44 @@ parser = many1 node
 //        textview.textContainer.lineFragmentPadding = 0
 //        textview.textContainerInset = .zero
 //        textview.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-//        
+//
 //        return textview
 //    }
-//    
+//
 //    func updateUIView(_ textview: UIViewType, context: Context) {
 //        if !text.isEmpty {
 //            var lines: [NSAttributedString] = []
-//            
+//
 //            for text in text.split(separator: "\n") {
-//                
+//
 //                let attrString = try! NSMutableAttributedString(markdown: text.data(using: .utf8)!, options: .init(allowsExtendedAttributes: true, interpretedSyntax: .full))
-//                
+//
 //                attrString.enumerateAttribute(.font, in: NSRange(location: 0, length: attrString.length), options: [], using: { font, range, _ in
 //                    let font = font != nil ? (font as! UIFont).withSize(fontSize) : UIFont.systemFont(ofSize: fontSize)
-//                    
+//
 //                    // Custom emoji support
 ////                    let customFont = UIFont(name: "Twitter Color Emoji", size: fontSize)!
 ////                    let descriptor = customFont.fontDescriptor
 ////                    let fallback = descriptor.addingAttributes([.name: font.fontName])
 ////                    let repaired = descriptor.addingAttributes([.cascadeList: [fallback]])
 ////                    let newFont = UIFont(descriptor: repaired, size: 0.0)
-//                    
+//
 //                    attrString.addAttribute(.font, value: font, range: range)
 //                })
-//                
+//
 //                var foundCodeblockCount = 0
-//                
+//
 //                attrString.enumerateAttribute(.presentationIntentAttributeName, in: NSRange(location: 0, length: attrString.length), using: { presentation, range, _ in
 //                    if let intent = presentation as? __NSPresentationIntent {
-//                        
+//
 //                        if intent.intentKind == __NSPresentationIntentKind.codeBlock {
 //                            let lowerInt = range.lowerBound - foundCodeblockCount
 //                            let lower = String.Index(encodedOffset: lowerInt)
 //                            let upper = String.Index(encodedOffset: range.upperBound - foundCodeblockCount)
 //                            let codeText = String(attrString.string[lower..<upper])
-//                            
+//
 //                            let globalRange = Range(uncheckedBounds: (lower, upper))
-//                            
+//
 //                            if let codeblockString = highlighter.highlight(codeText, as: intent.languageHint) {
 //                                attrString.deleteCharacters(in: NSRange(globalRange, in: attrString.string))
 //                                attrString.insert(codeblockString, at: lowerInt)
@@ -727,87 +727,87 @@ parser = many1 node
 //                        }
 //                    }
 //                })
-//                
+//
 //                attrString.enumerateAttribute(.foregroundColor, in: NSRange(location: 0, length: attrString.length), options: [], using: { color, range, _ in
 //                    attrString.addAttribute(.foregroundColor, value: color ?? foregroundColor, range: range)
 //                })
 //                //let run = attrString.string[String.Index(utf16Offset: range.location, in: attrString.string)..<String.Index(utf16Offset: range.location + range.length, in: attrString.string)]
-//                
+//
 //                var foundEmojiCount = 0
-//                
+//
 //                for match in attrString.string.matches(of: /:(\w{26}):/) {
 //                    let id = match.output.1
-//                    
+//
 //                    let lowerInt = match.range.lowerBound.encodedOffset - (foundEmojiCount * 27)
 //                    let lower = String.Index(encodedOffset: lowerInt)
 //                    let upper = String.Index(encodedOffset: match.range.upperBound.encodedOffset - (foundEmojiCount * 27))
-//                    
+//
 //                    let globalRange = Range(uncheckedBounds: (lower, upper))
-//                    
+//
 //                    attrString.deleteCharacters(in: NSRange(globalRange, in: attrString.string))
-//                    
+//
 //                    let view = EmojiView(imageSize: CGSize(width: fontSize, height: fontSize))
 //                    view.label = UILabel()
 //                    view.label.text = "Hello"
 //                    textview.addSubview(view)
 //                    view.imageView.kf.setImage(with: URL(string: "https://autumn.gangio.chat/emojis/\(id)")!, placeholder: .none)
-//                    
+//
 //                    attrString.insert(NSAttributedString(attachment: SubviewTextAttachment(view: view, size: CGSize(width: fontSize, height: fontSize))), at: lowerInt)
-//                    
+//
 //                    foundEmojiCount += 1
 //                }
-//                
+//
 //                var foundChannelLength = 0
-//                
+//
 //                for match in attrString.string.matches(of: /<#(\w{26})>/) {
 //                    let id = match.output.1
-//                    
+//
 //                    if let channel = viewState.channels[String(id)] {
 //                        let lowerInt = match.range.lowerBound.encodedOffset - foundChannelLength
 //                        let lower = String.Index(encodedOffset: lowerInt)
 //                        let upper = String.Index(encodedOffset: match.range.upperBound.encodedOffset - foundChannelLength)
-//                        
+//
 //                        let globalRange = Range(uncheckedBounds: (lower, upper))
-//                        
+//
 //                        var currentAttrs = attrString.attributes(at: lowerInt, effectiveRange: nil)
-//                        
+//
 //                        currentAttrs[.link] = URL(string: "gangiochat://channels?channel=\(id)")!
 //                        currentAttrs[.backgroundColor] = UIColor.clear.withAlphaComponent(0.1)
-//                        
+//
 //                        let channelName = channel.getName(viewState)
 //                        attrString.deleteCharacters(in: NSRange(globalRange, in: attrString.string))
 //                        attrString.insert(NSAttributedString(string: "#\(channelName)", attributes: currentAttrs), at: lowerInt)
-//                        
+//
 //                        foundChannelLength += 28 - channelName.count
 //                    }
 //                }
-//                
+//
 //                var foundUserCount = 0
-//                
+//
 //                for match in attrString.string.matches(of: /<@(\w{26})>/) {
 //                    let id = match.output.1
-//                    
+//
 //                    if let user = viewState.users[String(id)] {
 //                        let member = currentServer.flatMap { viewState.members[$0]![user.id] }
-//                        
+//
 //                        let lowerInt = match.range.lowerBound.encodedOffset - (foundUserCount * 28)
 //                        let lower = String.Index(encodedOffset: lowerInt)
 //                        let upper = String.Index(encodedOffset: match.range.upperBound.encodedOffset - (foundUserCount * 28))
-//                        
+//
 //                        let globalRange = Range(uncheckedBounds: (lower, upper))
-//                        
+//
 //                        let currentAttrs = attrString.attributes(at: lowerInt, effectiveRange: nil)
 //                        let currentFont = (currentAttrs[.font] ?? font) as! UIFont
-//                        
+//
 //                        attrString.deleteCharacters(in: NSRange(globalRange, in: attrString.string))
-//                        
+//
 //                        let view = UserMentionView() {
 //                            viewState.openUserSheet(user: user, member: member)
 //                        }
-//                        
+//
 //                        view.backgroundColor = viewState.theme.background2.uiColor
 //                        view.layer.cornerRadius = currentFont.pointSize / 2
-//                        
+//
 //                        view.imageView.kf.setImage(
 //                            with: viewState.resolveAvatarUrl(user: user, member: member, masquerade: nil),
 //                            options: [
@@ -815,40 +815,40 @@ parser = many1 node
 //                            ]
 //                        )
 //                        view.imageView.frame = CGRect(x: 0, y: 0, width: currentFont.pointSize, height: currentFont.pointSize)
-//                        
+//
 //                        view.nameView.text = member?.nickname ?? user.display_name ?? user.username
 //                        view.nameView.font = .boldSystemFont(ofSize: currentFont.pointSize)
-//                        
+//
 //                        textview.addSubview(view)
-//                        
+//
 //                        attrString.insert(NSAttributedString(attachment: SubviewTextAttachment(view: view)), at: lowerInt)
-//                        
+//
 //                        foundUserCount += 1
 //                    }
 //                }
-//                
+//
 //                lines.append(attrString)
 //            }
-//            
+//
 //            var attrString = NSMutableAttributedString(attributedString: lines.remove(at: 0))
-//            
+//
 //            for line in lines {
 //                attrString.append(NSAttributedString(string: "\n"))
 //                attrString.append(line)
 //            }
-//            
+//
 //            textview.attributedText = attrString
 //        } else {
 //            textview.attributedText = NSAttributedString()
 //        }
-//        
-//        
+//
+//
 //        InnerContents.recalculateHeight(view: textview, result: $calculatedHeight)
 //    }
-//    
+//
 //    static func recalculateHeight(view: UIView, result: Binding<CGFloat>) {
 //        let newSize = view.sizeThatFits(CGSize(width: view.frame.width, height: .greatestFiniteMagnitude))
-//        
+//
 //        guard result.wrappedValue != newSize.height else { return }
 //        DispatchQueue.main.async { // call in next render cycle.
 //            result.wrappedValue = newSize.height
@@ -1053,7 +1053,7 @@ class UserMentionTapHandler: NSObject {
 let highlighter = Highlightr()!
 
 struct InnerContents: UIViewRepresentable {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.currentServer) var currentServer: Server?
     
     typealias UIViewType = SubviewAttachingTextView
@@ -1151,12 +1151,23 @@ struct InnerContents: UIViewRepresentable {
         context.coordinator.lastFontSize = fontSize
         
         DispatchQueue.main.async {
-            handlers.removeAll()
+            self.handlers.removeAll()
         }
         
-        let attrString = try! NSMutableAttributedString(markdown: content.data(using: .utf8)!, options: .init(allowsExtendedAttributes: true, interpretedSyntax: .full, failurePolicy: .returnPartiallyParsedIfPossible))
+        let targetContent = content
+        let currentFont = self.contentFont
+        let foregroundColor = self.foregroundColor
+        let viewState = self.viewState
+        let currentServer = self.currentServer
         
-        fixAttributedStringStyling(for: attrString)
+        DispatchQueue.global(qos: .userInitiated).async {
+            guard let data = targetContent.data(using: .utf8) else { return }
+            let attrString = (try? NSMutableAttributedString(markdown: data, options: .init(allowsExtendedAttributes: true, interpretedSyntax: .full, failurePolicy: .returnPartiallyParsedIfPossible))) ?? NSMutableAttributedString(string: targetContent)
+            
+            DispatchQueue.main.async {
+                if context.coordinator.lastContent != targetContent { return }
+                
+                self.fixAttributedStringStyling(for: attrString)
         
         var inlinePresentationIntents: [(InlinePresentationIntent, NSRange)] = []
         
@@ -1468,7 +1479,9 @@ struct InnerContents: UIViewRepresentable {
         
         textview.attributedText = attrString
         
-        InnerContents.recalculateHeight(view: textview, result: $calculatedHeight)
+        InnerContents.recalculateHeight(view: textview, result: self.$calculatedHeight)
+            }
+        }
     }
     
     static func recalculateHeight(view: UIView, result: Binding<CGFloat>) {
@@ -1485,7 +1498,7 @@ struct InnerContents: UIViewRepresentable {
 }
 
 struct Contents: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.lineLimit) var lineLimit: Int?
     @Environment(\.multilineTextAlignment) var textAlignment: TextAlignment
     
@@ -1521,7 +1534,7 @@ struct Contents: View {
 }
 
 struct ParserPreview: PreviewProvider {
-    //static let viewState = ViewState.preview().applySystemScheme(theme: .light)
+    //static let viewState = AppViewState.preview().applySystemScheme(theme: .light)
 
     static var previews: some View {
         Text("asd")

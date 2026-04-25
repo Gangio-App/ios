@@ -10,7 +10,7 @@ import SwiftUI
 import ExyteGrid
 
 struct Tile<Body: View>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var title: String
     var content: () -> Body

@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct SessionsSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     @State var sessions: [Session] = []
     @State var isLoading = true

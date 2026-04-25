@@ -3,7 +3,7 @@ import Types
 
 
 struct LogIn: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     @Binding var path: NavigationPath
 
@@ -265,7 +265,7 @@ struct LogIn: View {
 }
 
 struct Mfa: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     @Binding public var path: NavigationPath
     @Binding var ticket: String
@@ -442,5 +442,5 @@ struct PasswordModifier: ViewModifier {
 
 #Preview {
     LogIn(path: .constant(NavigationPath()), mfaTicket: .constant(""), mfaMethods: .constant([]))
-        .environmentObject(ViewState.preview())
+        .environmentObject(AppViewState.preview())
 }

@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 struct CreateServer: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @State var name: String = ""
     
     var body: some View {

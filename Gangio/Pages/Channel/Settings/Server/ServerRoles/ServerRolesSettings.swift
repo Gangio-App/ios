@@ -11,7 +11,7 @@ import SwiftUI
 
 
 struct ServerRolesSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server
     @State var showCreateRole: Bool = false
@@ -63,7 +63,7 @@ struct ServerRolesSettings: View {
 }
 
 struct CreateRoleAlert: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server
     @State var name: String = ""

@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct DMScrollView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var currentChannel: ChannelSelection
     var toggleSidebar: () -> Void
 
@@ -116,7 +116,7 @@ struct DMUtilityRow: View {
 }
 
 struct DMRow: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     let channel: Channel
     let toggleSidebar: () -> Void
     
@@ -146,7 +146,7 @@ struct DMRow: View {
                     Text(channelName)
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                     
-                    if let lastMessage = channel.last_message_id {
+                    if channel.last_message_id != nil {
                         // In a real app we'd fetch the preview, for now just show a status
                         Text("Active conversation")
                             .font(.system(size: 13))
@@ -168,11 +168,9 @@ struct DMRow: View {
 }
 
 
-struct DMScrollView_Previews: PreviewProvider {
-    @StateObject static var viewState = ViewState.preview()
+#Preview {
+    @Previewable @StateObject var viewState = AppViewState.preview()
 
-    static var previews: some View {
-        DMScrollView(currentChannel: $viewState.currentChannel, toggleSidebar: {})
-            .applyPreviewModifiers(withState: viewState)
-    }
+    DMScrollView(currentChannel: $viewState.currentChannel, toggleSidebar: {})
+        .applyPreviewModifiers(withState: viewState)
 }

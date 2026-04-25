@@ -12,6 +12,6 @@
 		<string>RPBroadcastProcessModeSampleBuffer</string>
 	</dict>
 	<key>RTCAppGroupIdentifier</key>
-	<string>group.chat.stoat.app</string>
+	<string>group.chat.gangio.app</string>
 </dict>
 </plist>

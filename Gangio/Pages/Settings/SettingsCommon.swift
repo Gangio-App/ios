@@ -14,7 +14,7 @@ fileprivate struct SettingsFieldTextField: View {
 }
 
 struct SettingFieldNavigationItem: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var includeValueIfAvailable: Bool
 
@@ -24,7 +24,7 @@ struct SettingFieldNavigationItem: View {
 }
 
 struct SettingsSheetContainer<Content: View>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var showSheet: Bool
     @ViewBuilder var sheet: () -> Content
@@ -48,7 +48,7 @@ struct SettingsSheetContainer<Content: View>: View {
 }
 
 struct MaybeDismissableSettingsSheetContainer<Content: View>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var showSheet: Bool
     @Binding var sheetDismissDisabled: Bool
@@ -75,7 +75,7 @@ struct MaybeDismissableSettingsSheetContainer<Content: View>: View {
 
 
 struct CheckboxListItem: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     @State var title: String
     @Binding var isOn: Bool

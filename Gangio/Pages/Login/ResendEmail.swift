@@ -9,7 +9,7 @@ import SwiftUI
 import Types
 
 struct ResendEmail: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     @State var errorMessage: String? = nil
@@ -208,5 +208,5 @@ struct ResendEmail: View {
 
 #Preview {
     ResendEmail()
-        .environmentObject(ViewState.preview())
+        .environmentObject(AppViewState.preview())
 }

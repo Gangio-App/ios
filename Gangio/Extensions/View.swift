@@ -49,7 +49,7 @@ extension View {
     }
     
     @MainActor
-    func applyPreviewModifiers(withState viewState: ViewState) -> some View {
+    func applyPreviewModifiers(withState viewState: AppViewState) -> some View {
         self.environmentObject(viewState)
             .tint(viewState.theme.accent.color)
             .foregroundStyle(viewState.theme.foreground.color)

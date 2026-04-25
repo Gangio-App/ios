@@ -135,8 +135,8 @@ struct UserMaybeMember: Identifiable {
 }
 
 @MainActor
-public class ViewState: ObservableObject {
-    static var shared: ViewState? = nil
+public class AppViewState: ObservableObject {
+    static var shared: AppViewState? = nil
 
 #if os(iOS)
     static var application: UIApplication? = nil
@@ -378,6 +378,10 @@ public class ViewState: ObservableObject {
     @Published var messageSpacing: Double {
         didSet { UserDefaults.standard.set(messageSpacing, forKey: "messageSpacing") }
     }
+    
+    @Published var messageFontSize: Double {
+        didSet { UserDefaults.standard.set(messageFontSize, forKey: "messageFontSize") }
+    }
 
     /// Whether scroll feedback haptics are enabled.
     @Published var scrollHapticEnabled: Bool {
@@ -427,36 +431,37 @@ public class ViewState: ObservableObject {
         launchTransaction = SentrySDK.startTransaction(name: "launch", operation: "launch")
         let decoder = JSONDecoder()
         
-        let apiUrl = ViewState.decodeUserDefaults(forKey: "apiUrl", withDecoder: decoder, defaultingTo: DEFAULT_API_URL)
+        let apiUrl = AppViewState.decodeUserDefaults(forKey: "apiUrl", withDecoder: decoder, defaultingTo: DEFAULT_API_URL)
         self.apiUrl = apiUrl
         
         self.http = HTTPClient(token: nil, baseURL: apiUrl)
         
-        self.apiInfo = ViewState.decodeUserDefaults(forKey: "apiInfo", withDecoder: decoder, defaultingTo: nil)
+        self.apiInfo = AppViewState.decodeUserDefaults(forKey: "apiInfo", withDecoder: decoder, defaultingTo: nil)
         
         self.userSettingsStore = UserSettingsData.maybeRead(viewState: nil)
         self.sessionToken = keychain["sessionToken"]
 
-        self.users = ViewState.decodeUserDefaults(forKey: "users", withDecoder: decoder, defaultingTo: [:])
-        self.servers = ViewState.decodeUserDefaults(forKey: "servers", withDecoder: decoder, defaultingTo: [:])
-        self.channels = ViewState.decodeUserDefaults(forKey: "channels", withDecoder: decoder, defaultingTo: [:])
-        self.messages = ViewState.decodeUserDefaults(forKey: "messages", withDecoder: decoder, defaultingTo: [:])
-        self.channelMessages = ViewState.decodeUserDefaults(forKey: "channelMessages", withDecoder: decoder, defaultingTo: [:])
-        self.members = ViewState.decodeUserDefaults(forKey: "members", withDecoder: decoder, defaultingTo: [:])
-        self.dms = ViewState.decodeUserDefaults(forKey: "dms", withDecoder: decoder, defaultingTo: [])
-        self.emojis = ViewState.decodeUserDefaults(forKey: "emojis", withDecoder: decoder, defaultingTo: [:])
+        self.users = AppViewState.decodeUserDefaults(forKey: "users", withDecoder: decoder, defaultingTo: [:])
+        self.servers = AppViewState.decodeUserDefaults(forKey: "servers", withDecoder: decoder, defaultingTo: [:])
+        self.channels = AppViewState.decodeUserDefaults(forKey: "channels", withDecoder: decoder, defaultingTo: [:])
+        self.messages = AppViewState.decodeUserDefaults(forKey: "messages", withDecoder: decoder, defaultingTo: [:])
+        self.channelMessages = AppViewState.decodeUserDefaults(forKey: "channelMessages", withDecoder: decoder, defaultingTo: [:])
+        self.members = AppViewState.decodeUserDefaults(forKey: "members", withDecoder: decoder, defaultingTo: [:])
+        self.dms = AppViewState.decodeUserDefaults(forKey: "dms", withDecoder: decoder, defaultingTo: [])
+        self.emojis = AppViewState.decodeUserDefaults(forKey: "emojis", withDecoder: decoder, defaultingTo: [:])
         
-        self.currentSelection = ViewState.decodeUserDefaults(forKey: "currentSelection", withDecoder: decoder, defaultingTo: .dms)
-        self.currentChannel = ViewState.decodeUserDefaults(forKey: "currentChannel", withDecoder: decoder, defaultingTo: .home)
-        self.currentLocale = ViewState.decodeUserDefaults(forKey: "locale", withDecoder: decoder, defaultingTo: nil)
+        self.currentSelection = AppViewState.decodeUserDefaults(forKey: "currentSelection", withDecoder: decoder, defaultingTo: .dms)
+        self.currentChannel = AppViewState.decodeUserDefaults(forKey: "currentChannel", withDecoder: decoder, defaultingTo: .home)
+        self.currentLocale = AppViewState.decodeUserDefaults(forKey: "locale", withDecoder: decoder, defaultingTo: nil)
 
         self.currentSessionId = UserDefaults.standard.string(forKey: "currentSessionId")
 
-        self.theme = ViewState.decodeUserDefaults(forKey: "theme", withDecoder: decoder, defaultingTo: .dark)
+        self.theme = AppViewState.decodeUserDefaults(forKey: "theme", withDecoder: decoder, defaultingTo: .dark)
         
-        self.currentUser = ViewState.decodeUserDefaults(forKey: "currentUser", withDecoder: decoder, defaultingTo: nil)
+        self.currentUser = AppViewState.decodeUserDefaults(forKey: "currentUser", withDecoder: decoder, defaultingTo: nil)
 
         self.messageSpacing = UserDefaults.standard.object(forKey: "messageSpacing") as? Double ?? 8.0
+        self.messageFontSize = UserDefaults.standard.object(forKey: "messageFontSize") as? Double ?? 16.0
         self.scrollHapticEnabled = UserDefaults.standard.object(forKey: "scrollHapticEnabled") as? Bool ?? true
         
         self.masterVolume = UserDefaults.standard.object(forKey: "masterVolume") as? Double ?? 1.0
@@ -483,7 +488,7 @@ public class ViewState: ObservableObject {
         self.http.token = self.sessionToken
         
         self.userSettingsStore.viewState = self // this is a cursed workaround
-        ViewState.shared = self
+        AppViewState.shared = self
         
         if let user = self.currentUser {
             SentrySDK.setUser(Sentry.User(userId: user.id))
@@ -497,17 +502,13 @@ public class ViewState: ObservableObject {
         return self
     }
 
-    class func preview() -> ViewState {
-        let this = ViewState()
+    static func preview() -> AppViewState {
+        let this = AppViewState()
         this.state = .connected
-        this.currentUser = User(id: "0", username: "Zomatree", discriminator: "0000", badges: Int.max, status: Status(text: "hello world", presence: .Busy), relationship: .User, profile: Profile(content: "hello world"))
+        this.currentUser = User(id: "0", username: "Zomatree", discriminator: "0000", badges: Int.max, status: Status(text: "hello world", presence: .Online), relationship: .User, profile: Profile(content: "hello world"))
         this.users["0"] = this.currentUser!
         this.users["1"] = User(id: "1", username: "Other Person", discriminator: "0001", profile: Profile(content: "Balls"))
         this.servers["0"] = Server(id: "0", owner: "0", name: "Testing Server", channels: ["0"], default_permissions: Permissions.all, categories: [Types.Category(id: "0", title: "Channels", channels: ["0", "1"])])
-        this.channels["0"] = .text_channel(TextChannel(id: "0", server: "0", name: "General"))
-        this.channels["1"] = .voice_channel(VoiceChannel(id: "1", server: "0", name: "Voice General"))
-        this.channels["2"] = .saved_messages(SavedMessages(id: "2", user: "0"))
-        this.channels["3"] = .dm_channel(DMChannel(id: "3", active: true, recipients: ["0", "1"]))
         this.messages["01HD4VQY398JNRJY60JDY2QHA5"] = Message(id: "01HD4VQY398JNRJY60JDY2QHA5", content: String(repeating: "HelloWorld", count: 100), author: "0", channel: "0", mentions: ["0"])
         this.messages["01HDEX6M2E3SHY8AC2S6B9SEAW"] = Message(id: "01HDEX6M2E3SHY8AC2S6B9SEAW", content: "reply", author: "0", channel: "0", replies: ["01HD4VQY398JNRJY60JDY2QHA5"])
         this.members["0"] = ["0": Member(id: MemberId(server: "0", user: "0"), joined_at: "", can_publish: true, can_receive: true)]
@@ -678,7 +679,7 @@ public class ViewState: ObservableObject {
     func promptForNotifications() async {
         let notificationsGranted = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound, .providesAppNotificationSettings])
         if notificationsGranted != nil && notificationsGranted! {
-            ViewState.application?.registerForRemoteNotifications()
+            AppViewState.application?.registerForRemoteNotifications()
             self.userSettingsStore.store.notifications.rejectedRemoteNotifications = false
         } else {
             self.userSettingsStore.store.notifications.rejectedRemoteNotifications = true
@@ -842,7 +843,7 @@ public class ViewState: ObservableObject {
                 
                 // Re-register for push notifications on reconnect
                 if !isPreview {
-                    ViewState.application?.registerForRemoteNotifications()
+                    AppViewState.application?.registerForRemoteNotifications()
                     
                     // Also re-upload the saved push token to ensure backend has it
                     if let savedToken = AppDelegate.lastPushToken {
@@ -1681,7 +1682,7 @@ extension Dictionary {
 
 extension Channel {
     @MainActor
-    public func getName(_ viewState: ViewState) -> String {
+    public func getName(_ viewState: AppViewState) -> String {
         switch self {
             case .saved_messages(_):
                 return "Saved Messages"
@@ -1700,3 +1701,4 @@ extension Channel {
         }
     }
 }
+

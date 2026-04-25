@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct GroupDMChannelPermissionsSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var initial: GroupDMChannel
     @State var current: GroupDMChannel

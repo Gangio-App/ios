@@ -10,7 +10,7 @@ import Types
 
 
 struct ChannelListItem: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     var server: Server
     var channel: Channel
     
@@ -95,7 +95,7 @@ struct ChannelListItem: View {
                             viewState.openUserSheet(user: user, member: member)
                         } label: {
                             HStack(spacing: 8) {
-                                Avatar(user: user, width: 16, height: 16)
+                                AppAvatar(user: user, width: 16, height: 16)
                                 Text(verbatim: user.display_name ?? user.username)
                                     .font(.caption)
                                 
@@ -184,7 +184,7 @@ struct ChannelListItem: View {
 }
 
 struct CategoryListItem: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var server: Server
     var category: Types.Category
@@ -232,7 +232,7 @@ struct CategoryListItem: View {
 }
 
 struct ServerChannelScrollView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Binding var currentSelection: MainSelection
     @Binding var currentChannel: ChannelSelection
     var toggleSidebar: () -> ()
@@ -326,7 +326,7 @@ struct ServerChannelScrollView: View {
 }
 
 #Preview {
-    let state = ViewState.preview()
+    let state = AppViewState.preview()
     return ServerChannelScrollView(currentSelection: .constant(MainSelection.server("0")), currentChannel: .constant(ChannelSelection.channel("2")), toggleSidebar: {})
         .applyPreviewModifiers(withState: state)
 }

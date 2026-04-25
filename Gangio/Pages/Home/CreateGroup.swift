@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct CreateGroup: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var searchText: String = ""
     @State var selectedUsers: Set<User> = Set()
@@ -49,7 +49,7 @@ struct CreateGroup: View {
 
                     Toggle(isOn: binding) {
                         HStack(spacing: 12) {
-                            Avatar(user: user)
+                            AppAvatar(user: user)
                                 .frame(width: 16, height: 16)
                                 .frame(width: 24, height: 24)
                             
@@ -119,6 +119,6 @@ struct CreateGroup: View {
 #Preview {
     NavigationStack {
         CreateGroup()
-            .applyPreviewModifiers(withState: ViewState.preview())
+            .applyPreviewModifiers(withState: AppViewState.preview())
     }
 }

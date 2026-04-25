@@ -33,7 +33,7 @@ struct TokenResponse: Decodable {
 }
 
 struct VoiceChannelView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     var channel: Channel
 
@@ -104,7 +104,7 @@ struct VoiceChannelView: View {
                                         Spacer()
                                         VStack {
                                             Spacer()
-                                            Avatar(user: user, width: 48, height: 48)
+                                            AppAvatar(user: user, width: 48, height: 48)
                                             Spacer()
                                         }
                                         Spacer()
@@ -144,7 +144,7 @@ struct VoiceChannelView: View {
 //                                            Spacer()
 //                                            VStack {
 //                                                Spacer()
-//                                                Avatar(user: user, width: 48, height: 48)
+//                                                AppAvatar(user: user, width: 48, height: 48)
 //                                                Spacer()
 //                                            }
 //                                            Spacer()
@@ -307,7 +307,7 @@ class VoiceChannelDelegate: RoomDelegate {
 }
 
 #Preview {
-    let state = ViewState.preview()
+    let state = AppViewState.preview()
 
     return VoiceChannelView(channel: state.channels["1"]!, showSidebar: .constant(false))
         .applyPreviewModifiers(withState: state)

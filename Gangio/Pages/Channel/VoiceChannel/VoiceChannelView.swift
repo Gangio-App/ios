@@ -2,7 +2,7 @@
 //  VoiceChannelView.swift
 //  Gangio
 //
-//  Created by Angelo on 29/03/2024.
+//  Created by benyigit on 25/04/2026.
 //
 
 import Foundation
@@ -35,7 +35,7 @@ struct TokenResponse: Decodable {
 }
 
 struct VoiceChannelView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var channel: Channel
     var server: Server?
@@ -48,6 +48,7 @@ struct VoiceChannelView: View {
     @State var unmuted: Bool = false
     @State var defeaned: Bool = false
     @State var screenSharing: Bool = false
+    @State var cameraEnabled: Bool = false
     @State var inCall: Bool = false
     @State var updater: Bool = false
     
@@ -98,7 +99,14 @@ struct VoiceChannelView: View {
                     if let user = viewState.users[identity] {
                         return (participant, user)
                     } else if let metadata = participant.metadata?.data(using: .utf8), let user = try? JSONDecoder().decode(User.self, from: metadata) {
-                        viewState.users[user.id] = user
+                        DispatchQueue.main.async {
+                            if viewState.users[identity] == nil {
+                                viewState.users[identity] = user
+                            }
+                            if viewState.users[user.id] == nil {
+                                viewState.users[user.id] = user
+                            }
+                        }
                         
                         return (participant, user)
                     } else {
@@ -113,9 +121,16 @@ struct VoiceChannelView: View {
                     if let member = viewState.members[server.id]?[user.id] {
                         return member as Member?
                     } else {
+                        DispatchQueue.main.async {
+                            if viewState.members[server.id] == nil {
+                                viewState.members[server.id] = [:]
+                            }
+                        }
                         Task {
                             if let member = try? await viewState.http.fetchMember(server: server.id, member: user.id).get() {
-                                viewState.members[server.id]?[user.id] = member
+                                await MainActor.run {
+                                    viewState.members[server.id]?[user.id] = member
+                                }
                             }
                         }
                         
@@ -139,6 +154,19 @@ struct VoiceChannelView: View {
                     ChannelIcon(channel: channel)
                     Image(systemName: "chevron.right")
                         .frame(height: 4)
+                }
+            } trailing: {
+                Button {
+                    inCall.toggle()
+                } label: {
+                    Text(inCall ? "Leave" : "Join")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(inCall ? viewState.theme.error.color : Color.green)
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
                 }
             }
             
@@ -189,7 +217,7 @@ struct VoiceChannelView: View {
                                 }
                                 
                                 VoiceChannelBox(title: title) {
-                                    Avatar(user: user.user, member: user.member, width: 48, height: 48)
+                                    AppAvatar(user: user.user, member: user.member, width: 48, height: 48)
                                 } trailing: {
                                     if !participant.audioTracks.contains { track in
                                         track.source == .microphone && track.kind == .audio && !track.isMuted
@@ -238,13 +266,19 @@ struct VoiceChannelView: View {
                                 .padding(.vertical, 8)
                         }
                         
-                        Button { inCall.toggle() } label: {
-                            Text(inCall ? "Leave Call" : "Join Call")
-                                .font(.subheadline)
+                        Button {
+                            Task {
+                                if inCall, await AVCaptureDevice.requestAccess(for: .video) {
+                                    cameraEnabled.toggle()
+                                }
+                            }
+                        } label: {
+                            Image(systemName: cameraEnabled ? "video.fill" : "video.slash.fill")
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                         }
-                        .frame(maxWidth: .infinity)
+                        
+                        // Removed Leave/Join call button from here as it's now in the header
                         
                         Button {
                             withAnimation {
@@ -291,23 +325,21 @@ struct VoiceChannelView: View {
         .onChange(of: unmuted, { @MainActor _, unmuted in
             if let room = viewState.currentVoice {
                 Task {
-                    if unmuted {
-                        try! await room.localParticipant.setMicrophone(enabled: true)
-                    } else if let micTrack = room.localParticipant.localAudioTracks.first {
-                        try! await room.localParticipant.unpublish(publication: micTrack)
-                    }
+                    try? await room.localParticipant.setMicrophone(enabled: unmuted)
+                }
+            }
+        })
+        .onChange(of: cameraEnabled, { @MainActor _, cameraEnabled in
+            if let room = viewState.currentVoice {
+                Task {
+                    try? await room.localParticipant.setCamera(enabled: cameraEnabled)
                 }
             }
         })
         .onChange(of: screenSharing, { @MainActor _, screenSharing in
             if let room = viewState.currentVoice {
                 Task {
-                    if screenSharing, await AVAudioApplication.requestRecordPermission() {
-                        try! await room.localParticipant.set(source: .screenShareVideo, enabled: screenSharing, captureOptions: ScreenShareCaptureOptions(useBroadcastExtension: false, includeCurrentApplication: true))
-                    } else if let micTrack = room.localParticipant.localVideoTracks.first {
-                        try! await room.localParticipant.unpublish(publication: micTrack)
-                    }
-
+                    try? await room.localParticipant.setScreenShare(enabled: screenSharing)
                 }
             }
         })
@@ -316,6 +348,10 @@ struct VoiceChannelView: View {
             // resync state when view is reopened
             if viewState.currentVoiceChannel == channel.id {
                 inCall = true
+                if let room = viewState.currentVoice {
+                    room.add(delegate: VoiceChannelDelegate(updater: $updater))
+                    self.updater.toggle() // Force an immediate refresh
+                }
             }
         }
     }
@@ -375,7 +411,7 @@ class VoiceChannelDelegate: RoomDelegate {
 }
 
 #Preview {
-    let state = ViewState.preview()
+    let state = AppViewState.preview()
     
     VoiceChannelView(
         channel: state.channels["1"]!,
@@ -385,3 +421,4 @@ class VoiceChannelDelegate: RoomDelegate {
     )
     .applyPreviewModifiers(withState: state)
 }
+

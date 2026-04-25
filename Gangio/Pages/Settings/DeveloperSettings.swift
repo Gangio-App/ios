@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct DeveloperSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {

@@ -79,7 +79,7 @@ struct PickerEmojiCategory {
 }
 
 @MainActor
-func loadEmojis(withState viewState: ViewState) -> OrderedDictionary<PickerEmojiParent, [PickerEmoji]> {
+func loadEmojis(withState viewState: AppViewState) -> OrderedDictionary<PickerEmojiParent, [PickerEmoji]> {
     let file = Bundle.main.url(forResource: "emoji_15_1_ordering.json", withExtension: nil)!
     let data = try! Data(contentsOf: file)
     
@@ -144,16 +144,19 @@ func convertEmojiToImage(text: String) -> NSImage {
 #endif
 
 struct EmojiPicker: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     var background: AnyView
 
     var onClick: (PickerEmoji) -> ()
 
     @State var scrollPosition: String?
+    @State private var cachedEmojis: OrderedDictionary<PickerEmojiParent, [PickerEmoji]>? = nil
+
+    private var emojis: OrderedDictionary<PickerEmojiParent, [PickerEmoji]> {
+        cachedEmojis ?? [:]
+    }
 
     var body: some View {
-        let emojis = loadEmojis(withState: viewState)
-
         ZStack(alignment: .top) {
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
@@ -244,16 +247,26 @@ struct EmojiPicker: View {
             .background(background)
 
         }
+        .task {
+            // Load emojis in background to avoid freezing the main thread
+            if cachedEmojis == nil {
+                let result = await Task.detached(priority: .userInitiated) {
+                    loadEmojis(withState: viewState)
+                }.value
+                cachedEmojis = result
+            }
+        }
     }
 }
 
 #Preview {
     @FocusState var focused: Bool
     @State var showingSelectEmoji: Bool = false
-    let viewState = ViewState.preview()
+    let viewState = AppViewState.preview()
 
     let box = MessageBox(channel: viewState.channels["0"]!, server: viewState.servers["0"], channelReplies: .constant([]), focusState: $focused, showingSelectEmoji: $showingSelectEmoji, editing: .constant(nil))
     box.showingSelectEmoji = true
 
-    return box.applyPreviewModifiers(withState: ViewState.preview().applySystemScheme(theme: .dark))
+    return box.applyPreviewModifiers(withState: AppViewState.preview().applySystemScheme(theme: .dark))
 }
+

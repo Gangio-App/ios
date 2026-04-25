@@ -9,7 +9,7 @@ import SwiftUI
 import Types
 
 struct ForgotPassword_Reset: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     @State var errorMessage: String? = nil
@@ -201,7 +201,7 @@ struct ForgotPassword_Reset: View {
 }
 
 struct ForgotPassword: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @Environment(\.colorScheme) var colorScheme
     
     @State var errorMessage: String? = nil
@@ -400,6 +400,6 @@ struct ForgotPassword: View {
 #Preview {
     NavigationStack {
         ForgotPassword_Reset(email: "")
-            .environmentObject(ViewState.preview())
+            .environmentObject(AppViewState.preview())
     }
 }

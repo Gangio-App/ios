@@ -51,9 +51,9 @@
 //    }
 //    
 //    var regex: String = "<@([0-9A-HJKMNP-TV-Z]{26})>"
-//    var viewState: ViewState
+//    var viewState: AppViewState
 //    
-//    init(viewState: ViewState) {
+//    init(viewState: AppViewState) {
 //        self.viewState = viewState
 //    }
 //    
@@ -76,7 +76,7 @@
 //}
 //
 //struct Markdown: View {
-//    @EnvironmentObject var viewState: ViewState
+//    @EnvironmentObject var viewState: AppViewState
 //
 //    var text: String
 //    var parser: MarkdownParser {

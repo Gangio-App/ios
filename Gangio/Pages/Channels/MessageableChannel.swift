@@ -16,14 +16,14 @@ struct VisibleKey: PreferenceKey {
 
 @MainActor
 class MessageableChannelViewModel: ObservableObject {
-    @ObservedObject var viewState: ViewState
+    @ObservedObject var viewState: AppViewState
     @Published var channel: Channel
     @Published var server: Server?
     @Binding var messages: [String]
     @Published var replies: [Reply] = []
     @Published var queuedMessages: [QueuedMessage] = []
 
-    init(viewState: ViewState, channel: Channel, server: Server?, messages: Binding<[String]>) {
+    init(viewState: AppViewState, channel: Channel, server: Server?, messages: Binding<[String]>) {
         self.viewState = viewState
         self.channel = channel
         self.server = server
@@ -81,7 +81,7 @@ class MessageableChannelViewModel: ObservableObject {
 }
 
 struct MessageableChannelView: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     @ObservedObject var viewModel: MessageableChannelViewModel
 
     @State var foundAllMessages = false
@@ -325,7 +325,7 @@ struct MessageableChannelView: View {
 }
 
 #Preview {
-    @StateObject var viewState = ViewState.preview()
+    @StateObject var viewState = AppViewState.preview()
     let messages = Binding($viewState.channelMessages["0"])!
 
     return MessageableChannelView(viewModel: .init(viewState: viewState, channel: viewState.channels["0"]!, server: viewState.servers[""], messages: messages), foundAllMessages: true, showSidebar: .constant(false))

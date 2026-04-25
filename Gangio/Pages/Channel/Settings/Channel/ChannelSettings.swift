@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ChannelSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @Binding var server: Server?
     @Binding var channel: Channel
@@ -68,7 +68,7 @@ struct ChannelSettings: View {
 }
 
 #Preview {
-    @StateObject var viewState = ViewState.preview().applySystemScheme(theme: .light)
+    @Previewable @StateObject var viewState = AppViewState.preview().applySystemScheme(theme: .light)
     let channel = Binding($viewState.channels["0"])!
     let server = $viewState.servers["0"]
     

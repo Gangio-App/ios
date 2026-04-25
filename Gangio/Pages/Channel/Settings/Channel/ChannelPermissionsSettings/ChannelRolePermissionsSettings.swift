@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct ChannelRolePermissionsSettings: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     enum Value: Equatable {
         case permission(Permissions)

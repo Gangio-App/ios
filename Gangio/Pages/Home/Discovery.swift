@@ -13,7 +13,7 @@ import Types
 #if os(macOS)
 
 fileprivate struct WebView: NSViewRepresentable {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     let url: URL
     
@@ -33,14 +33,14 @@ fileprivate struct WebView: NSViewRepresentable {
 
 #else
 fileprivate struct WebView: UIViewRepresentable {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     let url: URL
 
     class Delegate: NSObject, WKScriptMessageHandler {
-        var viewState: ViewState
+        var viewState: AppViewState
         
-        init(viewState: ViewState) {
+        init(viewState: AppViewState) {
             self.viewState = viewState
         }
         
@@ -141,7 +141,7 @@ fileprivate struct WebView: UIViewRepresentable {
 #endif
 
 struct Discovery: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     var body: some View {
         WebView(url: URL(string: "https://rvlt.gg/discover?embedded=true")!)

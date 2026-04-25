@@ -11,7 +11,7 @@ import Types
 
 struct HomeWelcome: View {
     @Environment(\.openURL) var openURL: OpenURLAction
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     var toggleSidebar: () -> ()
 
     var body: some View {
@@ -86,7 +86,7 @@ struct HomeWelcome: View {
 }
 
 struct HomeButton<Icon: View>: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var title: String
     var description: String
@@ -125,5 +125,5 @@ struct HomeButton<Icon: View>: View {
 
 #Preview {
     HomeWelcome(toggleSidebar: {})
-        .applyPreviewModifiers(withState: ViewState.preview())
+        .applyPreviewModifiers(withState: AppViewState.preview())
 }

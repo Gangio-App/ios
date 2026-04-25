@@ -11,7 +11,7 @@ import SwiftUI
 
 struct ThemeColorPicker: View {
     @Environment(\.self) var environment
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var title: String
     @Binding var color: ThemeColor
@@ -32,7 +32,7 @@ struct ThemeColorPicker: View {
 struct AppearanceSettings: View {
     @Environment(\.self) var environment
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
 
     var body: some View {
         ScrollView {
@@ -146,6 +146,19 @@ struct AppearanceSettings: View {
                             }
                             Slider(value: $viewState.messageSpacing, in: 2...24, step: 1)
                                 .tint(viewState.theme.accent.color)
+                            
+                            VStack(spacing: 8) {
+                                HStack {
+                                    Text("Font Size")
+                                        .font(.system(size: 16, weight: .medium))
+                                    Spacer()
+                                    Text("\(Int(viewState.messageFontSize)) pt")
+                                        .font(.caption)
+                                        .foregroundStyle(.gray)
+                                }
+                                Slider(value: $viewState.messageFontSize, in: 10...32, step: 1)
+                                    .tint(viewState.theme.accent.color)
+                            }
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
@@ -218,7 +231,7 @@ struct ThemeModeButton: View {
 
 struct AppearanceSettings_Preview: PreviewProvider {
     static var previews: some View {
-        let viewState = ViewState.preview()
+        let viewState = AppViewState.preview()
         
         AppearanceSettings()
         .applyPreviewModifiers(withState: viewState.applySystemScheme(theme: .light))
@@ -227,3 +240,4 @@ struct AppearanceSettings_Preview: PreviewProvider {
         .applyPreviewModifiers(withState: viewState.applySystemScheme(theme: .dark))
     }
 }
+

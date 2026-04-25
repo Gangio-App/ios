@@ -12,7 +12,7 @@ struct ServerScrollView: View {
     let buttonSize = 44.0
     let viewWidth = 60.0
     
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     @State var showAddServerSheet = false
     
@@ -93,7 +93,7 @@ struct ServerScrollView: View {
                     viewState.selectDms()
                 } label: {
                     if viewState.currentUser != nil {
-                        Avatar(user: viewState.currentUser!, width: buttonSize, height: buttonSize, withPresence: true)
+                        AppAvatar(user: viewState.currentUser!, width: buttonSize, height: buttonSize, withPresence: true)
                             .frame(width: buttonSize, height: buttonSize)
                     }
                 }
@@ -112,5 +112,5 @@ struct ServerScrollView: View {
 
 #Preview(traits: .fixedLayout(width: 60, height: 500)) {
     ServerScrollView()
-        .applyPreviewModifiers(withState: ViewState.preview().applySystemScheme(theme: .light))
+        .applyPreviewModifiers(withState: AppViewState.preview().applySystemScheme(theme: .light))
 }

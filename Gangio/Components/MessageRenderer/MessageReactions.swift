@@ -11,7 +11,7 @@ import Flow
 import Types
 
 struct MessageReaction: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var channel: Channel
     var message: Message
@@ -61,7 +61,7 @@ struct MessageReaction: View {
 }
 
 struct MessageReactions: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     
     var channel: Channel
     var message: Message

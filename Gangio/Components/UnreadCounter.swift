@@ -10,7 +10,7 @@ import SwiftUI
 import Types
 
 struct UnreadCounter: View {
-    @EnvironmentObject var viewState: ViewState
+    @EnvironmentObject var viewState: AppViewState
     var unread: UnreadCount
     var mentionSize: CGFloat = 24
     var unreadSize: CGFloat = 8
