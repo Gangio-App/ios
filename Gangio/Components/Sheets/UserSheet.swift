@@ -100,7 +100,7 @@ struct UserSheet: View {
                                     Task { await viewState.http.sendFriendRequest(username: user.username) }
                                 case .Outgoing:
                                     Task { await viewState.http.removeFriend(user: user.id) }
-                                case .Blocked, .BlockedOther:
+                                case .Blocked, .BlockedOther, .Unknown:
                                     break
                                 }
                             } label: {
@@ -411,7 +411,7 @@ struct UserSheet: View {
         case .Friend: return "message.fill"
         case .Incoming, .None: return "plus"
         case .Outgoing: return "xmark"
-        case .Blocked, .BlockedOther: return "nosign"
+        case .Blocked, .BlockedOther, .Unknown: return "nosign"
         }
     }
     
@@ -421,7 +421,7 @@ struct UserSheet: View {
         case .Idle: return .orange
         case .Focus: return .purple
         case .Busy: return .red
-        case .Invisible, .none: return .gray
+        case .Invisible, .none, .some(.Unknown): return .gray
         }
     }
 }

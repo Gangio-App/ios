@@ -68,6 +68,11 @@ struct UserDisplay: View {
                                     .font(.caption)
                                     .foregroundStyle(viewState.theme.foreground2.color)
                                 
+                            case .some(.Unknown):
+                                Text("Unknown")
+                                    .font(.caption)
+                                    .foregroundStyle(viewState.theme.foreground2.color)
+                                
                             case nil:
                                 Text("Offline")
                                     .font(.caption)
