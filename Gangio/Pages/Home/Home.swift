@@ -312,6 +312,17 @@ struct Home: View {
                                 }
                             }
                         
+                        case .dms:
+                            VStack(spacing: 0) {
+                                PageToolbar(toggleSidebar: toggleSidebar) {
+                                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                                        .frame(width: 16, height: 16)
+                                    Text("Direct Messages")
+                                }
+                                DMScrollView(currentChannel: $currentChannel, toggleSidebar: toggleSidebar)
+                            }
+                            .background(viewState.theme.background.color)
+                            
                         case .messages:
                             SearchView()
                             
@@ -420,6 +431,8 @@ struct BottomBar: View {
         switch tab {
         case .servers:
             Image(systemName: isSelected ? "house.fill" : "house")
+        case .dms:
+            Image(systemName: isSelected ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right")
         case .messages:
             Image(systemName: "magnifyingglass")
         case .notifications:
@@ -830,6 +843,11 @@ extension Color {
 
 struct NotificationView: View {
     @EnvironmentObject var viewState: AppViewState
+    @State private var selectedFilter: NotificationFilter = .all
+    
+    enum NotificationFilter {
+        case all, mentions, friendRequests
+    }
     
     struct NotificationItem: Identifiable {
         let id: String
@@ -877,28 +895,54 @@ struct NotificationView: View {
             }
         }
         
-        return items.sorted(by: { $0.date > $1.date })
+        let filtered = items.filter { item in
+            switch selectedFilter {
+            case .all: return true
+            case .mentions: return item.type == .mention
+            case .friendRequests: return item.type == .friendRequest
+            }
+        }
+        
+        return filtered.sorted(by: { $0.date > $1.date })
     }
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            HStack(spacing: 10) {
-                Image("logo_round")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 32, height: 32)
-                    .clipShape(Circle())
-                
-                Text("Activity")
-                    .font(.system(size: 22, weight: .heavy, design: .rounded))
-                    .foregroundStyle(viewState.theme.foreground.color)
+            // Premium Header
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Activity")
+                        .font(.system(size: 28, weight: .black, design: .rounded))
+                        .foregroundStyle(viewState.theme.foreground.color)
+                    
+                    Text("Stay updated with your world")
+                        .font(.system(size: 14))
+                        .foregroundStyle(viewState.theme.foreground3.color)
+                }
                 
                 Spacer()
+                
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(viewState.theme.accent.color)
+                    .padding(10)
+                    .background(viewState.theme.accent.color.opacity(0.1))
+                    .clipShape(Circle())
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+            
+            // Filter Pills
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    FilterPill(title: "All", isSelected: selectedFilter == .all) { selectedFilter = .all }
+                    FilterPill(title: "Mentions", isSelected: selectedFilter == .mentions) { selectedFilter = .mentions }
+                    FilterPill(title: "Requests", isSelected: selectedFilter == .friendRequests) { selectedFilter = .friendRequests }
+                }
+                .padding(.horizontal, 24)
+            }
+            .padding(.bottom, 16)
             
             if notifications.isEmpty {
                 VStack(spacing: 24) {
@@ -907,41 +951,98 @@ struct NotificationView: View {
                     ZStack {
                         Circle()
                             .fill(viewState.theme.accent.color.opacity(0.1))
-                            .frame(width: 110, height: 110)
+                            .frame(width: 120, height: 120)
                         
-                        Image(systemName: "bell.and.waves.left.and.right.fill")
-                            .font(.system(size: 46))
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 40))
                             .foregroundStyle(viewState.theme.accent.color.gradient)
-                            .symbolEffect(.bounce, options: .repeating)
                     }
                     
                     VStack(spacing: 8) {
-                        Text("Quiet for now")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundStyle(viewState.theme.foreground.color)
+                        Text("All caught up!")
+                            .font(.system(size: 20, weight: .bold))
                         
-                        Text("Mentions, friend requests, and invites\nwill appear here.")
-                            .font(.system(size: 15))
-                            .multilineTextAlignment(.center)
+                        Text("Check back later for new notifications.")
+                            .font(.system(size: 14))
                             .foregroundStyle(viewState.theme.foreground3.color)
                     }
                     
                     Spacer()
                 }
-                .frame(maxWidth: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(notifications) { item in
+                    LazyVStack(spacing: 12) {
+                        // Special Friend Requests Section if showing all
+                        if selectedFilter == .all {
+                            let friendRequests = notifications.filter { $0.type == .friendRequest }
+                            if !friendRequests.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    HStack {
+                                        Text("Friend Requests")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundStyle(viewState.theme.foreground3.color)
+                                        
+                                        Spacer()
+                                        
+                                        Text("\(friendRequests.count)")
+                                            .font(.system(size: 12, weight: .bold))
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 2)
+                                            .background(viewState.theme.accent.color)
+                                            .foregroundStyle(.white)
+                                            .clipShape(Capsule())
+                                    }
+                                    .padding(.horizontal, 8)
+                                    
+                                    ForEach(friendRequests) { item in
+                                        NotificationRow(item: item)
+                                    }
+                                }
+                                .padding(.bottom, 8)
+                                
+                                Divider()
+                                    .padding(.bottom, 8)
+                            }
+                        }
+                        
+                        // Remaining notifications
+                        let remaining = selectedFilter == .all ? notifications.filter { $0.type != .friendRequest } : notifications
+                        
+                        ForEach(remaining) { item in
                             NotificationRow(item: item)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
                     .padding(.bottom, 120)
                 }
             }
         }
         .background(viewState.theme.background.color)
+    }
+}
+
+struct FilterPill: View {
+    @EnvironmentObject var viewState: AppViewState
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 14, weight: .bold))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(isSelected ? viewState.theme.accent.color : viewState.theme.background2.color)
+                .foregroundStyle(isSelected ? .white : viewState.theme.foreground2.color)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.clear : viewState.theme.background3.color, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 

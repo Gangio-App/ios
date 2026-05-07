@@ -1,3 +1,10 @@
+//
+//  ViewState.swift
+//  Gangio
+//
+//  Created & Design by github.com/benyigit on 21/04/2026.
+//
+
 import Foundation
 import SwiftUI
 import Alamofire
@@ -79,7 +86,7 @@ struct QueuedMessage {
 }
 
 enum MainTab: String, CaseIterable {
-    case servers, messages, notifications, profile
+    case servers, dms, messages, notifications, profile
 }
 
 enum MainSelection: Hashable, Codable {

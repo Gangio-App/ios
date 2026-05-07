@@ -52,209 +52,221 @@ struct Settings: View {
         let isDark = !Theme.isLightOrDark(viewState.theme.background)
 
         ScrollView {
-            VStack(spacing: 20) {
-
-                    // ── Profile Card ──────────────────────────────────────────
-                    if let user = viewState.currentUser {
+            VStack(spacing: 28) {
+                // Profile Header Card
+                if let user = viewState.currentUser {
+                    VStack(spacing: 0) {
                         NavigationLink(destination: LazyView(ProfileSettings())) {
-                            HStack(spacing: 14) {
-                                AppAvatar(user: user, width: 54, height: 54, withPresence: true)
+                            HStack(spacing: 16) {
+                                AppAvatar(user: user, width: 64, height: 64, withPresence: true)
+                                    .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
 
-                                VStack(alignment: .leading, spacing: 3) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text(user.display_name ?? user.username)
-                                        .font(.system(size: 17, weight: .semibold))
-                                        .foregroundStyle(isDark ? .white : .black)
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundStyle(viewState.theme.foreground.color)
 
                                     Text(user.status?.text?.isEmpty == false
                                          ? user.status!.text!
-                                         : "\(user.username)#\(user.discriminator)")
-                                        .font(.system(size: 13))
-                                        .foregroundStyle(isDark ? .white.opacity(0.55) : .black.opacity(0.45))
+                                         : "@\(user.username)")
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(viewState.theme.foreground3.color)
                                         .lineLimit(1)
                                 }
 
                                 Spacer()
 
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(.secondary.opacity(0.5))
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(viewState.theme.foreground3.color.opacity(0.5))
                             }
-                            .padding(.horizontal, 18)
-                            .padding(.vertical, 14)
-                            .background(cardBackgroundColor)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .padding(20)
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
+                        
+                        Divider().padding(.horizontal, 20)
+                        
+                        // Quick Status Button
+                        Button {
+                            showStatusEditor = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "face.smiling.fill")
+                                    .foregroundStyle(viewState.theme.accent.color)
+                                Text("Set Custom Status")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(viewState.theme.foreground2.color)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                        }
                     }
+                    .background(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(cardBackgroundColor)
+                            .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 5)
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                }
 
-                    // ── Account ───────────────────────────────────────────────
-                    settingsGroup(isDark: isDark, header: "Account", items: [
-                        AnyView(NavigationLink(destination: LazyView(UserSettings())) {
-                            settingsRowContent(icon: "person.badge.key.fill", label: "My Account", color: .blue, isDark: isDark)
-                        }),
-                        AnyView(NavigationLink(destination: LazyView(ProfileSettings())) {
-                            settingsRowContent(icon: "paintpalette.fill", label: "Edit Profile", color: .green, isDark: isDark)
-                        }),
-                        AnyView(NavigationLink(destination: LazyView(SessionsSettings())) {
-                            settingsRowContent(icon: "lock.shield.fill", label: "Sessions", color: Color(hex: "5865F2"), isDark: isDark)
-                        }),
-                    ])
+                // Account Section
+                settingsGroup(header: "Account") {
+                    VStack(spacing: 0) {
+                        SettingsRow(icon: "person.fill", title: "My Account", color: .blue) { UserSettings() }
+                        Divider().padding(.leading, 56)
+                        SettingsRow(icon: "paintpalette.fill", title: "Profile Appearance", color: .purple) { ProfileSettings() }
+                        Divider().padding(.leading, 56)
+                        SettingsRow(icon: "lock.shield.fill", title: "Safety & Sessions", color: .green) { SessionsSettings() }
+                    }
+                }
 
-                    // ── Preferences ───────────────────────────────────────────
-                    settingsGroup(isDark: isDark, header: "Preferences", items: [
-                        AnyView(NavigationLink(destination: LazyView(AppearanceSettings())) {
-                            settingsRowContent(icon: "sparkles", label: "Appearance", color: .orange, isDark: isDark)
-                        }),
-                        AnyView(NavigationLink(destination: LazyView(NotificationSettings())) {
-                            settingsRowContent(icon: "bell.badge.fill", label: "Notifications", color: .red, isDark: isDark)
-                        }),
-                        AnyView(NavigationLink(destination: LazyView(LanguageSettings())) {
-                            settingsRowContent(icon: "character.bubble.fill", label: "Language", color: .teal, isDark: isDark)
-                        }),
-                        AnyView(NavigationLink(destination: LazyView(AudioSettingsView())) {
-                            settingsRowContent(icon: "speaker.wave.3.fill", label: "Voice & Audio", color: Color(hex: "5865F2"), isDark: isDark)
-                        }),
-                    ])
+                // Preferences Section
+                settingsGroup(header: "App Settings") {
+                    VStack(spacing: 0) {
+                        SettingsRow(icon: "sparkles", title: "Appearance", color: .orange) { AppearanceSettings() }
+                        Divider().padding(.leading, 56)
+                        SettingsRow(icon: "speaker.wave.3.fill", title: "Voice & Audio", color: Color(hex: "5865F2")) { AudioSettingsView() }
+                        Divider().padding(.leading, 56)
+                        SettingsRow(icon: "bell.badge.fill", title: "Notifications", color: .red) { NotificationSettings() }
+                        Divider().padding(.leading, 56)
+                        SettingsRow(icon: "character.bubble.fill", title: "Language", color: .teal) { LanguageSettings() }
+                    }
+                }
 
-                    // ── Advanced ──────────────────────────────────────────────
-                    settingsGroup(isDark: isDark, header: "Advanced", items: [
-                        AnyView(NavigationLink(destination: LazyView(BotSettings())) {
-                            settingsRowContent(icon: "cpu.fill", label: "Bots", color: .indigo, isDark: isDark)
-                        }),
-                        AnyView(NavigationLink(destination: LazyView(ExperimentsSettings())) {
-                            settingsRowContent(icon: "testtube.2", label: "Experiments", color: .mint, isDark: isDark)
-                        }),
-                    ])
+                // Advanced Section
+                settingsGroup(header: "Advanced") {
+                    VStack(spacing: 0) {
+                        SettingsRow(icon: "cpu.fill", title: "Developer Tools", color: .indigo) { BotSettings() }
+                        Divider().padding(.leading, 56)
+                        SettingsRow(icon: "testtube.2", title: "Experimental Features", color: .mint) { ExperimentsSettings() }
+                    }
+                }
 
-                    // ── Support ───────────────────────────────────────────────
-                    settingsGroup(isDark: isDark, header: "Support", items: [
-                        AnyView(NavigationLink(destination: LazyView(About())) {
-                            settingsRowContent(icon: "info.circle.fill", label: "About Gangio", color: .gray, isDark: isDark)
-                        }),
-                    ])
+                // Support Section
+                settingsGroup(header: "Support") {
+                    SettingsRow(icon: "info.circle.fill", title: "About Gangio", color: .gray) { About() }
+                }
 
-                    // ── Log Out ───────────────────────────────────────────────
+                // Danger Zone
+                VStack(spacing: 12) {
                     Button(action: { presentLogoutDialog = true }) {
                         HStack {
-                            Spacer()
                             if isLoggingOut {
-                                ProgressView()
+                                ProgressView().tint(.red)
                             } else {
-                                Label("Log Out", systemImage: "rectangle.portrait.and.arrow.right")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundStyle(.red)
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                Text("Log Out")
+                                    .fontWeight(.bold)
                             }
-                            Spacer()
                         }
-                        .padding(.vertical, 15)
-                        .background(cardBackgroundColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color.red.opacity(0.1))
+                        .foregroundStyle(.red)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                        )
                     }
                     .disabled(isLoggingOut)
-                    .padding(.horizontal, 16)
-
-                    // Footer
-                    Text("Gangio iOS • Premium Edition")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary.opacity(0.5))
-                        .padding(.bottom, 32)
+                    
+                    Text("Gangio v1.0.0 (Premium)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(viewState.theme.foreground3.color)
                 }
-            }
-            .background(backgroundColor.ignoresSafeArea())
-            .environment(\.colorScheme, isDark ? .dark : .light)
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .onAppear {
-                if let status = viewState.currentUser?.status {
-                    statusText = status.text ?? ""
-                    selectedPresence = status.presence ?? .Online
-                }
-            }
-            .alert("Log Out", isPresented: $presentLogoutDialog) {
-                Button("Cancel", role: .cancel) {}
-                Button("Log Out", role: .destructive) {
-                    isLoggingOut = true
-                    Task {
-                        let _ = await viewState.signOut()
-                        await MainActor.run { isLoggingOut = false }
-                    }
-                }
-            } message: {
-                Text("Are you sure you want to log out?")
-            }
-            .sheet(isPresented: $showStatusEditor) {
-                StatusEditorSheet(
-                    statusText: $statusText,
-                    selectedPresence: $selectedPresence,
-                    showSheet: $showStatusEditor
-                )
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-            }
-            .task {
-                if let userId = viewState.currentUser?.id {
-                    profile = try? await viewState.http.fetchProfile(user: userId).get()
-                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
         }
-
-    func presenceColor(_ presence: Presence) -> Color {
-        switch presence {
-        case .Online: return .green
-        case .Idle: return .yellow
-        case .Focus: return .blue
-        case .Busy: return .red
-        case .Invisible: return .gray
-        @unknown default: return .gray
+        .background(backgroundColor.ignoresSafeArea())
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
+        .onAppear {
+            if let status = viewState.currentUser?.status {
+                statusText = status.text ?? ""
+                selectedPresence = status.presence ?? .Online
+            }
+        }
+        .alert("Log Out", isPresented: $presentLogoutDialog) {
+            Button("Cancel", role: .cancel) {}
+            Button("Log Out", role: .destructive) {
+                isLoggingOut = true
+                Task {
+                    let _ = await viewState.signOut()
+                    await MainActor.run { isLoggingOut = false }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to log out?")
+        }
+        .sheet(isPresented: $showStatusEditor) {
+            StatusEditorSheet(
+                statusText: $statusText,
+                selectedPresence: $selectedPresence,
+                showSheet: $showStatusEditor
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
     }
 
-    // MARK: - Card group builder
     @ViewBuilder
-    func settingsGroup(isDark: Bool, header: String, items: [AnyView]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    func settingsGroup<Content: View>(header: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text(header.uppercased())
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .padding(.leading, 4)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(viewState.theme.foreground3.color)
+                .padding(.leading, 8)
 
-            VStack(spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    item
-                    if index < items.count - 1 {
-                        Divider().padding(.leading, 60)
-                    }
-                }
-            }
-            .background(cardBackgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            content()
+                .background(cardBackgroundColor)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(color: Color.black.opacity(0.02), radius: 8, x: 0, y: 4)
         }
         .padding(.horizontal, 16)
-    }
-
-    @ViewBuilder
-    func settingsRowContent(icon: String, label: String, color: Color, isDark: Bool) -> some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
-                .background(color)
-                .clipShape(RoundedRectangle(cornerRadius: 7))
-
-            Text(label)
-                .font(.system(size: 16))
-                .foregroundStyle(isDark ? .white : .black)
-
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 13)
     }
 }
+
+struct SettingsRow<Destination: View>: View {
+    @EnvironmentObject var viewState: AppViewState
+    let icon: String
+    let title: String
+    let color: Color
+    @ViewBuilder let destination: () -> Destination
+
+    var body: some View {
+        NavigationLink(destination: LazyView(destination())) {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(color.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(color)
+                }
+
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(viewState.theme.foreground.color)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(viewState.theme.foreground3.color.opacity(0.3))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 
 // MARK: - Audio Settings View
 public struct AudioSettingsView: View {

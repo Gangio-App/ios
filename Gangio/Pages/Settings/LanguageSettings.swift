@@ -2,6 +2,13 @@
 //  LanguageSettings.swift
 //  Gangio
 //
+//  Created & Design by github.com/benyigit on 21/04/2026.
+//
+
+//
+//  LanguageSettings.swift
+//  Gangio
+//
 //  Uses iOS 16+ native per-app language settings (Apple's recommended approach).
 //  The app's language is controlled directly by the OS from Settings > Gangio > Language.
 //  No custom language picker needed — this just redirects the user there.

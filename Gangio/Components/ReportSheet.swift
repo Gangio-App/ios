@@ -2,6 +2,13 @@
 //  ReportSheet.swift
 //  Gangio
 //
+//  Created & Design by github.com/benyigit on 21/04/2026.
+//
+
+//
+//  ReportSheet.swift
+//  Gangio
+//
 //  A unified report sheet matching the web client's report categories.
 //
 

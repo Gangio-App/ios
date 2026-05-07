@@ -1,3 +1,10 @@
+//
+//  Login.swift
+//  Gangio
+//
+//  Created & Design by github.com/benyigit on 21/04/2026.
+//
+
 import SwiftUI
 import Types
 

@@ -20,13 +20,25 @@ struct MessageAttachment: View {
     var body: some View {
         switch attachment.metadata {
             case .image(_):
-                LazyImage(source: .file(attachment), clipTo: RoundedRectangle(cornerRadius: 5))
+                LazyImage(source: .file(attachment), clipTo: RoundedRectangle(cornerRadius: 12))
                     .aspectRatio(contentMode: .fit)
                     .frame(maxHeight: 400)
+                    .contentShape(Rectangle())
                     .onTapGesture {
-                        withAnimation {
+                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                        impact.impactOccurred()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             viewState.fullScreenImage = attachment
                         }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 12, weight: .bold))
+                            .padding(6)
+                            .background(.black.opacity(0.4))
+                            .foregroundStyle(.white)
+                            .clipShape(Circle())
+                            .padding(8)
                     }
 
             case .video(_):
