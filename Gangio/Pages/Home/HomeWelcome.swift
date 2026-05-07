@@ -98,50 +98,48 @@ struct HomeWelcome: View {
                         .padding(.horizontal, 24)
                     }
                     
-                    // Quick Actions Section
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text("Get Started")
-                            .font(.system(size: 18, weight: .bold))
+                    // Quick Actions Grid
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Quick Actions")
+                            .font(.system(size: 14, weight: .black))
+                            .foregroundStyle(viewState.theme.foreground3.color)
+                            .tracking(2)
                             .padding(.horizontal, 24)
                         
-                        VStack(spacing: 12) {
-                            HomeButton(
-                                title: "Discover Communities",
-                                description: "Explore public servers and find your tribe",
-                                iconName: "safari.fill",
-                                color: Color.blue
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                            HomeTile(
+                                title: "Discovery",
+                                icon: "safari.fill",
+                                color: .blue
                             ) {
                                 viewState.path.append(NavigationDestination.discover)
                             }
                             
-                            HomeButton(
-                                title: "Testers Hub",
-                                description: "Join our official server and help us improve",
-                                iconName: "star.bubble.fill",
-                                color: Color.purple
+                            HomeTile(
+                                title: "Testers",
+                                icon: "star.bubble.fill",
+                                color: .purple
                             ) {
                                 viewState.path.append(NavigationDestination.invite("Testers"))
                             }
                             
-                            HomeButton(
-                                title: "Support Gangio",
-                                description: "Help keep the project alive with a donation",
-                                iconName: "heart.circle.fill",
-                                color: Color.pink
+                            HomeTile(
+                                title: "Donate",
+                                icon: "heart.circle.fill",
+                                color: .pink
                             ) {
                                 openURL(URL(string: "https://ko-fi.com/gangiochat")!)
                             }
                             
-                            HomeButton(
-                                title: "App Settings",
-                                description: "Customize your experience and appearance",
-                                iconName: "gearshape.fill",
-                                color: Color.gray
+                            HomeTile(
+                                title: "Settings",
+                                icon: "gearshape.fill",
+                                color: .gray
                             ) {
                                 viewState.path.append(NavigationDestination.settings)
                             }
                         }
-                        .padding(.horizontal, 20)
+                        .padding(.horizontal, 16)
                     }
                     
                     Spacer(minLength: 60)
@@ -153,50 +151,38 @@ struct HomeWelcome: View {
     }
 }
 
-struct HomeButton: View {
+struct HomeTile: View {
     @EnvironmentObject var viewState: AppViewState
     
     var title: String
-    var description: String
-    var iconName: String
+    var icon: String
     var color: Color
     var action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            VStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(color.opacity(0.15))
-                        .frame(width: 48, height: 48)
+                        .frame(width: 44, height: 44)
                     
-                    Image(systemName: iconName)
+                    Image(systemName: icon)
                         .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(color)
                 }
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(viewState.theme.foreground.color)
-                    
-                    Text(description)
-                        .font(.system(size: 13))
-                        .foregroundStyle(viewState.theme.foreground2.color)
-                        .lineLimit(1)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(viewState.theme.foreground2.color.opacity(0.5))
+                Text(title)
+                    .font(.system(size: 14, weight: .black))
+                    .foregroundStyle(viewState.theme.foreground.color)
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(viewState.theme.background2.color)
-                    .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+            .frame(maxWidth: .infinity)
+            .frame(height: 110)
+            .background(viewState.theme.background2.color)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
             )
         }
         .buttonStyle(ScaleButtonStyle())
