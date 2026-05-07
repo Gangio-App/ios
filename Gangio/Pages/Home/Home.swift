@@ -203,9 +203,6 @@ struct Home: View {
                             ZStack(alignment: .topLeading) {
                                 // Sidebar content (servers strip + channels/DMs)
                                 VStack(spacing: 0) {
-                                    // Manual top safe area padding
-                                    Color.clear.frame(height: geometry.safeAreaInsets.top)
-                                    
                                     // Top header: Gangio logo + app name + DM inbox
                                     HStack(spacing: 10) {
                                         Image("logo_round")
@@ -235,7 +232,7 @@ struct Home: View {
                                         }
                                     }
                                     .padding(.horizontal, 16)
-                                    .padding(.top, 4)
+                                    .padding(.top, 8)
                                     .padding(.bottom, 12)
                                     
                                     // Horizontal server strip
@@ -252,7 +249,7 @@ struct Home: View {
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(viewState.theme.background2.color)
+                                .background(viewState.theme.background2.color.ignoresSafeArea(edges: .top))
                                 .onAppear {
                                     calculatedSize = sidebarWidth
                                     // Start with sidebar open (channels visible, chat hidden)
@@ -315,9 +312,14 @@ struct Home: View {
                                 }
                             }
                         
-                        case .dms:
+                        case .voice: // Handle voice tab if it exists
                             VStack(spacing: 0) {
                                 Color.clear.frame(height: geometry.safeAreaInsets.top)
+                                MaybeChannelView(currentChannel: $currentChannel, currentSelection: $currentSelection, toggleSidebar: toggleSidebar, disableScroll: $disableScroll, disableSidebar: $disableSidebar)
+                            }
+                        
+                        case .dms:
+                            VStack(spacing: 0) {
                                 PageToolbar(toggleSidebar: toggleSidebar) {
                                     Image(systemName: "bubble.left.and.bubble.right.fill")
                                         .frame(width: 16, height: 16)
@@ -328,22 +330,13 @@ struct Home: View {
                             .background(viewState.theme.background.color)
                             
                         case .messages:
-                            VStack(spacing: 0) {
-                                Color.clear.frame(height: geometry.safeAreaInsets.top)
-                                SearchView()
-                            }
+                            SearchView()
                             
                         case .notifications:
-                            VStack(spacing: 0) {
-                                Color.clear.frame(height: geometry.safeAreaInsets.top)
-                                NotificationView()
-                            }
+                            NotificationView()
                             
                         case .profile:
-                            VStack(spacing: 0) {
-                                Color.clear.frame(height: geometry.safeAreaInsets.top)
-                                YouView(currentSelection: $currentSelection, currentChannel: $currentChannel)
-                            }
+                            YouView(currentSelection: $currentSelection, currentChannel: $currentChannel)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -355,7 +348,6 @@ struct Home: View {
                     // Tab bar: only hide when inside an active chat channel AND sidebar is closed
                     if !isChatOpen { BottomBar() }
                 }
-                .ignoresSafeArea(edges: .top)
             }
         }
 //            .onChange(of: viewState.currentChannel, { before, after in
@@ -524,9 +516,7 @@ struct YouView: View {
                         // Settings gear on top right of banner
                         HStack {
                             Spacer()
-                            Button {
-                                viewState.path.append(NavigationDestination.settings)
-                            } label: {
+                            NavigationLink(value: NavigationDestination.settings) {
                                 Image(systemName: "gearshape.fill")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(.white)
