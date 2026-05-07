@@ -2,7 +2,7 @@
 //  Home.swift
 //  Gangio
 //
-//  Created by benyigit on 25/04/2026.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 import SwiftUI
 import Types
@@ -144,9 +144,9 @@ struct Home: View {
     let minGestureLength: CGFloat = 35
     let minSwipeVelocity: CGFloat = 200
     let minSnapPercentage: CGFloat = 0.4
-    let sidebarWidthPercentage: CGFloat = 0.85
+    let sidebarWidthPercentage: CGFloat = 1.0 // FULL WIDTH
     let minSidebarWidth: CGFloat = 600
-    let animationStyle: Animation = .spring(response: 0.3, dampingFraction: 0.85)
+    let animationStyle: Animation = .spring(response: 0.20, dampingFraction: 0.85) // Faster chat animation
     
     func toggleSidebar() {
         withAnimation(animationStyle) {
@@ -193,17 +193,52 @@ struct Home: View {
         } else {
             GeometryReader { geometry in
                 let sidebarWidth = geometry.size.width * sidebarWidthPercentage
+                let isDark = !Theme.isLightOrDark(viewState.theme.background)
                 
                 ZStack(alignment: .bottom) {
                     ZStack {
                         switch viewState.selectedTab {
                         case .servers:
-                            // The original sidebar layout for server navigation
+                            // Discord-style layout: top header + horizontal servers + content
                             ZStack(alignment: .topLeading) {
-                                HStack(spacing: 0) {
-                                    ServerScrollView()
-                                        .frame(width: 60)
+                                // Sidebar content (servers strip + channels/DMs)
+                                VStack(spacing: 0) {
+                                    // Top header: Gangio logo + app name + DM inbox
+                                    HStack(spacing: 10) {
+                                        Image("logo_round")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 32, height: 32)
+                                            .clipShape(Circle())
+                                        
+                                        Image("wide")
+                                            .resizable()
+                                            .if(isDark, content: { $0.colorInvert() })
+                                            .scaledToFit()
+                                            .frame(height: 24)
+                                        
+                                        Spacer()
+                                        
+                                        // DM inbox button
+                                        Button {
+                                            viewState.selectedTab = .messages
+                                        } label: {
+                                            Image(systemName: "envelope.fill")
+                                                .font(.system(size: 18))
+                                                .foregroundStyle(viewState.theme.foreground2.color)
+                                                .padding(8)
+                                                .background(viewState.theme.background3.color)
+                                                .clipShape(Circle())
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 8)
+                                    .padding(.bottom, 12)
                                     
+                                    // Horizontal server strip
+                                    HorizontalServerStrip()
+                                    
+                                    // Channel list or DM list
                                     Group {
                                         switch currentSelection {
                                             case .server(_):
@@ -212,23 +247,24 @@ struct Home: View {
                                                 DMScrollView(currentChannel: $currentChannel, toggleSidebar: toggleSidebar)
                                         }
                                     }
-                                    .frame(width: sidebarWidth - 60) // Explicitly set width to prevent layout ambiguity
                                 }
-                                .frame(width: sidebarWidth, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(viewState.theme.background2.color)
                                 .onAppear {
                                     calculatedSize = sidebarWidth
+                                    // Start with sidebar open (channels visible, chat hidden)
+                                    offset = sidebarWidth
                                 }
                                 
+                                // Chat overlay - slides from right
                                 ZStack {
-                                    viewState.theme.messageBox
+                                    viewState.theme.background.color
                                         .offset(x: offset)
-                                        .ignoresSafeArea(.all)
                                     
                                     MaybeChannelView(currentChannel: $currentChannel, currentSelection: $currentSelection, toggleSidebar: toggleSidebar, disableScroll: $disableScroll, disableSidebar: $disableSidebar)
                                         .allowsHitTesting(offset == 0)
                                         .offset(x: offset)
-                                        .shadow(color: .black.opacity(offset > 0 ? 0.3 : 0), radius: 10, x: -5, y: 0) // Aesthetic depth
+                                        .shadow(color: .black.opacity(offset > 0 && offset < sidebarWidth ? (isDark ? 0.4 : 0.15) : 0), radius: 15, x: -5, y: 0)
                                         .onTapGesture {
                                             if offset != 0.0 {
                                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
@@ -238,23 +274,19 @@ struct Home: View {
                                         }
                                 }
                                 .simultaneousGesture(
-                                    DragGesture(minimumDistance: minGestureLength)
+                                    DragGesture(minimumDistance: 25)
                                         .onChanged({ g in
-                                            // Only trigger if swipe is primarily horizontal
-                                            guard abs(g.translation.width) > abs(g.translation.height) else { return }
+                                            if offset == 0 && g.startLocation.x > 25 { return }
+                                            guard abs(g.translation.width) > abs(g.translation.height) * 3 else { return }
                                             
-                                            if g.translation.width >= minGestureLength {
+                                            if g.translation.width >= 25 {
                                                 disableScroll = true
                                             }
-                                            
-                                            // Smooth direct tracking
                                             offset = min(max(g.translation.width, 0), sidebarWidth)
                                         })
                                         .onEnded({ v in
                                             disableScroll = false
                                             let velocity = v.predictedEndLocation.x - v.location.x
-                                            
-                                            // More natural snapping logic
                                             let shouldOpen = offset > (sidebarWidth * 0.35) || velocity > minSwipeVelocity
                                             
                                             withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
@@ -268,33 +300,37 @@ struct Home: View {
                                     isEnabled: !disableSidebar
                                 )
                             }
-                        
-                    case .messages:
-                        VStack(spacing: 0) {
-                            PageToolbar(toggleSidebar: {}) {
-                                Text("Messages").font(.headline)
+                            // When a channel is selected, slide chat in
+                            .onChange(of: currentChannel) { _, newValue in
+                                switch newValue {
+                                case .channel, .force_textchannel, .force_voicechannel:
+                                    withAnimation(.spring(response: 0.20, dampingFraction: 0.85)) {
+                                        offset = .zero
+                                    }
+                                default:
+                                    break
+                                }
                             }
-                            DMScrollView(currentChannel: $currentChannel, toggleSidebar: {})
+                        
+                        case .messages:
+                            SearchView()
+                            
+                        case .notifications:
+                            NotificationView()
+                            
+                        case .profile:
+                            YouView(currentSelection: $currentSelection, currentChannel: $currentChannel)
                         }
-                        
-                    case .notifications:
-                        NotificationView()
-                        
-                    case .profile:
-                        YouView(currentSelection: $currentSelection, currentChannel: $currentChannel)
                     }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea(edges: .bottom)
-                .overlay(alignment: .top) {
-                    GlobalVoiceBanner(currentChannel: $currentChannel, offset: $offset)
-                        .padding(.top, 4) // Top padding to avoid Dynamic Island (SafeArea handles the rest usually, but we can tweak if needed)
-                }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(alignment: .top) {
+                        GlobalVoiceBanner(currentChannel: $currentChannel, offset: $offset)
+                            .padding(.top, 4)
+                    }
 
-                // Tab bar: only hide when inside an active chat channel AND sidebar is closed
-                if !isChatOpen { BottomBar() }
+                    // Tab bar: only hide when inside an active chat channel AND sidebar is closed
+                    if !isChatOpen { BottomBar() }
                 }
-                .ignoresSafeArea(.keyboard)
             }
         }
 //            .onChange(of: viewState.currentChannel, { before, after in
@@ -338,7 +374,10 @@ struct Home: View {
 
 struct BottomBar: View {
     @EnvironmentObject var viewState: AppViewState
-    @Environment(\.colorScheme) var colorScheme
+    
+    private var isDark: Bool {
+        !Theme.isLightOrDark(viewState.theme.background)
+    }
     
     var body: some View {
         HStack(spacing: 0) {
@@ -346,67 +385,62 @@ struct BottomBar: View {
                 Button {
                     let impact = UIImpactFeedbackGenerator(style: .light)
                     impact.impactOccurred()
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         viewState.selectedTab = tab
                     }
                 } label: {
-                    VStack(spacing: 4) {
-                        tabIcon(for: tab)
-                            .font(.system(size: tab == viewState.selectedTab ? 24 : 20, weight: .bold))
-                            .foregroundStyle(viewState.selectedTab == tab ? viewState.theme.accent.color : .gray.opacity(0.7))
-                            .scaleEffect(tab == viewState.selectedTab ? 1.1 : 1.0)
-                        
-                        Text(tabName(for: tab))
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .foregroundStyle(viewState.selectedTab == tab ? viewState.theme.accent.color : .gray.opacity(0.7))
-                    }
-                    .frame(maxWidth: .infinity)
+                    let isSelected = viewState.selectedTab == tab
+                    
+                    // All tabs: Just icons, no text
+                    tabIcon(for: tab, isSelected: isSelected)
+                        .font(.system(size: isSelected ? 24 : 22, weight: isSelected ? .bold : .medium))
+                        .foregroundStyle(isSelected ? viewState.theme.foreground.color : (isDark ? Color.white.opacity(0.5) : Color.black.opacity(0.4)))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                        .contentShape(Rectangle())
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.top, 12)
-        .padding(.bottom, 12) // Balanced padding
-        .background {
-            ZStack {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.15), radius: 20, y: 10)
-                
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(
-                        LinearGradient(colors: [.white.opacity(0.5), .clear], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        lineWidth: 1
-                    )
-            }
-        }
         .padding(.horizontal, 16)
-        .padding(.bottom, 6) // Restored marginal padding so rounded borders aren't clipped by Safe Area
+        .padding(.vertical, 12)
+        .background(
+            viewState.theme.background2.color
+                .ignoresSafeArea(edges: .bottom)
+        )
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundStyle(Color.black.opacity(isDark ? 0.2 : 0.05)),
+            alignment: .top
+        )
     }
     
     @ViewBuilder
-    func tabIcon(for tab: MainTab) -> some View {
+    func tabIcon(for tab: MainTab, isSelected: Bool) -> some View {
         switch tab {
         case .servers:
-            Image(systemName: "circle.grid.2x2.fill")
+            Image(systemName: isSelected ? "house.fill" : "house")
         case .messages:
-            Image(systemName: "bubble.left.and.bubble.right.fill")
+            Image(systemName: "magnifyingglass")
         case .notifications:
-            Image(systemName: "bell.fill")
+            Image(systemName: isSelected ? "bell.fill" : "bell")
         case .profile:
             if let user = viewState.currentUser {
                 AppAvatar(user: user, width: 24, height: 24)
+                    .overlay(
+                        Circle().stroke(isSelected ? .white : .clear, lineWidth: 1.5)
+                    )
             } else {
-                Image(systemName: "person.fill")
+                Image(systemName: isSelected ? "person.fill" : "person")
             }
         }
     }
     
     func tabName(for tab: MainTab) -> String {
         switch tab {
-        case .servers: return "Servers"
-        case .messages: return "Messages"
-        case .notifications: return "Notifications"
+        case .servers: return "Home"
+        case .messages: return "Search"
+        case .notifications: return "Activity"
         case .profile: return "You"
         }
     }
@@ -430,7 +464,7 @@ struct YouView: View {
     }
     
     let bannerGradient = LinearGradient(
-        colors: [Color(hex: "9D4EDD"), Color(hex: "C77DFF")],
+        colors: [Color(hex: "5865F2"), Color(hex: "7289DA")],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
@@ -440,213 +474,239 @@ struct YouView: View {
         ZStack(alignment: .top) {
             backgroundColor.ignoresSafeArea()
             
-            // Subtle gradient for background
-            LinearGradient(colors: [backgroundColor, isDarkTheme ? Color.black.opacity(0.3) : .white.opacity(0.5)], startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-            
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: 0) {
                     let user = viewState.currentUser!
                     
-                    // Top Section: Banner + AppAvatar + Badges + Info
-                    VStack(spacing: 0) {
-                        // Banner Area with Settings Button
-                        ZStack(alignment: .topTrailing) {
-                            if let profile = viewState.profiles[user.id], let banner = profile.background {
-                                LazyImage(source: .file(banner), height: 140, clipTo: Rectangle())
-                            } else {
-                                // Default clean gradient banner
-                                bannerGradient
-                                    .frame(height: 140)
-                            }
-                            
-                            // Settings Button
+                    // ── Banner ──
+                    ZStack(alignment: .top) {
+                        if let profile = viewState.profiles[user.id], let banner = profile.background {
+                            LazyImage(source: .file(banner), height: 150, clipTo: Rectangle())
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .padding(.horizontal, 16)
+                                .padding(.top, 32)
+                        } else {
+                            bannerGradient
+                                .frame(height: 150)
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .padding(.horizontal, 16)
+                                .padding(.top, 32)
+                        }
+                        
+                        // Settings gear on top right of banner
+                        HStack {
+                            Spacer()
                             Button {
                                 viewState.path.append(NavigationDestination.settings)
                             } label: {
                                 Image(systemName: "gearshape.fill")
-                                    .font(.system(size: 20, weight: .bold))
-                                    .foregroundStyle(isDarkTheme ? .white : .black.opacity(0.6))
-                                    .padding(10)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 32, height: 32)
+                                    .background(Circle().fill(Color.black.opacity(0.45)))
                             }
-                            .padding(.top, 16)
-                            .padding(.trailing, 16)
+                            .padding(.trailing, 28)
+                            .padding(.top, 44)
+                        }
+                    }
+                    
+                    // ── Avatar with Status Ring ──
+                    ZStack(alignment: .bottomTrailing) {
+                        ZStack {
+                            Circle()
+                                .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                                .frame(width: 100, height: 100)
+                            
+                            Circle()
+                                .fill(backgroundColor)
+                                .frame(width: 92, height: 92)
+                            
+                            AppAvatar(user: user, width: 86, height: 86, withPresence: false)
+                                .clipShape(Circle())
                         }
                         
-                        // AppAvatar and Badges
-                        HStack(alignment: .bottom) {
-                            AppAvatar(user: user, width: 76, height: 76, withPresence: true)
-                                .offset(y: -24)
-                                .padding(.leading, 20)
-                            
-                            Spacer()
-                            
-                            // Badges Capsule
-                            if let badges = user.badges, badges > 0 {
-                                HStack(spacing: 8) {
-                                    UserBadgeView(badges: badges)
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color.black.opacity(0.2))
-                                .clipShape(Capsule())
-                                .offset(y: -12)
-                                .padding(.trailing, 20)
-                            }
-                        }
-                        
-                        // Name and Status
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(user.username)
-                                .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        // Status indicator dot
+                        Circle()
+                            .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                            .frame(width: 22, height: 22)
+                            .overlay(Circle().stroke(backgroundColor, lineWidth: 3))
+                            .offset(x: -6, y: -6)
+                    }
+                    .frame(width: 100, height: 100)
+                    .offset(y: -50)
+                    .padding(.bottom, -50)
+                    
+                    // ── Display Name ──
+                    VStack(spacing: 6) {
+                        if let display_name = user.display_name, !display_name.isEmpty {
+                            Text(display_name)
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
                                 .foregroundStyle(isDarkTheme ? .white : .black)
-                            
-                            Text(user.display_name ?? user.username)
-                                .font(.system(size: 16))
-                                .foregroundStyle(isDarkTheme ? .white.opacity(0.6) : .black.opacity(0.4))
-                            
-                            HStack(spacing: 8) {
-                                if let status = user.status?.text {
-                                    Image(systemName: "sparkles")
-                                        .foregroundStyle(.purple)
-                                    Text(status)
-                                        .font(.system(size: 17, weight: .medium))
-                                        .foregroundStyle(isDarkTheme ? .white.opacity(0.9) : .black.opacity(0.7))
-                                    Spacer()
-                                    Button {
-                                        // Clear status logic?
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundStyle(isDarkTheme ? .white.opacity(0.3) : .black.opacity(0.3))
-                                    }
-                                } else {
-                                    Text("No status set")
-                                        .italic()
-                                        .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.3))
-                                }
-                            }
-                            .padding(.top, 16)
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 24)
-                        
-                        // Action Buttons
-                        HStack(spacing: 12) {
-                            Button {
-                                showStatusEditor = true
-                            } label: {
-                                Label("Edit Status", systemImage: "bubble.left.fill")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(Color.purple)
-                                    .foregroundStyle(.white)
-                                    .clipShape(Capsule())
-                            }
-                            
-                            Button {
-                                viewState.path.append(NavigationDestination.profile_settings)
-                            } label: {
-                                Label("Edit Profile", systemImage: "pencil")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                    .background(Color.purple)
-                                    .foregroundStyle(.white)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 20)
-                    }
-                    .background(cardBackgroundColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 32))
-                    .padding(.horizontal, 16)
-                    
-                    // About Me Section
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("About Me")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.5))
-                        
-                        if let profile = viewState.profiles[user.id], let bio = profile.content {
-                            Text(bio)
-                                .font(.system(size: 16))
-                                .foregroundStyle(isDarkTheme ? .white.opacity(0.9) : .black.opacity(0.8))
                         } else {
-                            Text("No bio yet.")
-                                .italic()
-                                .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.3))
+                            Text(user.username)
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .foregroundStyle(isDarkTheme ? .white : .black)
                         }
                         
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Gangio Member Since")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(.secondary)
-                            Text(getCreationDate(from: user.id))
-                                .font(.system(size: 16))
-                                .foregroundStyle(.primary)
-                        }
-                        .padding(.top, 10)
+                        Text("@\(user.username)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(isDarkTheme ? .white.opacity(0.6) : .black.opacity(0.4))
                     }
-                    .padding(24)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(cardBackgroundColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 24))
-                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
                     
-                    // Friends Section
-                    Button {
-                        let impact = UIImpactFeedbackGenerator(style: .medium)
-                        impact.impactOccurred()
-                        withAnimation {
-                            viewState.selectedTab = .servers
-                            currentSelection = .dms
-                            currentChannel = .friends
+                    // ── Bio ──
+                    if let profile = viewState.profiles[user.id], let bio = profile.content, !bio.isEmpty {
+                        Text(bio)
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundStyle(isDarkTheme ? .white.opacity(0.7) : .black.opacity(0.6))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                            .padding(.top, 10)
+                    }
+                    
+                    // ── Badges ──
+                    if let badges = user.badges, badges > 0 {
+                        HStack(spacing: 8) {
+                            UserBadgeView(badges: badges)
                         }
-                    } label: {
-                        HStack {
-                            let realFriends = viewState.users.values.filter { $0.relationship == .Friend }
-                            
-                            Text("Your Friends")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(.secondary)
-                            
-                            Spacer()
-                            
-                            HStack(spacing: -14) {
-                                ForEach(realFriends.prefix(5)) { friend in
-                                    AppAvatar(user: friend, width: 34, height: 34)
-                                        .overlay(Circle().stroke(cardBackgroundColor, lineWidth: 2))
+                        .padding(.top, 12)
+                    }
+                    
+                    // ── Status Bubble ──
+                    if let status = user.status?.text, !status.isEmpty {
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(statusColor(for: user.status?.presence))
+                                .frame(width: 10, height: 10)
+                            Text(status)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(isDarkTheme ? .white : .black)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(cardBackgroundColor)
+                        .clipShape(Capsule())
+                        .padding(.top, 12)
+                    }
+                    
+                    // ── Action Buttons ──
+                    HStack(spacing: 12) {
+                        Button {
+                            showStatusEditor = true
+                        } label: {
+                            Text("Edit Status")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color(hex: "5865F2"))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        
+                        Button {
+                            viewState.path.append(NavigationDestination.profile_settings)
+                        } label: {
+                            Text("Edit Profile")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color(hex: "5865F2"))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                    
+                    // ── Cards Section ──
+                    VStack(spacing: 10) {
+                        // Friends
+                        Button {
+                            let impact = UIImpactFeedbackGenerator(style: .medium)
+                            impact.impactOccurred()
+                            withAnimation {
+                                viewState.selectedTab = .servers
+                                currentSelection = .dms
+                                currentChannel = .friends
+                            }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Image(systemName: "person.2.fill")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.4))
+                                    Text("Friends")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.4))
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(isDarkTheme ? .white.opacity(0.3) : .black.opacity(0.2))
                                 }
                                 
-                                if realFriends.count > 5 {
-                                    Circle()
-                                        .fill(Color.gray.opacity(0.3))
-                                        .frame(width: 34, height: 34)
-                                        .overlay(Circle().stroke(cardBackgroundColor, lineWidth: 2))
-                                        .overlay(
-                                            Text("+\(realFriends.count - 5)")
-                                                .font(.system(size: 10, weight: .bold))
-                                                .foregroundStyle(.white)
-                                        )
+                                let realFriends = viewState.users.values.filter { $0.relationship == .Friend }
+                                
+                                HStack(spacing: -10) {
+                                    ForEach(Array(realFriends.prefix(6)), id: \.id) { friend in
+                                        AppAvatar(user: friend, width: 32, height: 32)
+                                            .overlay(Circle().stroke(cardBackgroundColor, lineWidth: 2))
+                                    }
+                                    
+                                    if realFriends.count > 6 {
+                                        Circle()
+                                            .fill(isDarkTheme ? Color.white.opacity(0.15) : Color.black.opacity(0.08))
+                                            .frame(width: 32, height: 32)
+                                            .overlay(Circle().stroke(cardBackgroundColor, lineWidth: 2))
+                                            .overlay(
+                                                Text("+\(realFriends.count - 6)")
+                                                    .font(.system(size: 10, weight: .bold))
+                                                    .foregroundStyle(isDarkTheme ? .white : .black)
+                                            )
+                                    }
+                                }
+                                
+                                Text("\(realFriends.count) friends")
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.4))
+                            }
+                            .padding(16)
+                            .background(cardBackgroundColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // Member Since
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.4))
+                                Text("Member Since")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .textCase(.uppercase)
+                                    .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.4))
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 24) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Gangio")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(isDarkTheme ? .white.opacity(0.5) : .black.opacity(0.4))
+                                    Text(getCreationDate(from: user.id))
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(isDarkTheme ? .white : .black)
                                 }
                             }
-                            .padding(.trailing, 8)
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(.secondary.opacity(0.5))
                         }
-                        .padding(24)
+                        .padding(16)
                         .background(cardBackgroundColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 24))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
-                    .buttonStyle(.plain)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, 120) // More space for bottom bar
+                    .padding(.top, 16)
+                    .padding(.bottom, 120)
                 }
             }
         }
@@ -671,6 +731,16 @@ struct YouView: View {
             }
         }
         .environment(\.colorScheme, isDarkTheme ? .dark : .light)
+    }
+    
+    private func statusColor(for presence: Presence?) -> Color {
+        switch presence {
+        case .Online: return .green
+        case .Idle: return .orange
+        case .Focus: return .purple
+        case .Busy: return .red
+        case .Invisible, .none: return .gray
+        }
     }
 
     func getCreationDate(from id: String) -> String {
@@ -812,53 +882,66 @@ struct NotificationView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            PageToolbar(toggleSidebar: {}) {
-                HStack(spacing: 8) {
-                    Image(systemName: "bell.badge.fill")
-                        .foregroundStyle(.purple)
-                    Text("Activity")
-                        .font(.system(size: 20, weight: .heavy, design: .rounded))
-                }
+            // Header
+            HStack(spacing: 10) {
+                Image("logo_round")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 32, height: 32)
+                    .clipShape(Circle())
+                
+                Text("Activity")
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .foregroundStyle(viewState.theme.foreground.color)
+                
+                Spacer()
             }
-            .background(viewState.theme.background.color)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
             
             if notifications.isEmpty {
                 VStack(spacing: 24) {
+                    Spacer()
+                    
                     ZStack {
                         Circle()
-                            .fill(.purple.opacity(0.1))
-                            .frame(width: 120, height: 120)
+                            .fill(viewState.theme.accent.color.opacity(0.1))
+                            .frame(width: 110, height: 110)
                         
                         Image(systemName: "bell.and.waves.left.and.right.fill")
-                            .font(.system(size: 50))
-                            .foregroundStyle(.purple.gradient)
+                            .font(.system(size: 46))
+                            .foregroundStyle(viewState.theme.accent.color.gradient)
                             .symbolEffect(.bounce, options: .repeating)
                     }
                     
                     VStack(spacing: 8) {
                         Text("Quiet for now")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .foregroundStyle(viewState.theme.foreground.color)
                         
                         Text("Mentions, friend requests, and invites\nwill appear here.")
                             .font(.system(size: 15))
                             .multilineTextAlignment(.center)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(viewState.theme.foreground3.color)
                     }
+                    
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(viewState.theme.background.color)
+                .frame(maxWidth: .infinity)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 1) { // Divider style
+                    LazyVStack(spacing: 8) {
                         ForEach(notifications) { item in
                             NotificationRow(item: item)
-                                .background(viewState.theme.background2.color)
                         }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 120)
                 }
-                .background(viewState.theme.background3.color)
             }
         }
+        .background(viewState.theme.background.color)
     }
 }
 
@@ -871,26 +954,27 @@ struct NotificationRow: View {
             if let user = item.user {
                 AppAvatar(user: user, width: 44, height: 44)
             } else {
-                Circle().fill(.gray.opacity(0.3)).frame(width: 44, height: 44)
+                Circle().fill(viewState.theme.background3.color).frame(width: 44, height: 44)
             }
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(item.user?.username ?? "Unknown")
                         .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(viewState.theme.foreground.color)
                     
                     Spacer()
                     
                     Text(item.date, style: .relative)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(viewState.theme.foreground3.color)
                 }
                 
                 switch item.type {
                 case .friendRequest:
                     Text("sent you a friend request")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(viewState.theme.foreground2.color)
                     
                     HStack(spacing: 8) {
                         Button {
@@ -899,8 +983,8 @@ struct NotificationRow: View {
                             Text("Accept")
                                 .font(.caption.bold())
                                 .padding(.horizontal, 16)
-                                .padding(.vertical, 6)
-                                .background(Color.purple)
+                                .padding(.vertical, 7)
+                                .background(viewState.theme.accent.color)
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
                         }
@@ -911,9 +995,9 @@ struct NotificationRow: View {
                             Text("Ignore")
                                 .font(.caption.bold())
                                 .padding(.horizontal, 16)
-                                .padding(.vertical, 6)
-                                .background(Color.gray.opacity(0.2))
-                                .foregroundStyle(.primary)
+                                .padding(.vertical, 7)
+                                .background(viewState.theme.background3.color)
+                                .foregroundStyle(viewState.theme.foreground.color)
                                 .clipShape(Capsule())
                         }
                     }
@@ -923,18 +1007,18 @@ struct NotificationRow: View {
                     Text("mentioned you: \(item.message ?? "")")
                         .font(.subheadline)
                         .lineLimit(2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(viewState.theme.foreground2.color)
                     
                 case .serverInvite:
                     Text("invited you to a server")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(viewState.theme.foreground2.color)
                 }
             }
         }
-        .padding(12)
+        .padding(14)
         .background(viewState.theme.background2.color)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 
@@ -984,13 +1068,7 @@ struct GlobalVoiceBanner: View {
                         
                         Button {
                             Task {
-                                if let room = viewState.currentVoice {
-                                    await room.disconnect()
-                                    await MainActor.run {
-                                        viewState.currentVoice = nil
-                                        viewState.currentVoiceChannel = nil
-                                    }
-                                }
+                                await viewState.leaveVoice()
                             }
                         } label: {
                             Image(systemName: "phone.down.fill")

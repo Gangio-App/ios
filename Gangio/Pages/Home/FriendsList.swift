@@ -2,7 +2,7 @@
 //  FriendsList.swift
 //  Gangio
 //
-//  Created by Angelo on 14/11/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -185,7 +185,7 @@ struct FriendRow: View {
                 } label: {
                     Image(systemName: "bubble.left.fill")
                         .font(.title3)
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(Color(hex: "5865F2"))
                 }
             }
         }

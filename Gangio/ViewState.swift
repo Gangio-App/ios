@@ -9,6 +9,7 @@ import Types
 import UserNotifications
 import KeychainAccess
 import AudioToolbox
+import AVFoundation
 
 enum UserStateError: Error {
     case signInError
@@ -316,7 +317,13 @@ public class AppViewState: ObservableObject {
     @Published var currentUserSheet: UserMaybeMember? = nil
     @Published var currentVoiceChannel: String? = nil
     @Published var currentVoice: Room? = nil
+    @Published var voiceUpdater: Bool = false
+    var voiceDelegate: PersistentVoiceDelegate?
     @Published var profiles: [String: Profile] = [:]
+    
+    // Global Overlays
+    @Published var fullScreenImage: File? = nil
+    @Published var selectedTrack: VideoTrack? = nil
     @Published var atTopOfChannel: Set<String> = []
 
     func fetchProfile(userId: String) async {
@@ -906,8 +913,12 @@ public class AppViewState: ObservableObject {
                 }
 
                 messages[m.id] = m
-                unreads[m.channel]?.last_id = channelMessages[m.channel]?.last
+                
+                if channelMessages[m.channel] == nil {
+                    channelMessages[m.channel] = []
+                }
                 channelMessages[m.channel]?.append(m.id)
+                unreads[m.channel]?.last_id = m.id
                 
                 // Sound effect for received messages
                 if messageReceivedSoundEnabled && m.author != currentUser?.id {
@@ -1534,6 +1545,58 @@ public class AppViewState: ObservableObject {
         return nil
     }
 
+    @MainActor
+    func joinVoice(channelId: String) async {
+        // If already connected to this channel, don't do anything
+        if currentVoiceChannel == channelId && currentVoice != nil { return }
+        
+        // If connected to a different channel, disconnect first
+        if currentVoice != nil { await leaveVoice() }
+        
+        guard let node = apiInfo?.features.livekit.nodes.first else {
+            print("❌ Error: No LiveKit nodes available")
+            return
+        }
+        
+        do {
+            let token = try await http.joinVoiceChannel(channel: channelId, node: node.name).get()
+            let room = Room(connectOptions: ConnectOptions(autoSubscribe: true))
+            
+            #if os(iOS)
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playAndRecord, mode: .voiceChat, options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP, .mixWithOthers])
+            try? session.setActive(true)
+            #endif
+            
+            // Create a persistent delegate that lives with ViewState, not the view
+            let delegate = PersistentVoiceDelegate(viewState: self)
+            room.add(delegate: delegate)
+            self.voiceDelegate = delegate
+            
+            try await room.connect(url: node.public_url, token: token.token)
+            
+            self.currentVoiceChannel = channelId
+            self.currentVoice = room
+        } catch let error as any Swift.Error {
+            print("❌ Failed to connect to voice channel: \(error)")
+        }
+    }
+    
+    @MainActor
+    func leaveVoice() async {
+        if let room = currentVoice {
+            await room.disconnect()
+            self.voiceDelegate = nil
+            self.currentVoice = nil
+            self.currentVoiceChannel = nil
+            
+            #if os(iOS)
+            let session = AVAudioSession.sharedInstance()
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            #endif
+        }
+    }
+
     func openUserSheet(withId id: String, server: String?) {
         if let user = users[id] {
             let member = server
@@ -1702,3 +1765,53 @@ extension Channel {
     }
 }
 
+// MARK: - Persistent Voice Delegate
+// Lives in AppViewState so it survives view destruction during navigation
+class PersistentVoiceDelegate: RoomDelegate {
+    weak var viewState: AppViewState?
+    
+    init(viewState: AppViewState) {
+        self.viewState = viewState
+    }
+    
+    func roomDidConnect(_ room: Room) {
+        print("✅ Voice room connected")
+    }
+    
+    func roomDidReconnect(_ room: Room) {
+        print("🔄 Voice room reconnected")
+        DispatchQueue.main.async { self.viewState?.voiceUpdater.toggle() }
+    }
+    
+    func roomIsReconnecting(_ room: Room) {
+        print("🔄 Voice room reconnecting...")
+    }
+    
+    func room(_ room: Room, didDisconnectWithError error: LiveKitError?) {
+        print("❌ Voice room disconnected: \(String(describing: error))")
+    }
+    
+    func room(_ room: Room, trackPublication: TrackPublication, didUpdateE2EEState state: E2EEState) {
+        DispatchQueue.main.async { self.viewState?.voiceUpdater.toggle() }
+    }
+    
+    func room(_ room: Room, participantDidConnect participant: RemoteParticipant) {
+        DispatchQueue.main.async { self.viewState?.voiceUpdater.toggle() }
+    }
+    
+    func room(_ room: Room, participantDidDisconnect participant: RemoteParticipant) {
+        DispatchQueue.main.async { self.viewState?.voiceUpdater.toggle() }
+    }
+    
+    func room(_ room: Room, participant: LocalParticipant, didPublishTrack publication: LocalTrackPublication) {
+        DispatchQueue.main.async { self.viewState?.voiceUpdater.toggle() }
+    }
+    
+    func room(_ room: Room, participant: RemoteParticipant, didPublishTrack publication: RemoteTrackPublication) {
+        DispatchQueue.main.async { self.viewState?.voiceUpdater.toggle() }
+    }
+    
+    func room(_ room: Room, participant: Participant, trackPublication: TrackPublication, didUpdateIsMuted isMuted: Bool) {
+        DispatchQueue.main.async { self.viewState?.voiceUpdater.toggle() }
+    }
+}

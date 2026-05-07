@@ -2,7 +2,7 @@
 //  Payloads.swift
 //  Gangio
 //
-//  Created by Tom on 2023-11-13.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -115,6 +115,12 @@ struct PasswordResetPayload: Encodable {
 struct GroupChannelCreate: Encodable {
     var name: String
     var users: [String]
+}
+
+struct CreateServerPayload: Encodable {
+    var name: String
+    var description: String? = nil
+    var icon: String? = nil
 }
 
 struct ServerEdit: Encodable {

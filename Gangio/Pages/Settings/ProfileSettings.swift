@@ -2,7 +2,7 @@
 //  ProfileSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 31/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -77,7 +77,7 @@ struct ProfileSettings: View {
                                     AppAvatar(user: user, width: 80, height: 80, withPresence: false)
                                     
                                     ZStack {
-                                        Circle().fill(Color.purple).frame(width: 28, height: 28)
+                                        Circle().fill(viewState.theme.accent.color).frame(width: 28, height: 28)
                                         if isUploadingAppAvatar {
                                             ProgressView().scaleEffect(0.6).tint(.white)
                                         } else {
@@ -148,7 +148,7 @@ struct ProfileSettings: View {
                                     .foregroundStyle(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
-                                    .background(Color.purple)
+                                    .background(viewState.theme.accent.color)
                                     .cornerRadius(10)
                                     .padding(12)
                             }

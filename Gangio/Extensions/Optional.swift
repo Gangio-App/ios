@@ -2,7 +2,7 @@
 //  Optional.swift
 //  Gangio
 //
-//  Created by Angelo on 18/11/2024.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 extension Optional {

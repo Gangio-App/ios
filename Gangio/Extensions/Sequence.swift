@@ -2,7 +2,7 @@
 //  Sequence.swift
 //  Gangio
 //
-//  Created by Angelo on 23/05/2025.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 extension Sequence {

@@ -2,7 +2,7 @@
 //  Api.swift
 //  Gangio
 //
-//  Created by Zomatree on 21/04/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

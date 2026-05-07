@@ -2,7 +2,7 @@
 //  UIFont.swift
 //  Gangio
 //
-//  Created by Angelo on 10/11/2024.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import UIKit

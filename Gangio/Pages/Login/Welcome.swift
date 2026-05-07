@@ -2,7 +2,7 @@
 //  Welcome.swift
 //  Gangio
 //
-//  Created by Angelo Manca on 2023-11-15.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI

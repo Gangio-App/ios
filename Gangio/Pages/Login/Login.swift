@@ -274,6 +274,8 @@ struct Mfa: View {
     @State var selected: String? = nil
     @State var currentText: String = ""
     @State var error: String? = nil
+    @State var isSubmitting = false
+    @State private var animateGradients = false
     
     @FocusState var textEntryFocus: String?
 
@@ -282,13 +284,13 @@ struct Mfa: View {
     func getMethodDetails(method: String) -> (String, String, String, String, UIKeyboardType) {
         switch method {
             case "Password":
-                return ("lock.fill", "Enter a password", "Enter your saved password.", "Password", .default)
+                return ("lock.shield.fill", "Password", "Enter your account password to verify.", "Password", .default)
             case "Totp":
-                return ("checkmark", "Enter a six-digit code", "Enter the six-digit code from your authenticator app", "Code", .numberPad)
+                return ("key.horizontal.fill", "Authenticator Code", "Enter the 6-digit code from your authenticator app.", "000000", .numberPad)
             case "Recovery":
-                return ("arrow.counterclockwise", "Enter a recovery code", "Enter your backup recovery code", "Recovery code", .default)
+                return ("arrow.counterclockwise", "Recovery Code", "Enter one of your backup recovery codes.", "xxxxx-xxxxx", .default)
             default:
-                return ("questionmark", "Unknown", "Unknown", "Unknown", .default)
+                return ("questionmark", "Unknown", "Unknown method", "Unknown", .default)
         }
     }
     
@@ -306,8 +308,10 @@ struct Mfa: View {
                 return
         }
         
+        isSubmitting = true
         Task {
             await viewState.signIn(mfa_ticket: ticket, mfa_response: [key: currentText], callback: { response in
+                isSubmitting = false
                 switch response {
                     case .Success:
                         path = NavigationPath()
@@ -327,33 +331,80 @@ struct Mfa: View {
     }
     
     var body: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .center, spacing: 16) {
+        ZStack {
+            // Background matching login screen
+            (colorScheme == .light ? Color(hue: 0.62, saturation: 0.02, brightness: 0.98) : Color(hue: 0.62, saturation: 0.1, brightness: 0.05))
+                .ignoresSafeArea()
+            
+            // Animated gradient blobs
+            GeometryReader { proxy in
+                ZStack {
+                    Circle()
+                        .fill(Color(hex: "5865F2").opacity(colorScheme == .light ? 0.12 : 0.20))
+                        .blur(radius: 100)
+                        .frame(width: proxy.size.width * 0.8, height: proxy.size.width * 0.8)
+                        .offset(x: animateGradients ? -proxy.size.width/4 : proxy.size.width/4, y: animateGradients ? -proxy.size.height/5 : proxy.size.height/5)
+                    
+                    Circle()
+                        .fill(Color(hex: "7289DA").opacity(colorScheme == .light ? 0.10 : 0.18))
+                        .blur(radius: 100)
+                        .frame(width: proxy.size.width * 0.7, height: proxy.size.width * 0.7)
+                        .offset(x: animateGradients ? proxy.size.width/3 : -proxy.size.width/3, y: animateGradients ? proxy.size.height/4 : -proxy.size.height/4)
+                }
+            }
+            .ignoresSafeArea()
+            .onAppear {
+                withAnimation(.easeInOut(duration: 6).repeatForever(autoreverses: true)) {
+                    animateGradients.toggle()
+                }
+            }
+            
+            VStack(spacing: 0) {
                 Spacer()
                 
-                Text("One more thing")
-                    .bold()
-                    .font(.title)
+                // Logo + Title
+                VStack(spacing: 14) {
+                    Image("logo_round")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 64, height: 64)
+                        .clipShape(Circle())
+                        .shadow(color: Color(hex: "5865F2").opacity(0.3), radius: 12, y: 4)
+                    
+                    Text("Two-Factor Auth")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(colorScheme == .light ? .black : .white)
+                    
+                    Text("Your account is protected with 2FA.\nChoose a verification method below.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.gray)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.bottom, 28)
                 
-                Spacer()
-                
-                Text("You've got 2FA enabled to keep your account extra-safe.")
-                    .foregroundStyle(.secondary)
-                
-                Spacer()
-                
+                // Error banner
                 if let error {
-                    Text(verbatim: error)
-                        .foregroundStyle(.red)
+                    Text(error)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .background(Color.red.opacity(0.9))
+                        .clipShape(Capsule())
+                        .shadow(color: Color.red.opacity(0.3), radius: 5, y: 3)
+                        .padding(.bottom, 16)
                 }
                 
-                ScrollView {
+                // Method cards
+                VStack(spacing: 12) {
                     ForEach(methods, id: \.self) { method in
                         let (icon, text, desc, placeholder, keyboardType) = getMethodDetails(method: method)
+                        let isExpanded = selected == method
                         
-                        VStack(alignment: .leading) {
+                        VStack(spacing: 0) {
+                            // Method header button
                             Button {
-                                withAnimation {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                     if selected == method {
                                         selected = nil
                                         textEntryFocus = nil
@@ -361,71 +412,115 @@ struct Mfa: View {
                                         selected = method
                                         textEntryFocus = method
                                     }
-                                    
                                     currentText = ""
+                                    error = nil
                                 }
                             } label: {
-                                VStack(alignment: .center, spacing: 12) {
-                                    HStack(alignment: .center, spacing: 16) {
-                                        
+                                HStack(spacing: 14) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(isExpanded ? Color(hex: "5865F2") : Color(hex: "5865F2").opacity(0.12))
+                                            .frame(width: 38, height: 38)
                                         Image(systemName: icon)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 24)
-                                        
-                                        Text(text)
-                                            .bold()
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundStyle(isExpanded ? .white : Color(hex: "5865F2"))
                                     }
                                     
-                                    if selected == method {
-                                        Text(desc)
-                                            .foregroundStyle(.secondary)
-                                        
-                                        VStack(alignment: .leading, spacing: 16) {
+                                    Text(text)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(colorScheme == .light ? .black : .white)
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(.gray)
+                                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                                }
+                                .padding(14)
+                            }
+                            
+                            // Expanded input area
+                            if isExpanded {
+                                VStack(spacing: 14) {
+                                    Text(desc)
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(.gray)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                    
+                                    // Input field
+                                    Group {
+                                        if method == "Password" {
+                                            SecureField(placeholder, text: $currentText)
+                                                .textContentType(.password)
+                                                .focused($textEntryFocus, equals: method)
+                                                .onSubmit(sendMfa)
+                                        } else {
                                             TextField(placeholder, text: $currentText)
                                                 .focused($textEntryFocus, equals: method)
-                                            #if os(iOS)
+                                                #if os(iOS)
                                                 .keyboardType(keyboardType)
-                                            #endif
+                                                #endif
                                                 .textContentType(.oneTimeCode)
                                                 .onSubmit(sendMfa)
-                                            
-                                            Button {
-                                                sendMfa()
-                                            } label: {
-                                                HStack {
-                                                    Spacer()
-                                                    Text("Next")
-                                                    Spacer()
+                                                .onChange(of: currentText) { _, newVal in
+                                                    if method == "Totp" && newVal.count == 6 {
+                                                        sendMfa()
+                                                    }
                                                 }
-                                            }
-                                            .buttonStyle(.borderedProminent)
-                                            .buttonBorderShape(.roundedRectangle(radius: 8))
-                                            .tint(.themePrimary)
                                         }
                                     }
+                                    .padding(14)
+                                    .background(.ultraThinMaterial)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                    )
+                                    .foregroundStyle(colorScheme == .light ? .black : .white)
+                                    
+                                    // Submit button
+                                    Button(action: sendMfa) {
+                                        HStack {
+                                            if isSubmitting {
+                                                ProgressView()
+                                                    .tint(.white)
+                                                    .scaleEffect(0.8)
+                                            } else {
+                                                Text("Verify")
+                                                    .font(.system(size: 16, weight: .bold))
+                                            }
+                                        }
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 14)
+                                                .fill(Color(hex: "5865F2"))
+                                        )
+                                    }
+                                    .disabled(isSubmitting || currentText.isEmpty)
+                                    .opacity(currentText.isEmpty ? 0.6 : 1)
                                 }
-                                .padding(.horizontal, 32)
-                                .padding(.vertical, 16)
+                                .padding(.horizontal, 14)
+                                .padding(.bottom, 14)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
                             }
-                            .background(RoundedRectangle(cornerRadius: 8)
-                                .foregroundStyle(.gray.opacity(0.2))
-                            )
                         }
+                        .background(.ultraThinMaterial)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(isExpanded ? Color(hex: "5865F2").opacity(0.4) : Color.gray.opacity(0.15), lineWidth: 1)
+                        )
+                        .shadow(color: .black.opacity(0.03), radius: 8, y: 4)
                     }
                 }
+                .padding(.horizontal, 24)
                 
                 Spacer()
             }
-            .padding(.horizontal, 24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .foregroundColor((colorScheme == .light) ? Color.black : Color.white)
     }
 }
 

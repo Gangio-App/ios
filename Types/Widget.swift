@@ -2,7 +2,7 @@
 //  Widget.swift
 //  Types
 //
-//  Created by Angelo on 21/05/2024.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

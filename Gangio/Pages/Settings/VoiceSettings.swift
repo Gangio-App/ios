@@ -2,7 +2,7 @@
 //  VoiceSettings.swift
 //  Gangio
 //
-//  Created by Antigravity on 2024-04-18.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI
@@ -78,11 +78,11 @@ public struct AudioSettingsView: View {
                                     HStack(spacing: 14) {
                                         ZStack {
                                             RoundedRectangle(cornerRadius: 10)
-                                                .fill(Color.purple.opacity(0.1))
+                                                .fill(viewState.theme.accent.color.opacity(0.1))
                                                 .frame(width: 32, height: 32)
                                             Image(systemName: "mic.fill")
                                                 .font(.system(size: 14))
-                                                .foregroundColor(.purple)
+                                                .foregroundColor(viewState.theme.accent.color)
                                         }
                                         
                                         VStack(alignment: .leading, spacing: 2) {

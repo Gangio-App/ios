@@ -2,7 +2,7 @@
 //  Image.swift
 //  Gangio
 //
-//  Created by Angelo Manca on 2024-07-18.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

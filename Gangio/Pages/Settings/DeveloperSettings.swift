@@ -2,7 +2,7 @@
 //  DeveloperSettings.swift
 //  Gangio
 //
-//  Created by Angelo Manca on 2024-07-12.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI
@@ -42,7 +42,7 @@ struct DeveloperSettings: View {
 
                 // API Info (read-only)
                 SettingsSectionView(title: "API Info") {
-                    InfoRow(icon: "server.rack", iconColor: .purple, title: "API URL", value: viewState.http.baseURL)
+                    InfoRow(icon: "server.rack", iconColor: viewState.theme.accent.color, title: "API URL", value: viewState.http.baseURL)
                     Divider().padding(.leading, 52)
                     InfoRow(icon: "antenna.radiowaves.left.and.right", iconColor: .green, title: "WS", value: viewState.apiInfo?.ws ?? "N/A")
                 }
@@ -50,7 +50,7 @@ struct DeveloperSettings: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
         }
-        .background(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96))
+        .background(viewState.theme.background.color)
         .toolbarBackground(viewState.theme.topBar, for: .automatic)
         .navigationTitle("Developer")
     }

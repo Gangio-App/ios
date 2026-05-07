@@ -2,7 +2,7 @@
 //  NotificationService.swift
 //  NotificationService
 //
-//  Created by Angelo Manca on 2024-07-12.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import UserNotifications

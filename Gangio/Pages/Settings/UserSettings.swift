@@ -2,7 +2,7 @@
 //  UserSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 2024-02-10.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI
@@ -120,7 +120,7 @@ fileprivate struct CreateMFATicketView: View {
             VStack(spacing: 12) {
                 Image(systemName: requestTicketType == .Password ? "lock.shield.fill" : "key.fill")
                     .font(.system(size: 48))
-                    .foregroundColor(.purple)
+                    .foregroundColor(viewState.theme.accent.color)
                 
                 Text(requestTicketType == .Password ? "Verification Required" : "Enter Code")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -196,7 +196,7 @@ fileprivate struct CreateMFATicketView: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
+                .background(RoundedRectangle(cornerRadius: 12).fill(viewState.theme.accent.color))
             }
             .disabled(isLoading || fieldValue.isEmpty)
         }
@@ -266,7 +266,7 @@ fileprivate struct AddTOTPSheet: View {
                 VStack(spacing: 24) {
                     Image(systemName: "qrcode.viewfinder")
                         .font(.system(size: 48))
-                        .foregroundColor(.purple)
+                        .foregroundColor(viewState.theme.accent.color)
                     
                     Text("Setup Authenticator")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -306,7 +306,7 @@ fileprivate struct AddTOTPSheet: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
+                            .background(RoundedRectangle(cornerRadius: 12).fill(viewState.theme.accent.color))
                     }
                 }
                 .padding(24)
@@ -315,7 +315,7 @@ fileprivate struct AddTOTPSheet: View {
                 VStack(spacing: 24) {
                     Image(systemName: "checkerboard.shield")
                         .font(.system(size: 48))
-                        .foregroundColor(.purple)
+                        .foregroundColor(viewState.theme.accent.color)
                     
                     Text("Verify Authenticator")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -358,7 +358,7 @@ fileprivate struct AddTOTPSheet: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(viewState.theme.accent.color))
                     }
                     .disabled(OTP.count != 6 || isSaving)
                 }
@@ -521,7 +521,7 @@ fileprivate struct UsernameUpdateSheet: View {
             VStack(spacing: 12) {
                 Image(systemName: "person.text.rectangle.fill")
                     .font(.system(size: 48))
-                    .foregroundColor(.purple)
+                    .foregroundColor(viewState.theme.accent.color)
                 
                 Text("Change Username")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -571,7 +571,7 @@ fileprivate struct UsernameUpdateSheet: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
+                .background(RoundedRectangle(cornerRadius: 12).fill(viewState.theme.accent.color))
             }
             .disabled(isSaving || value.isEmpty || password.isEmpty)
             
@@ -609,7 +609,7 @@ fileprivate struct PasswordUpdateSheet: View {
             VStack(spacing: 12) {
                 Image(systemName: "lock.fill")
                     .font(.system(size: 48))
-                    .foregroundColor(.purple)
+                    .foregroundColor(viewState.theme.accent.color)
                 
                 Text("Change Password")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -658,7 +658,7 @@ fileprivate struct PasswordUpdateSheet: View {
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple))
+                .background(RoundedRectangle(cornerRadius: 12).fill(viewState.theme.accent.color))
             }
             .disabled(isSaving || oldPassword.isEmpty || newPassword.isEmpty)
         }
@@ -801,7 +801,7 @@ struct UserSettings: View {
             Section(header: Text("Account Info")) {
                 Button(action: { presentChangeUsernameSheet = true }) {
                     HStack {
-                        Image(systemName: "person.fill").foregroundColor(.purple).frame(width: 24)
+                        Image(systemName: "person.fill").foregroundColor(viewState.theme.accent.color).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Username").font(.body).foregroundColor(.primary)
                             if let user = viewState.userSettingsStore.cache.user {
@@ -818,7 +818,7 @@ struct UserSettings: View {
 
                 Button(action: { presentChangeEmailSheet = true }) {
                     HStack {
-                        Image(systemName: "envelope.fill").foregroundColor(.purple).frame(width: 24)
+                        Image(systemName: "envelope.fill").foregroundColor(viewState.theme.accent.color).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Email").font(.body).foregroundColor(.primary)
                             Text(verbatim: emailSubstitute)
@@ -836,7 +836,7 @@ struct UserSettings: View {
 
                 Button(action: { presentChangePasswordSheet = true }) {
                     HStack {
-                        Image(systemName: "lock.fill").foregroundColor(.purple).frame(width: 24)
+                        Image(systemName: "lock.fill").foregroundColor(viewState.theme.accent.color).frame(width: 24)
                         Text("Change Password").foregroundColor(.primary)
                         Spacer()
                         Image(systemName: "chevron.right").foregroundColor(.gray.opacity(0.5)).font(.system(size: 14))
@@ -919,7 +919,7 @@ struct UserSettings: View {
                 Text("Account Settings")
             }
         }
-        .tint(.purple)
+        .tint(viewState.theme.accent.color)
         .refreshable {
             await viewState.userSettingsStore.fetchFromApi()
         }

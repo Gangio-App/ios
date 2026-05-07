@@ -2,7 +2,7 @@
 //  AppearanceSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 31/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

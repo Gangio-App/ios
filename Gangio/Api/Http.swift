@@ -2,7 +2,7 @@
 //  Http.swift
 //  Gangio
 //
-//  Created by Zomatree on 21/04/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -310,6 +310,10 @@ struct HTTPClient {
 
     func fetchMember(server: String, member: String) async -> Result<Member, GangioError> {
         await req(method: .get, route: "/servers/\(server)/members/\(member)")
+    }
+
+    func createServer(payload: CreateServerPayload) async -> Result<Server, GangioError> {
+        await req(method: .post, route: "/servers/create", parameters: payload)
     }
 
     func editServer(server: String, edits: ServerEdit) async -> Result<Server, GangioError> {

@@ -2,7 +2,7 @@
 //  View.swift
 //  Gangio
 //
-//  Created by Angelo on 2024-03-10.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

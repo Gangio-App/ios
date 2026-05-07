@@ -2,7 +2,7 @@
 //  ServerChannelScrollView.swift
 //  Gangio
 //
-//  Created by Angelo on 2023-11-25.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI
@@ -45,115 +45,142 @@ struct ChannelListItem: View {
     }
     
     var body: some View {
-        let (isMuted, unread, backgroundColor, foregroundColor) = getValues()
+        let (isMuted, unread, _, _) = getValues()
+        let isSelected = viewState.currentChannel.id == channel.id
+        
+        // Determine foreground explicitly for better visibility
+        let channelForeground: Color = {
+            if isSelected || unread != nil {
+                return viewState.theme.foreground.color
+            } else if isMuted {
+                return viewState.theme.foreground3.color.opacity(0.5)
+            } else {
+                return viewState.theme.foreground2.color
+            }
+        }()
         
         Button {
             toggleSidebar()
-            
             viewState.selectChannel(inServer: server.id, withId: channel.id)
         } label: {
-            VStack(alignment: .leading) {
-                HStack {
-                    ChannelIcon(channel: channel)
-                        .fontWeight(.medium)
-                        .opacity(isMuted ? 0.4 : 1)
-                    
-                    Spacer()
-                    
-                    if let unread = unread, !isMuted {
-                        UnreadCounter(unread: unread)
-                            .padding(.trailing)
-                    }
-                }
+            HStack(spacing: 8) {
+                // Channel type icon
+                channelTypeIcon
+                    .font(.system(size: 18))
+                    .foregroundStyle(channelForeground)
+                    .frame(width: 24)
                 
-                if let channelVoiceState = viewState.voiceStates[channel.id] {
-                    ForEach(channelVoiceState.values.compactMap({ participant in
-                        let user = viewState.users[participant.id]
-                        let member = viewState.members[server.id]![participant.id]
-                        
-                        if let user, let member {
-                            return (participant, user, member)
-                        } else {
-                            Task {
-                                if user == nil {
-                                    viewState.users[participant.id] = try! await viewState.http.fetchUser(user: participant.id).get()
-                                }
-                                
-                                if member == nil {
-                                    viewState.members[server.id]![participant.id] = try! await viewState.http.fetchMember(server: server.id, member: participant.id).get()
-                                }
-                                
-                                updateVoiceState.toggle()
-                            }
-                            
-                            return nil
-                        }
-                    }), id: \.0.id) { args in
-                        let (participant, user, member) = args
-                        
-                        Button {
-                            viewState.openUserSheet(user: user, member: member)
-                        } label: {
-                            HStack(spacing: 8) {
-                                AppAvatar(user: user, width: 16, height: 16)
-                                Text(verbatim: user.display_name ?? user.username)
-                                    .font(.caption)
-                                
-                                Spacer()
-                                
-                                if participant.camera {
-                                    Image(systemName: "camera.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 16, height: 16)
-                                }
-                                
-                                if participant.screensharing {
-                                    Image(systemName: "desktopcomputer")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 16, height: 16)
-                                }
-                                
-                                if !(member.can_receive ?? true) {
-                                    Image(systemName: "mic.slash.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 16, height: 16)
-                                        .foregroundStyle(.red)
-                                    
-                                } else if !participant.is_publishing {
-                                    Image(systemName: "mic.slash.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 16, height: 16)
-                                }
-                                
-                                if !(member.can_receive ?? true) {
-                                    Image("headphones.slash")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 16, height: 16)
-                                        .foregroundStyle(.red)
-                                    
-                                } else if !participant.is_receiving {
-                                    Image("headphones.slash")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 16, height: 16)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.leading, 32)
+                // Channel name
+                Text(channel.getName(viewState))
+                    .font(.system(size: 15, weight: isSelected || unread != nil ? .semibold : .regular))
+                    .foregroundStyle(channelForeground)
+                    .lineLimit(1)
+                
+                Spacer()
+                
+                // Unread badge
+                if let unread = unread, !isMuted {
+                    UnreadCounter(unread: unread, mentionSize: 20, unreadSize: 8)
                 }
             }
-            .padding(8)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                isSelected
+                    ? viewState.theme.background4.color.opacity(0.5)
+                    : Color.clear
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            
+            // Voice state participants
+            if let channelVoiceState = viewState.voiceStates[channel.id] {
+                ForEach(channelVoiceState.values.compactMap({ participant in
+                    let user = viewState.users[participant.id]
+                    let member = viewState.members[server.id]![participant.id]
+                    
+                    if let user, let member {
+                        return (participant, user, member)
+                    } else {
+                        Task {
+                            if user == nil {
+                                viewState.users[participant.id] = try! await viewState.http.fetchUser(user: participant.id).get()
+                            }
+                            
+                            if member == nil {
+                                viewState.members[server.id]![participant.id] = try! await viewState.http.fetchMember(server: server.id, member: participant.id).get()
+                            }
+                            
+                            updateVoiceState.toggle()
+                        }
+                        
+                        return nil
+                    }
+                }), id: \.0.id) { args in
+                    let (participant, user, member) = args
+                    
+                    Button {
+                        viewState.openUserSheet(user: user, member: member)
+                    } label: {
+                        HStack(spacing: 8) {
+                            AppAvatar(user: user, width: 16, height: 16)
+                            Text(verbatim: user.display_name ?? user.username)
+                                .font(.caption)
+                                .foregroundStyle(Color(hex: "B9BBBE"))
+                            
+                            Spacer()
+                            
+                            if participant.camera {
+                                Image(systemName: "camera.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 14, height: 14)
+                                    .foregroundStyle(Color(hex: "B9BBBE"))
+                            }
+                            
+                            if participant.screensharing {
+                                Image(systemName: "desktopcomputer")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 14, height: 14)
+                                    .foregroundStyle(Color(hex: "B9BBBE"))
+                            }
+                            
+                            if !(member.can_receive ?? true) {
+                                Image(systemName: "mic.slash.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 14, height: 14)
+                                    .foregroundStyle(.red)
+                                
+                            } else if !participant.is_publishing {
+                                Image(systemName: "mic.slash.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 14, height: 14)
+                                    .foregroundStyle(Color(hex: "72767D"))
+                            }
+                            
+                            if !(member.can_receive ?? true) {
+                                Image("headphones.slash")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 14, height: 14)
+                                    .foregroundStyle(.red)
+                                
+                            } else if !participant.is_receiving {
+                                Image("headphones.slash")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 14, height: 14)
+                                    .foregroundStyle(Color(hex: "72767D"))
+                            }
+                        }
+                    }
+                }
+                .padding(.leading, 40)
+            }
         }
-        .background(backgroundColor)
-        .foregroundStyle(foregroundColor)
-        .clipShape(RoundedRectangle(cornerRadius: 5))
-        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 5))
+        .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 6))
         .contextMenu {
             Button("Mark as read") {
                 Task {
@@ -181,6 +208,22 @@ struct ChannelListItem: View {
             ShareInviteSheet(channel: channel, url: url.url)
         }
     }
+    
+    @ViewBuilder
+    var channelTypeIcon: some View {
+        switch channel {
+        case .text_channel(let tc):
+            if tc.voice != nil {
+                Image(systemName: "speaker.wave.2")
+            } else {
+                Image(systemName: "number")
+            }
+        case .voice_channel:
+            Image(systemName: "speaker.wave.2")
+        default:
+            Image(systemName: "number")
+        }
+    }
 }
 
 struct CategoryListItem: View {
@@ -195,9 +238,10 @@ struct CategoryListItem: View {
     var body: some View {
         let isClosed = viewState.userSettingsStore.store.closedCategories[server.id]?.contains(category.id) ?? false
         
-        VStack(alignment: .leading) {
+        VStack(alignment: .leading, spacing: 2) {
+            // Category header
             Button {
-                withAnimation(.easeInOut) {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     if isClosed {
                         viewState.userSettingsStore.store.closedCategories[server.id]?.remove(category.id)
                     } else {
@@ -205,21 +249,23 @@ struct CategoryListItem: View {
                     }
                 }
             } label: {
-                HStack(spacing: 12) {
+                HStack(spacing: 6) {
                     Image(systemName: "chevron.right")
                         .resizable()
                         .rotationEffect(Angle(degrees: isClosed ? 0 : 90))
                         .scaledToFit()
                         .frame(width: 8, height: 8)
+                        .foregroundStyle(viewState.theme.foreground3.color)
                     
-                    Text(category.title)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(viewState.theme.foreground)
+                    Text(category.title.uppercased())
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(viewState.theme.foreground3.color)
+                        .tracking(0.5)
                     
                     Spacer()
                 }
-                .padding(8)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 10)
             }
             
             if !isClosed {
@@ -260,65 +306,78 @@ struct ServerChannelScrollView: View {
             let nonCategoryChannels = server.channels.filter({ !categoryChannels.contains($0) })
             
             ScrollView {
-                Button {
-                    showServerSheet = true
-                } label: {
-                    ZStack(alignment: .bottomLeading) {
-                        if let banner = server.banner {
-                            LazyImage(source: .file(banner), height: 120, clipTo: Rectangle())
-                                .frame(maxWidth: .infinity)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-                        
-                        HStack(alignment: .center, spacing: 8) {
-                            ServerBadges(value: server.flags)
-                            
-                            Text(server.name)
-                                .fontWeight(.medium)
-                                .foregroundStyle(server.banner != nil ? .white : viewState.theme.foreground.color)
-                            
-                            Spacer()
-                            
-                            if canOpenServerSettings {
-                                NavigationLink(value: NavigationDestination.server_settings(server.id)) {
-                                    Image(systemName: "gearshape.fill")
-                                        .resizable()
-                                        .bold()
-                                        .frame(width: 18, height: 18)
-                                        .foregroundStyle(server.banner != nil ? .white : viewState.theme.foreground.color)
-                                }
+                VStack(alignment: .leading, spacing: 4) {
+                    // Server Banner Card
+                    Button {
+                        showServerSheet = true
+                    } label: {
+                        ZStack(alignment: .top) {
+                            // Banner image
+                            if let banner = server.banner {
+                                LazyImage(source: .file(banner), height: 140, clipTo: Rectangle())
+                                    .frame(maxWidth: .infinity)
+                            } else {
+                                LinearGradient(
+                                    colors: [viewState.theme.accent.color, viewState.theme.accent.color.opacity(0.6)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                                .frame(height: 140)
                             }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
-                        .if(server.banner != nil) { $0.background(
-                            UnevenRoundedRectangle(bottomLeadingRadius: 12, bottomTrailingRadius: 12)
-                                .foregroundStyle(LinearGradient(colors: [Color(red: 32/255, green: 26/255, blue: 25/255, opacity: 0.5), .clear], startPoint: .bottom, endPoint: .top))
+                            
+                            // Top subtle shadow gradient for text readability
+                            LinearGradient(
+                                colors: [.black.opacity(0.6), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
                             )
-                        }
-                    }
-                    .padding(.bottom, 10)
-                }
-                .padding(.bottom, 10)
-
+                            .frame(height: 64)
+                            
+                            // Top overlay: name (top-left) + 3-dot (top-right)
+                            HStack(alignment: .top, spacing: 6) {
+                                // Server badge/icon
+                                ServerBadges(value: server.flags)
                                 
-                ForEach(nonCategoryChannels.compactMap({ viewState.channels[$0] })) { channel in
-                    ChannelListItem(server: server, channel: channel, toggleSidebar: toggleSidebar)
+                                // Server name
+                                Text(server.name)
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(.white) // White text for overlay
+                                    .lineLimit(1)
+                                
+                                Spacer()
+                                
+                                // 3-dot menu
+                                Image(systemName: "ellipsis")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 14)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .padding(.bottom, 16)
+                    
+                    // Non-category channels
+                    ForEach(nonCategoryChannels.compactMap({ viewState.channels[$0] })) { channel in
+                        ChannelListItem(server: server, channel: channel, toggleSidebar: toggleSidebar)
+                    }
+                    
+                    // Categories
+                    ForEach(server.categories ?? []) { category in
+                        CategoryListItem(server: server, category: category, toggleSidebar: toggleSidebar)
+                    }
+                    
+                    // Buffer to prevent BottomBar overlap
+                    Spacer()
+                        .frame(height: 120)
                 }
-                
-                ForEach(server.categories ?? []) { category in
-                    CategoryListItem(server: server, category: category, toggleSidebar: toggleSidebar)
-                }
-                
-                // Buffer to prevent BottomBar overlap
-                Spacer()
-                    .frame(height: 120)
+                .padding(.horizontal, 16)
+                .padding(.top, 24)
             }
-            .padding(.horizontal, 8)
             .scrollContentBackground(.hidden)
             .scrollIndicators(.hidden)
-            .background(viewState.theme.background2.color)
+            .background(Color.clear)
             .sheet(isPresented: $showServerSheet) {
                 ServerInfoSheet(server: server)
                     .presentationBackground(viewState.theme.background)

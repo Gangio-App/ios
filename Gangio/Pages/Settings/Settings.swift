@@ -2,7 +2,7 @@
 //  Settings.swift
 //  Gangio
 //
-//  Created by Angelo on 18/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -98,7 +98,7 @@ struct Settings: View {
                             settingsRowContent(icon: "paintpalette.fill", label: "Edit Profile", color: .green, isDark: isDark)
                         }),
                         AnyView(NavigationLink(destination: LazyView(SessionsSettings())) {
-                            settingsRowContent(icon: "lock.shield.fill", label: "Sessions", color: .purple, isDark: isDark)
+                            settingsRowContent(icon: "lock.shield.fill", label: "Sessions", color: Color(hex: "5865F2"), isDark: isDark)
                         }),
                     ])
 
@@ -114,7 +114,7 @@ struct Settings: View {
                             settingsRowContent(icon: "character.bubble.fill", label: "Language", color: .teal, isDark: isDark)
                         }),
                         AnyView(NavigationLink(destination: LazyView(AudioSettingsView())) {
-                            settingsRowContent(icon: "speaker.wave.3.fill", label: "Voice & Audio", color: .purple, isDark: isDark)
+                            settingsRowContent(icon: "speaker.wave.3.fill", label: "Voice & Audio", color: Color(hex: "5865F2"), isDark: isDark)
                         }),
                     ])
 
@@ -327,11 +327,11 @@ public struct AudioSettingsView: View {
                                     HStack(spacing: 14) {
                                         ZStack {
                                             RoundedRectangle(cornerRadius: 10)
-                                                .fill(Color.purple.opacity(0.1))
+                                                .fill(viewState.theme.accent.color.opacity(0.1))
                                                 .frame(width: 32, height: 32)
                                             Image(systemName: "mic.fill")
                                                 .font(.system(size: 14))
-                                                .foregroundColor(.purple)
+                                                .foregroundColor(Color(hex: "5865F2"))
                                         }
                                         
                                         VStack(alignment: .leading, spacing: 2) {
@@ -484,7 +484,7 @@ struct StatusEditorSheet: View {
                                         Spacer()
                                         if selectedPresence == option.0 {
                                             Image(systemName: "checkmark")
-                                                .foregroundColor(.purple)
+                                                .foregroundColor(Color(hex: "5865F2"))
                                                 .font(.system(size: 14, weight: .bold))
                                         }
                                     }
@@ -533,7 +533,7 @@ struct StatusEditorSheet: View {
                             Spacer()
                         }
                         .padding(.vertical, 16)
-                        .background(Color.purple)
+                        .background(Color(hex: "5865F2"))
                         .foregroundColor(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .padding(.horizontal, 16)
@@ -550,7 +550,7 @@ struct StatusEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { showSheet = false }
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(Color(hex: "5865F2"))
                 }
             }
         }

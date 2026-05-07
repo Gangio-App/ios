@@ -2,12 +2,105 @@
 //  ServerScrollView.swift
 //  Gangio
 //
-//  Created by Angelo Manca on 2023-11-25.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI
 import Types
 
+// MARK: - Horizontal Server Strip (Discord-style top row)
+struct HorizontalServerStrip: View {
+    @EnvironmentObject var viewState: AppViewState
+    let iconSize: CGFloat = 54
+    
+    @State var showAddServerSheet = false
+    
+    private var isDark: Bool {
+        !Theme.isLightOrDark(viewState.theme.background)
+    }
+    
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                // DMs / Home button
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        viewState.selectDms()
+                    }
+                } label: {
+                    let isSelected = viewState.currentSelection == .dms
+                    ZStack {
+                        Circle()
+                            .fill(isSelected ? viewState.theme.accent.color : viewState.theme.background3.color)
+                            .frame(width: iconSize, height: iconSize)
+                        
+                        Image(systemName: "bubble.left.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(isSelected ? .white : viewState.theme.foreground2.color)
+                    }
+                    .overlay(
+                        Circle()
+                            .stroke(isSelected ? viewState.theme.accent.color.opacity(0.6) : .clear, lineWidth: 2.5)
+                            .frame(width: iconSize + 4, height: iconSize + 4)
+                    )
+                }
+                
+                // Server icons
+                ForEach(viewState.servers.elements, id: \.key) { elem in
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            viewState.selectServer(withId: elem.key)
+                        }
+                    } label: {
+                        let isSelected = viewState.currentSelection == .server(elem.key)
+                        
+                        ZStack(alignment: .topTrailing) {
+                            ServerIcon(
+                                server: elem.value,
+                                height: iconSize,
+                                width: iconSize,
+                                clipTo: Circle()
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(isSelected ? viewState.theme.accent.color.opacity(0.8) : .clear, lineWidth: 2.5)
+                                    .frame(width: iconSize + 4, height: iconSize + 4)
+                            )
+                            
+                            // Unread badge
+                            if let unread = viewState.getUnreadCountFor(server: elem.value) {
+                                UnreadCounter(unread: unread, mentionSize: 18, unreadSize: 8)
+                                    .offset(x: 4, y: -4)
+                            }
+                        }
+                    }
+                }
+                
+                // + Add server button (always at end)
+                Button {
+                    showAddServerSheet.toggle()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(viewState.theme.background3.color)
+                            .frame(width: iconSize, height: iconSize)
+                        
+                        Image(systemName: "plus")
+                            .font(.system(size: 24, weight: .medium))
+                            .foregroundStyle(viewState.theme.accent.color)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .sheet(isPresented: $showAddServerSheet) {
+            AddServerSheet()
+        }
+    }
+}
+
+// MARK: - Legacy vertical ServerScrollView (kept for iPad/Mac)
 struct ServerScrollView: View {
     let buttonSize = 44.0
     let viewWidth = 60.0

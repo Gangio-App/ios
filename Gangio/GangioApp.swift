@@ -1,6 +1,8 @@
 import SwiftUI
 import Sentry
 import Types
+import LiveKit
+import LiveKitComponents
 
 let DEFAULT_API_URL: String = "https://gangio.pro/api"
 
@@ -143,6 +145,86 @@ struct ApplicationSwitcher: View {
                         banner = after
                     }
                 })
+                .overlay {
+                    // Global Full Screen Image Viewer
+                    if let file = viewState.fullScreenImage {
+                        ZStack {
+                            Color.black.ignoresSafeArea()
+                            
+                            LazyImage(source: .file(file), clipTo: Rectangle())
+                                .aspectRatio(contentMode: .fit)
+                                .ignoresSafeArea()
+                            
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    Button {
+                                        withAnimation {
+                                            viewState.fullScreenImage = nil
+                                        }
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 20, weight: .bold))
+                                            .foregroundStyle(.white)
+                                            .padding(12)
+                                            .background(Circle().fill(Color.black.opacity(0.6)))
+                                    }
+                                    .padding(20)
+                                }
+                                Spacer()
+                                
+                                // Download button
+                                Button {
+                                    // TODO: Implement save to photos
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "square.and.arrow.down")
+                                        Text("Save Image")
+                                    }
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .background(Capsule().fill(Color.white.opacity(0.2)))
+                                }
+                                .padding(.bottom, 40)
+                            }
+                        }
+                        .transition(.opacity)
+                        .zIndex(200)
+                    }
+                    
+                    // Global Full Screen Video Stream Viewer
+                    if let track = viewState.selectedTrack {
+                        ZStack {
+                            Color.black.ignoresSafeArea()
+                            
+                            SwiftUIVideoView(track, layoutMode: .fit)
+                                .ignoresSafeArea()
+                            
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    Button {
+                                        withAnimation {
+                                            viewState.selectedTrack = nil
+                                        }
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 20, weight: .bold))
+                                            .foregroundStyle(.white)
+                                            .padding(12)
+                                            .background(Circle().fill(Color.black.opacity(0.6)))
+                                    }
+                                    .padding(20)
+                                }
+                                Spacer()
+                            }
+                        }
+                        .transition(.opacity)
+                        .zIndex(201)
+                    }
+                }
         } else {
             Welcome(wasSignedOut: $wasSignedOut)
                 .transition(.slideNext)
@@ -227,18 +309,17 @@ struct InnerApp: View {
                 }
             }
         }
-        }
     }
 }
 
 struct MainApp: View {
     @EnvironmentObject var viewState: AppViewState
-    #if !DEBUG
+#if !DEBUG
     @State var alphaAlert = true
-    #else
+#else
     @State var alphaAlert = false
-    #endif
-
+#endif
+    
     var currentServer: Server? {
         if let id = viewState.currentSelection.id {
             return viewState.servers[id]
@@ -263,45 +344,43 @@ struct MainApp: View {
         })
         .navigationDestination(for: NavigationDestination.self) { dest in
             switch dest {
-                case .channel_info(let id):
-                    let channel = Binding($viewState.channels[id])!
-                    ChannelInfo(channel: channel)
-                case .channel_settings(let id):
-                    let channel = Binding($viewState.channels[id])!
-                    let server = channel.wrappedValue.server.map { $viewState.servers[$0] } ?? .constant(nil)
-                    
-                    ChannelSettings(server: server, channel: channel)
-                case .discover:
-                    Discovery()
-                case .server_settings(let id):
-                    let server = Binding($viewState.servers[id])!
-                    ServerSettings(server: server)
-                case .settings:
-                    Settings()
-                case .add_friend:
-                    AddFriend()
-                case .create_group(let initial_users):
-                    CreateGroup(selectedUsers: Set(initial_users.compactMap { viewState.users[$0] }))
-                case .create_server:
-                    CreateServer()
-                case .channel_search(let id):
-                    let channel = Binding($viewState.channels[id])!
-                    ChannelSearch(channel: channel)
-                case .invite(let code):
-                    ViewInvite(code: code)
-                case .channel_pins(let id):
-                    let channel = Binding($viewState.channels[id])!
-                    ChannelPins(channel: channel)
-                case .profile_settings:
-                    ProfileSettings()
-                case .status_settings:
-                    Settings() // For now, status editor is a sheet in Settings, so going to settings is the closest path.
-                    // Or I could make a dedicated StatusScreen.
-
+            case .channel_info(let id):
+                let channel = Binding($viewState.channels[id])!
+                ChannelInfo(channel: channel)
+            case .channel_settings(let id):
+                let channel = Binding($viewState.channels[id])!
+                let server = channel.wrappedValue.server.map { $viewState.servers[$0] } ?? .constant(nil)
+                
+                ChannelSettings(server: server, channel: channel)
+            case .discover:
+                Discovery()
+            case .server_settings(let id):
+                let server = Binding($viewState.servers[id])!
+                ServerSettings(server: server)
+            case .settings:
+                Settings()
+            case .add_friend:
+                AddFriend()
+            case .create_group(let initial_users):
+                CreateGroup(selectedUsers: Set(initial_users.compactMap { viewState.users[$0] }))
+            case .create_server:
+                CreateServer()
+            case .channel_search(let id):
+                let channel = Binding($viewState.channels[id])!
+                ChannelSearch(channel: channel)
+            case .invite(let code):
+                ViewInvite(code: code)
+            case .channel_pins(let id):
+                let channel = Binding($viewState.channels[id])!
+                ChannelPins(channel: channel)
+            case .profile_settings:
+                ProfileSettings()
+            case .status_settings:
+                Settings() // For now, status editor is a sheet in Settings, so going to settings is the closest path.
+                // Or I could make a dedicated StatusScreen.
+                
             }
         }
-        .environment(\.currentServer, currentServer)
-        .environment(\.currentChannel, currentChannel)
         .sheet(item: $viewState.currentUserSheet) { (v) in
             UserSheet(user: v.user, member: v.member)
         }
@@ -309,44 +388,43 @@ struct MainApp: View {
 }
 
 // replace with settings eventually
-let TEMP_IS_COMPACT_MODE: (Bool, Bool) = (false, true)
-
+    let TEMP_IS_COMPACT_MODE: (Bool, Bool) = (false, true)
+    
 #if targetEnvironment(macCatalyst)
-let isIPad = UIDevice.current.userInterfaceIdiom == .pad
-let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
-let isMac = true
+    let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+    let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
+    let isMac = true
 #elseif os(iOS)
-let isIPad = UIDevice.current.userInterfaceIdiom == .pad
-let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
-let isMac = false
+    let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+    let isIPhone = UIDevice.current.userInterfaceIdiom == .phone
+    let isMac = false
 #else
-let isIPad = false
-let isIPhone = false
-let isMac = true
+    let isIPad = false
+    let isIPhone = false
+    let isMac = true
 #endif
-
-
-var isPreview: Bool {
+    
+    
+    var isPreview: Bool {
 #if DEBUG
-    ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
 #else
-    false
-#endif
-}
-
-func copyText(text: String) {
-#if os(macOS)
-    NSPasteboard.general.setString(text, forType: .string)
-#else
-    UIPasteboard.general.string = text
+        false
 #endif
     }
-
-func copyUrl(url: URL) {
+    
+    func copyText(text: String) {
 #if os(macOS)
-    NSPasteboard.general.setString(url.absoluteString, forType: .URL)
+        NSPasteboard.general.setString(text, forType: .string)
 #else
-    UIPasteboard.general.url = url
+        UIPasteboard.general.string = text
 #endif
-}
-
+    }
+    
+    func copyUrl(url: URL) {
+#if os(macOS)
+        NSPasteboard.general.setString(url.absoluteString, forType: .URL)
+#else
+        UIPasteboard.general.url = url
+#endif
+    }

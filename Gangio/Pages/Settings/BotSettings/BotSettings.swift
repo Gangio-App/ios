@@ -2,7 +2,7 @@
 //  BotSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 03/10/2024.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -140,10 +140,10 @@ struct BotSettings: View {
             }
             isLoading = false
         }
-        .background(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96))
+        .background(viewState.theme.background.color)
         .navigationTitle("Bots")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96), for: .navigationBar)
+        .toolbarBackground(viewState.theme.background.color, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .alert("Create Bot", isPresented: $showCreateBotAlert) {
             CreateBotAlert(bots: $bots)

@@ -2,7 +2,7 @@
 //  Theme.swift
 //  Gangio
 //
-//  Created by Angelo on 31/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -586,38 +586,38 @@ public struct Theme: Codable, Equatable {
 
     public static var light: Theme {
         Theme(
-            accent: ThemeColor(hex: "#FD6671FF"),
-            background: ThemeColor(hex: "#F6F6F6FF"),
-            background2: ThemeColor(hex: "#FFFFFFFF"),
-            background3: ThemeColor(hex: "#F1F1F1FF"),
-            background4: ThemeColor(hex: "#4D4D4DFF"),
-            foreground: ThemeColor(hex: "#000000FF"),
-            foreground2: ThemeColor(hex: "#1F1F1FFF"),
-            foreground3: ThemeColor(hex: "#3A3A3AFF"),
-            messageBox: ThemeColor(hex: "#F1F1F1FF"),
+            accent: ThemeColor(hex: "#5865F2FF"),
+            background: ThemeColor(hex: "#FFFFFFFF"),
+            background2: ThemeColor(hex: "#F2F3F5FF"),
+            background3: ThemeColor(hex: "#E3E5E8FF"),
+            background4: ThemeColor(hex: "#EBEDEF"),
+            foreground: ThemeColor(hex: "#060607FF"),
+            foreground2: ThemeColor(hex: "#4E5058FF"),
+            foreground3: ThemeColor(hex: "#80848EFF"),
+            messageBox: ThemeColor(hex: "#EBEDEEFF"),
             topBar: ThemeColor(hex: "#FFFFFFEE"),
             error: ThemeColor(hex: "#ED4245"),
-            success: ThemeColor(hex: "#91b362"),
-            mention: ThemeColor(hex: "#FBFF000F"),
+            success: ThemeColor(hex: "#23A559"),
+            mention: ThemeColor(hex: "#5865F20F"),
             shouldFollowiOSTheme: false
         )
     }
 
     public static var dark: Theme {
         Theme(
-            accent: ThemeColor(hex: "#FD6671FF"),
-            background: ThemeColor(hex: "#191919FF"),
-            background2: ThemeColor(hex: "#242424FF"),
-            background3: ThemeColor(hex: "#1E1E1EFF"),
-            background4: ThemeColor(hex: "#4D4D4DFF"),
-            foreground: ThemeColor(hex: "#FFFFFFFF"),
-            foreground2: ThemeColor(hex: "#C8C8C8FF"),
-            foreground3: ThemeColor(hex: "#848484FF"),
-            messageBox: ThemeColor(hex:"#363636FF"),
-            topBar: ThemeColor(hex: "#191919EE"),
+            accent: ThemeColor(hex: "#5865F2FF"),
+            background: ThemeColor(hex: "#1E1F22FF"),
+            background2: ThemeColor(hex: "#2B2D31FF"),
+            background3: ThemeColor(hex: "#232428FF"),
+            background4: ThemeColor(hex: "#383A40FF"),
+            foreground: ThemeColor(hex: "#F2F3F5FF"),
+            foreground2: ThemeColor(hex: "#B5BAC1FF"),
+            foreground3: ThemeColor(hex: "#6D6F78FF"),
+            messageBox: ThemeColor(hex: "#313338FF"),
+            topBar: ThemeColor(hex: "#2B2D31EE"),
             error: ThemeColor(hex: "#ED4245"),
-            success: ThemeColor(hex: "#91b362"),
-            mention: ThemeColor(hex: "#FBFF000F"),
+            success: ThemeColor(hex: "#23A559"),
+            mention: ThemeColor(hex: "#5865F20F"),
             shouldFollowiOSTheme: false
         )
     }

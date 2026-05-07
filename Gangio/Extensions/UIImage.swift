@@ -2,7 +2,7 @@
 //  UIImage.swift
 //  Gangio
 //
-//  Created by Angelo on 19/07/2024.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import UIKit

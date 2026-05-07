@@ -2,7 +2,7 @@
 //  SessionsSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 31/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -23,7 +23,7 @@ struct SessionsSettings: View {
     }
 
     private var bgColor: Color {
-        colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96)
+        viewState.theme.background.color
     }
 
     var body: some View {

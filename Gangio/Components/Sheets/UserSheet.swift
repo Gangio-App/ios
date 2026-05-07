@@ -2,7 +2,7 @@
 //  MemberSheet.swift
 //  Gangio
 //
-//  Created by Angelo on 23/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -35,27 +35,18 @@ struct UserSheetHeader: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             if let banner = profile.background {
-                LazyImage(source: .file(banner), height: 115, clipTo: RoundedRectangle(cornerRadius: 12))
+                LazyImage(source: .file(banner), height: 150, clipTo: Rectangle())
+                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
+            } else {
+                // Discord-style colored banner
+                LinearGradient(
+                    colors: [viewState.theme.accent.color, viewState.theme.accent.color.opacity(0.5)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .frame(height: 150)
+                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 16, topTrailingRadius: 16))
             }
-            
-            HStack(alignment: .center, spacing: 16) {
-                AppAvatar(user: user, width: 48, height: 48, withPresence: true)
-
-                VStack(alignment: .leading) {
-                    if let display_name = user.display_name {
-                        Text(display_name)
-                            .foregroundStyle(.white)
-                            .bold()
-                    }
-                    
-                    Text("\(user.username)")
-                        .foregroundStyle(viewState.theme.foreground)
-                    + Text("#\(user.discriminator)")
-                        .foregroundStyle(viewState.theme.foreground2)
-                }
-            }
-            .padding(.leading, 16)
-            .padding(.bottom, 16)
         }
     }
 }
@@ -72,6 +63,10 @@ struct UserSheet: View {
     @State var mutualFriends: [String] = []
     @State var showReportSheet = false
     
+    private var isDark: Bool {
+        !Theme.isLightOrDark(viewState.theme.background)
+    }
+    
     func getRoleColour(role: Role) -> AnyShapeStyle {
         if let colour = role.colour {
             return parseCSSColorToShapeStyle(currentTheme: viewState.theme, input: colour)
@@ -81,256 +76,312 @@ struct UserSheet: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        ScrollView {
             if let profile = profile {
-                Grid(tracks: 2, flow: .rows, spacing: 12) {
-                    UserSheetHeader(user: user, member: member, profile: profile)
-                        .gridSpan(column: 2)
-
-                    if let member = member,
-                       let server = viewState.servers[member.id.server],
-                       let roles = member.roles, !roles.isEmpty
-                    {
-                        Tile("Roles") {
-                            ScrollView {
-                                ForEach(roles, id: \.self) { roleId in
-                                    let role = server.roles![roleId]!
-                                    
-                                    HStack {
-                                        Text(role.name)
-                                        
-                                        Spacer()
-                                        
+                VStack(spacing: 0) {
+                    // ── Banner ──
+                    ZStack(alignment: .top) {
+                        UserSheetHeader(user: user, member: member, profile: profile)
+                            .frame(height: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .padding(.horizontal, 16)
+                            .padding(.top, 32)
+                        
+                        // Top Right "+" button (Friend Request / Action)
+                        HStack {
+                            Spacer()
+                            Button {
+                                switch user.relationship ?? .None {
+                                case .User:
+                                    viewState.path.append(NavigationDestination.settings)
+                                case .Friend:
+                                    Task { await viewState.openDm(with: user.id) }
+                                case .Incoming, .None:
+                                    Task { await viewState.http.sendFriendRequest(username: user.username) }
+                                case .Outgoing:
+                                    Task { await viewState.http.removeFriend(user: user.id) }
+                                case .Blocked, .BlockedOther:
+                                    break
+                                }
+                            } label: {
+                                Image(systemName: actionButtonIcon)
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 32, height: 32)
+                                    .background(Circle().fill(Color.black.opacity(0.45)))
+                            }
+                            .padding(.trailing, 28)
+                            .padding(.top, 44)
+                        }
+                    }
+                    
+                    // ── Avatar with Status Ring ──
+                    ZStack(alignment: .bottomTrailing) {
+                        ZStack {
+                            Circle()
+                                .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                                .frame(width: 100, height: 100)
+                            
+                            Circle()
+                                .fill(viewState.theme.background.color)
+                                .frame(width: 92, height: 92)
+                            
+                            AppAvatar(user: user, width: 86, height: 86, withPresence: false)
+                                .clipShape(Circle())
+                        }
+                        
+                        // Status indicator dot
+                        Circle()
+                            .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                            .frame(width: 22, height: 22)
+                            .overlay(Circle().stroke(viewState.theme.background.color, lineWidth: 3))
+                            .offset(x: -6, y: -6)
+                    }
+                    .frame(width: 100, height: 100)
+                    .offset(y: -50)
+                    .padding(.bottom, -50)
+                    
+                    // ── Display Name ──
+                    VStack(spacing: 6) {
+                        if let display_name = user.display_name, !display_name.isEmpty {
+                            Text(display_name)
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .foregroundStyle(viewState.theme.foreground.color)
+                        } else {
+                            Text(user.username)
+                                .font(.system(size: 24, weight: .bold, design: .rounded))
+                                .foregroundStyle(viewState.theme.foreground.color)
+                        }
+                        
+                        Text("@\(user.username)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(viewState.theme.foreground2.color)
+                    }
+                    .padding(.top, 12)
+                    
+                    // ── Bio ──
+                    if let bio = profile.content, !bio.isEmpty {
+                        Text(bio)
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundStyle(viewState.theme.foreground2.color)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                            .padding(.top, 10)
+                    }
+                    
+                    // ── Badges ──
+                    if let badges = user.badges, badges > 0 {
+                        HStack(spacing: 8) {
+                            ForEach(Badges.allCases, id: \.self) { value in
+                                if badges & (value.rawValue << 0) != 0 {
+                                    Image(String(describing: value))
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 24, height: 24)
+                                }
+                            }
+                        }
+                        .padding(.top, 12)
+                    }
+                    
+                    // ── Roles ──
+                    if let member = member, let server = viewState.servers[member.id.server], let roles = member.roles, !roles.isEmpty {
+                        HFlow(spacing: 6) {
+                            ForEach(roles, id: \.self) { roleId in
+                                if let role = server.roles?[roleId] {
+                                    HStack(spacing: 5) {
                                         Circle()
                                             .foregroundStyle(getRoleColour(role: role))
-                                            .frame(width: 16, height: 16)
+                                            .frame(width: 10, height: 10)
+                                        Text(role.name)
+                                            .font(.system(size: 13, weight: .medium))
+                                            .foregroundStyle(viewState.theme.foreground.color)
                                     }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(viewState.theme.background2.color)
+                                    .clipShape(Capsule())
                                 }
                             }
                         }
+                        .padding(.horizontal, 24)
+                        .padding(.top, 12)
                     }
                     
-                    Tile("Joined") {
-                        VStack(alignment: .leading) {
-                            Text(createdAt(id: user.id), style: .date)
-                            Text("Gangio")
-                                .bold()
-                        }
-                        //.frame(maxWidth: .infinity)
-                        
-                        if let member {
-                            let server = viewState.servers[member.id.server]!
-                            let formatter = {
-                                let formatter = ISO8601DateFormatter()
-                                formatter.formatOptions.insert(.withFractionalSeconds)
-                                return formatter
-                            }()
-                            
-                            VStack(alignment: .leading) {
-                                Text(formatter.date(from: member.joined_at)!, style: .date)  // TODO
-                                Text(verbatim: server.name)
-                            }
-                            //.frame(maxWidth: .infinity)
-                        }
-                    }
-                    
-                    if let badges = user.badges {
-                        Tile("Badges") {
-                            HFlow {
-                                ForEach(Badges.allCases, id: \.self) { value in
-                                    Badge(badges: badges, filename: String(describing: value), value: value.rawValue)
+                    // ── Cards Section ──
+                    VStack(spacing: 10) {
+                        // Mutual Servers
+                        if !mutualServers.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Image(systemName: "server.rack")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(viewState.theme.foreground3.color)
+                                    Text("Mutual Servers")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(viewState.theme.foreground3.color)
+                                    Spacer()
                                 }
-                            }
-                        }
-                    }
-                    
-                    if let bot = user.bot {
-                        Tile("Owner") {
-                            HStack(spacing: 12) {
-                                AppAvatar(user: owner)
                                 
-                                Text(owner.display_name ?? owner.username)
-                            }
-                        }
-                        .task {
-                            if let user = viewState.users[bot.owner] {
-                                owner = user
-                            } else {
-                                Task {
-                                    if case .success(let user) = await viewState.http.fetchUser(user: bot.owner) {
-                                        owner = user
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    if !mutualFriends.isEmpty {
-                        Tile("Mutual Friends") {
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    ForEach(mutualFriends.compactMap { viewState.users[$0] }) { user in
-                                        Button {
-                                            viewState.openUserSheet(user: user)
-                                        } label: {
-                                            HStack(spacing: 8) {
-                                                AppAvatar(user: user, width: 16, height: 16, withPresence: true)
-                                                
-                                                Text(verbatim: user.display_name ?? user.username)
-                                                    .lineLimit(1)
-                                            }
+                                ForEach(mutualServers.prefix(4), id: \.self) { serverId in
+                                    if let server = viewState.servers[serverId] {
+                                        HStack(spacing: 12) {
+                                            ServerIcon(server: server, height: 36, width: 36, clipTo: RoundedRectangle(cornerRadius: 8))
+                                            Text(server.name)
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(viewState.theme.foreground.color)
+                                            Spacer()
                                         }
                                     }
                                 }
-                            }
-                        }
-                    }
-                    
-                    if !mutualServers.isEmpty {
-                        Tile("Mutual Servers") {
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    ForEach(mutualServers.compactMap { viewState.servers[$0] }) { server in
-                                        Button {
-                                            viewState.selectServer(withId: server.id)
-                                        } label: {
-                                            HStack(spacing: 8) {
-                                                ServerIcon(server: server, height: 16, width: 16, clipTo: Circle())
-                                                
-                                                Text(verbatim: server.name)
-                                                    .lineLimit(1)
-                                            }
-                                        }
-                                    }
+                                
+                                if mutualServers.count > 4 {
+                                    Text("+ \(mutualServers.count - 4) more")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(viewState.theme.accent.color)
                                 }
                             }
-                        }
-                    }
-                    
-                    if let bio = profile.content {
-                        Tile("Bio") {
-                            ScrollView {
-                                Contents(text: .constant(bio), fontSize: 14)
-                            }
-                        }
-                        .gridSpan(column: 2)
-                    }
-                    
-                    HStack {
-                        Group {
-                            switch user.relationship ?? .None {
-                                case .User:
-                                    Button {
-                                        viewState.path.append(NavigationDestination.settings)
-                                    } label: {
-                                        HStack {
-                                            Spacer()
-                                            
-                                            Text("Edit profile")
-                                            
-                                            Spacer()
-                                        }
-                                    }
-                                    .padding(8)
-                                    .background(viewState.theme.accent, in: RoundedRectangle(cornerRadius: 50))
-                                    
-                                case .Blocked:
-                                    EmptyView()  // TODO: unblock
-                                case .BlockedOther:
-                                    EmptyView()
-                                case .Friend:
-                                    Button {
-                                        Task {
-                                            await viewState.openDm(with: user.id)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Spacer()
-                                            
-                                            Text("Send Message")
-                                            
-                                            Spacer()
-                                        }
-                                    }
-                                    .padding(8)
-                                    .background(viewState.theme.accent, in: RoundedRectangle(cornerRadius: 50))
-                                    
-                                case .Incoming, .None:
-                                    Button {
-                                        Task {
-                                            await viewState.http.sendFriendRequest(username: user.username)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Spacer()
-                                            
-                                            Text("Add Friend")
-                                            
-                                            Spacer()
-                                        }
-                                    }
-                                    .padding(8)
-                                    .background(viewState.theme.accent, in: RoundedRectangle(cornerRadius: 50))
-                                    
-                                case .Outgoing:
-                                    Button {
-                                        Task {
-                                            await viewState.http.removeFriend(user: user.id)
-                                        }
-                                    } label: {
-                                        HStack {
-                                            Spacer()
-                                            
-                                            Text("Cancel Friend Request")
-                                            
-                                            Spacer()
-                                        }
-                                    }
-                                    .padding(8)
-                                    .background(viewState.theme.accent, in: RoundedRectangle(cornerRadius: 50))
-                            }
+                            .padding(16)
+                            .background(viewState.theme.background2.color)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                         
-                        Menu {
-                            Button("Block") {
+                        // Mutual Friends
+                        if !mutualFriends.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Image(systemName: "person.2.fill")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundStyle(viewState.theme.foreground3.color)
+                                    Text("Mutual Friends")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .textCase(.uppercase)
+                                        .foregroundStyle(viewState.theme.foreground3.color)
+                                    Spacer()
+                                }
+                                
+                                ForEach(mutualFriends.prefix(4), id: \.self) { friendId in
+                                    if let friend = viewState.users[friendId] {
+                                        HStack(spacing: 12) {
+                                            AppAvatar(user: friend, width: 36, height: 36, withPresence: true)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(friend.display_name ?? friend.username)
+                                                    .font(.system(size: 15, weight: .semibold))
+                                                    .foregroundStyle(viewState.theme.foreground.color)
+                                                Text("@\(friend.username)")
+                                                    .font(.system(size: 12))
+                                                    .foregroundStyle(viewState.theme.foreground3.color)
+                                            }
+                                            Spacer()
+                                        }
+                                    }
+                                }
+                                
+                                if mutualFriends.count > 4 {
+                                    Text("+ \(mutualFriends.count - 4) more")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(viewState.theme.accent.color)
+                                }
+                            }
+                            .padding(16)
+                            .background(viewState.theme.background2.color)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                        }
+                        
+                        // Member Since
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(viewState.theme.foreground3.color)
+                                Text("Member Since")
+                                    .font(.system(size: 13, weight: .bold))
+                                    .textCase(.uppercase)
+                                    .foregroundStyle(viewState.theme.foreground3.color)
+                                Spacer()
+                            }
+                            
+                            HStack(spacing: 24) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Gangio")
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundStyle(viewState.theme.foreground3.color)
+                                    Text(createdAt(id: user.id), style: .date)
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(viewState.theme.foreground.color)
+                                }
+                                
+                                if let member = member {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Server")
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundStyle(viewState.theme.foreground3.color)
+                                        let f = ISO8601DateFormatter()
+                                        let _ = f.formatOptions.insert(.withFractionalSeconds)
+                                        Text(f.date(from: member.joined_at) ?? Date(), style: .date)
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundStyle(viewState.theme.foreground.color)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16)
+                        .background(viewState.theme.background2.color)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                    
+                    // ── Bottom Three-Dot Menu ──
+                    Menu {
+                        Button {
+                            copyText(text: user.id)
+                        } label: {
+                            Label("Copy ID", systemImage: "doc.on.doc")
+                        }
+                        
+                        if user.relationship != .User {
+                            Button {
                                 Task {
                                     if case .success(let blockedUser) = await viewState.http.blockUser(user: user.id) {
-                                        DispatchQueue.main.async {
-                                            viewState.users[user.id] = blockedUser
-                                        }
+                                        DispatchQueue.main.async { viewState.users[user.id] = blockedUser }
                                     }
                                 }
+                            } label: {
+                                Label("Block", systemImage: "nosign")
                             }
                             
-                            Button("Copy ID") {
-                                copyText(text: user.id)
-                            }
-                            
-                            Button("Report", role: .destructive) {
+                            Button(role: .destructive) {
                                 showReportSheet = true
+                            } label: {
+                                Label("Report", systemImage: "exclamationmark.triangle")
                             }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 24, height: 24)
-                                .fontWeight(.light)
                         }
-                        .menuStyle(.borderlessButton)
-                        .padding(.horizontal, 12)
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(viewState.theme.foreground2.color)
+                            .frame(width: 44, height: 44)
+                            .background(viewState.theme.background2.color)
+                            .clipShape(Circle())
                     }
-                    .gridSpan(column: 2)
+                    .padding(.top, 20)
+                    .padding(.bottom, 40)
                 }
-                .gridContentMode(.scroll)
-                .gridFlow(.rows)
-                .gridPacking(.sparse)
-                .gridCommonItemsAlignment(.topLeading)
             } else {
-                Text("Loading...")
+                VStack(spacing: 16) {
+                    Spacer().frame(height: 60)
+                    ProgressView()
+                        .tint(viewState.theme.accent.color)
+                    Text("Loading profile...")
+                        .font(.system(size: 14))
+                        .foregroundStyle(viewState.theme.foreground3.color)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 16)
         .background(viewState.theme.background.color)
         .presentationBackground(viewState.theme.background)
         .sheet(isPresented: $showReportSheet) {
@@ -352,6 +403,54 @@ struct UserSheet: View {
             }
         }
         .id(user.id)
+    }
+    
+    private var actionButtonIcon: String {
+        switch user.relationship ?? .None {
+        case .User: return "pencil"
+        case .Friend: return "message.fill"
+        case .Incoming, .None: return "plus"
+        case .Outgoing: return "xmark"
+        case .Blocked, .BlockedOther: return "nosign"
+        }
+    }
+    
+    private func statusColor(for presence: Presence?) -> Color {
+        switch presence {
+        case .Online: return .green
+        case .Idle: return .orange
+        case .Focus: return .purple
+        case .Busy: return .red
+        case .Invisible, .none: return .gray
+        }
+    }
+}
+
+// MARK: - Profile Info Card Component
+struct ProfileInfoCard<Content: View>: View {
+    @EnvironmentObject var viewState: AppViewState
+    let title: String
+    let icon: String
+    @ViewBuilder let content: Content
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(viewState.theme.foreground3.color)
+                Text(title)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(viewState.theme.foreground3.color)
+                    .textCase(.uppercase)
+            }
+            
+            content
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(viewState.theme.background2.color)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 
@@ -389,4 +488,3 @@ struct ReportUserSheetView: View {
         ReportSheet(target: .user(user))
     }
 }
-

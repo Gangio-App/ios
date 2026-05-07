@@ -2,7 +2,7 @@
 //  MessageBox.swift
 //  Gangio
 //
-//  Created by Zomatree on 21/04/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -178,6 +178,7 @@ struct MessageBox: View {
     }
 
     func sendMessage() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         var c = content
         // Apply autocomplete replacements (e.g. @korybantes -> <@user_id>)
         for (display, replacement) in autocompleteReplacements {

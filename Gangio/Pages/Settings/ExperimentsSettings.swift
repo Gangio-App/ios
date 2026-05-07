@@ -2,7 +2,7 @@
 //  ExperimentsSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 2024-02-10.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI
@@ -39,11 +39,11 @@ struct ExperimentsSettings: View {
                     HStack(spacing: 14) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.purple.opacity(0.15))
+                                .fill(viewState.theme.accent.color.opacity(0.15))
                                 .frame(width: 32, height: 32)
                             Image(systemName: "text.badge.checkmark")
                                 .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.purple)
+                                .foregroundColor(viewState.theme.accent.color)
                         }
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Custom Markdown")
@@ -66,8 +66,8 @@ struct ExperimentsSettings: View {
         }
         .navigationTitle("Experiments")
         .navigationBarTitleDisplayMode(.inline)
-        .background(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96))
-        .toolbarBackground(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96), for: .navigationBar)
+        .background(viewState.theme.background.color)
+        .toolbarBackground(viewState.theme.background.color, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
     }
 }

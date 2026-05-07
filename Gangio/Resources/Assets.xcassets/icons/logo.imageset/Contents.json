@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "logo.png",
+      "filename" : "AppIcon@3x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },

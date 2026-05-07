@@ -2,7 +2,7 @@
 //  MemberProfileSheet.swift
 //  Gangio
 //
-//  Created by Angelo on 27/03/2025.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

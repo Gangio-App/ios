@@ -2,7 +2,7 @@
 //  MessageableChannel.swift
 //  Gangio
 //
-//  Created by Angelo on 18/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -105,7 +105,7 @@ class MessageableChannelViewModel: ObservableObject {
     }
     
     func updateGroups() {
-        let ids = Array(messages)
+        let ids = viewState.channelMessages[channel.id] ?? []
         var seen = Set<String>()
         let uniqueIds = ids.filter { seen.insert($0).inserted }
         
@@ -149,13 +149,20 @@ class MessageableChannelViewModel: ObservableObject {
         let existingIds = Set(viewState.channelMessages[channel.id] ?? [])
         let newUniqueIds = ids.reversed().filter { !existingIds.contains($0) }
         
+        if result.messages.count < 50 {
+            DispatchQueue.main.async {
+                self.viewState.atTopOfChannel.insert(self.channel.id)
+            }
+        }
+        
         viewState.channelMessages[channel.id] = newUniqueIds + (viewState.channelMessages[channel.id] ?? [])
         updateGroups()
         return result
     }
     
     func loadMoreMessagesIfNeeded(current: String?) async {
-        guard let item = current, messages.first == item else { return }
+        let msgs = viewState.channelMessages[channel.id] ?? []
+        guard let item = current, msgs.first == item else { return }
         await loadMoreMessages(before: item)
     }
 }
@@ -192,13 +199,16 @@ struct MessageableChannelView: View {
             switch viewModel.channel {
                 case .dm_channel, .group_dm_channel:
                     AnyView(Button {
+                        let impact = UIImpactFeedbackGenerator(style: .medium)
+                        impact.impactOccurred()
                         viewState.currentChannel = .force_voicechannel(viewModel.channel.id)
                     } label: {
                         Image(systemName: "phone.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 16, height: 16)
-                            .frame(width: 24, height: 24)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(8)
+                            .background(Color.green)
+                            .clipShape(Circle())
                     })
                 default:
                     AnyView(EmptyView())
@@ -233,36 +243,63 @@ struct MessageableChannelView: View {
                                     MessageGroupContainer(group: vms, selection: .constant([]), highlighted: $viewModel.highlighted)
                                 }
                             }
+                            
+                            // Bottom anchor for reliable scrolling and visibility tracking
+                            Color.clear
+                                .frame(height: 1)
+                                .id("bottom")
+                                .onAppear { nearBottom = true }
+                                .onDisappear { nearBottom = false }
                         }
-                        .padding(.bottom, 20)
+                        .padding(.bottom, 8)
                     }
                     .scrollDismissesKeyboard(.interactively)
-                    .onChange(of: viewModel.messages) { _, _ in
+                    .coordinateSpace(name: "scroll")
+                    .onChange(of: viewState.channelMessages[viewModel.channel.id]) { _, _ in
                         viewModel.updateGroups()
                         if nearBottom {
-                            withAnimation { proxy.scrollTo(viewModel.messages.last, anchor: .bottom) }
+                            withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                         }
                     }
                     .onAppear {
-                        viewModel.updateGroups()
-                        // Ensure we scroll to bottom on initial load
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            if let lastId = viewModel.messages.last {
-                                proxy.scrollTo(lastId, anchor: .bottom)
+                        if (viewState.channelMessages[viewModel.channel.id] ?? []).isEmpty {
+                            Task {
+                                _ = await viewModel.loadMoreMessages()
+                                DispatchQueue.main.async {
+                                    proxy.scrollTo("bottom", anchor: .bottom)
+                                }
+                            }
+                        } else {
+                            viewModel.updateGroups()
+                        }
+                        
+                        // Immediate scroll to bottom
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                        
+                        // Fallback delayed scroll to ensure layout is ready
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                proxy.scrollTo("bottom", anchor: .bottom)
                             }
                         }
                     }
                     .onChange(of: viewModel.groupedIds) { _, _ in
-                        // Also scroll when groups are first populated
-                        if nearBottom || viewModel.messages.count < 50 {
-                            withAnimation { proxy.scrollTo(viewModel.messages.last, anchor: .bottom) }
+                        if nearBottom || viewModel.messages.count < 20 {
+                            withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                        }
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                        // Follow chat when keyboard opens
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.easeOut(duration: 0.3)) {
+                                proxy.scrollTo("bottom", anchor: .bottom)
+                            }
                         }
                     }
                     .onChange(of: focused) { _, isFocused in
                         if isFocused {
-                            // Delay slightly to wait for keyboard animation to start
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                withAnimation { proxy.scrollTo(viewModel.messages.last, anchor: .bottom) }
+                                withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                             }
                         }
                     }
@@ -270,13 +307,15 @@ struct MessageableChannelView: View {
                     // Jump to bottom button
                     if !nearBottom {
                         Button {
-                            withAnimation { proxy.scrollTo(viewModel.messages.last, anchor: .bottom) }
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { 
+                                proxy.scrollTo("bottom", anchor: .bottom) 
+                            }
                         } label: {
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundStyle(viewState.theme.foreground.color)
                                 .padding(12)
-                                .background(Circle().fill(viewState.theme.background2.color).shadow(radius: 4))
+                                .background(Circle().fill(viewState.theme.background2.color).shadow(color: .black.opacity(0.2), radius: 8, y: 4))
                         }
                         .padding(16)
                         .transition(.scale.combined(with: .opacity))

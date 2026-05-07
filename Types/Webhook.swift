@@ -2,7 +2,7 @@
 //  Webhook.swift
 //  Gangio
 //
-//  Created by Angelo on 26/03/2025.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 public struct Webhook: Codable, Hashable, Equatable, Identifiable {

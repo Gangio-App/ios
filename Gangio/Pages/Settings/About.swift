@@ -2,7 +2,7 @@
 //  About.swift
 //  Gangio
 //
-//  Created by Angelo on 31/10/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -91,9 +91,9 @@ struct About: View {
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96), for: .navigationBar)
+        .toolbarBackground(viewState.theme.background.color, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
-        .background(colorScheme == .dark ? Color(hue: 0.62, saturation: 0.1, brightness: 0.05) : Color(hue: 0.62, saturation: 0.02, brightness: 0.96))
+        .background(viewState.theme.background.color)
     }
 }
 

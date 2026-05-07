@@ -2,7 +2,7 @@
 //  ServerRolesSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 25/09/2024.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

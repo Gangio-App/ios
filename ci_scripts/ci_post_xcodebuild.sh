@@ -3,7 +3,7 @@
 #  ci_post_xcodebuild.sh.sh
 #  Stoat
 #
-#  Created by Angelo on 22/08/2024.
+#  Created & Design by github.com/benyigit on 21/04/2026.
 #
 
 # Disable Sentry for now until until we setup our instance again

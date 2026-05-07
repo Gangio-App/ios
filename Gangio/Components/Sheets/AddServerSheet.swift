@@ -2,12 +2,13 @@
 //  JoinServer.swift
 //  Gangio
 //
-//  Created by Angelo on 01/11/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
 import SwiftUI
 import Types
+import Gangio
 
 struct AddServerSheet: View {
     @EnvironmentObject var viewState: AppViewState
@@ -17,50 +18,106 @@ struct AddServerSheet: View {
     
     var body: some View {
         NavigationStack {
-            HStack {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Add a server")
-                        .bold()
-                        .font(.title2)
+            VStack(spacing: 24) {
+                // Header
+                VStack(spacing: 8) {
+                    Text("Add a Server")
+                        .font(.system(size: 24, weight: .heavy, design: .rounded))
+                        .foregroundStyle(viewState.theme.foreground.color)
                     
-                    VStack(alignment: .leading) {
-                        Button {
-                            showJoinServerAlert.toggle()
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "arrow.right.square")
-                                    .resizable()
-                                    .frame(width: 18, height: 18)
-                                
-                                Text("Join by invite code or link")
-                            }
+                    Text("Your server is where you and your friends hang out. Make yours and start talking.")
+                        .font(.system(size: 15))
+                        .foregroundStyle(viewState.theme.foreground2.color)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+                .padding(.top, 32)
+                
+                // Options
+                VStack(spacing: 12) {
+                    // Create Server Card
+                    Button {
+                        dismiss()
+                        viewState.path.append(NavigationDestination.create_server)
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: "plus.app.fill")
+                                .font(.system(size: 26))
+                                .foregroundStyle(Color(hex: "5865F2")) // Blurple
+                            
+                            Text("Create a new server")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(viewState.theme.foreground.color)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(viewState.theme.foreground3.color)
                         }
-                        
-                        Button {
-                            dismiss()
-                            viewState.path.append(NavigationDestination.create_server)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "hammer.fill")
-                                    .resizable()
-                                    .frame(width: 18, height: 18)
-                                
-                                Text("Create a new server")
-                            }
+                        .padding(16)
+                        .background(viewState.theme.background2.color)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    
+                    // Join Server Card
+                    Button {
+                        showJoinServerAlert.toggle()
+                    } label: {
+                        HStack(spacing: 16) {
+                            Image(systemName: "link.circle.fill")
+                                .font(.system(size: 26))
+                                .foregroundStyle(Color(hex: "3BA55D")) // Green
+                            
+                            Text("Join a server")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(viewState.theme.foreground.color)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(viewState.theme.foreground3.color)
                         }
+                        .padding(16)
+                        .background(viewState.theme.background2.color)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                     }
                 }
+                .padding(.horizontal, 16)
                 
                 Spacer()
+                
+                // Footer
+                VStack(spacing: 12) {
+                    Text("Have an invite already?")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(viewState.theme.foreground2.color)
+                    
+                    Button {
+                        showJoinServerAlert.toggle()
+                    } label: {
+                        Text("Join Server")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color(hex: "5865F2"))
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 32)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(viewState.theme.background.color.ignoresSafeArea())
         }
-        .padding(16)
-        .presentationBackground(viewState.theme.background)
-        .presentationDetents([.fraction(0.2)])
-        .alert("Invite code or link", isPresented: $showJoinServerAlert) {
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .alert("Join Server", isPresented: $showJoinServerAlert) {
             JoinServerAlert()
         } message: {
-            Text("Enter a link like rvlt.gg/Testers or an invite code like Testers")
+            Text("Enter an invite link or code to join an existing server.")
         }
     }
 }

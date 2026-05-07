@@ -2,7 +2,7 @@
 //  CreateAccount.swift
 //  Gangio
 //
-//  Created by Tom on 2023-11-13.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI

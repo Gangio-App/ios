@@ -2,7 +2,7 @@
 //  DMScrollView.swift
 //  Gangio
 //
-//  Created by Angelo on 27/11/2023.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation
@@ -17,118 +17,42 @@ struct DMScrollView: View {
     @State private var searchText = ""
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Search Bar
-            HStack(spacing: 12) {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField("Search messages...", text: $searchText)
-                    .font(.system(size: 16))
-            }
-            .padding(12)
-            .background(viewState.theme.background2.color.opacity(0.8))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal)
-            .padding(.top, 8)
-            
-            ScrollView {
-            VStack(spacing: 8) {
-                // Top Utilities
-                VStack(spacing: 1) {
-                    DMUtilityRow(title: "Home", icon: "house.fill", color: .blue) {
-                        viewState.selectedTab = .servers
-                        currentChannel = .home
-                    }
-                    
-                    DMUtilityRow(title: "Friends", icon: "person.2.fill", color: .green) {
-                        viewState.selectedTab = .servers
-                        currentChannel = .friends
-                    }
-                    
-                    DMUtilityRow(title: "Saved Messages", icon: "bookmark.fill", color: .orange) {
-                        Task {
-                            if let user = viewState.currentUser {
-                                let channel = try? await viewState.http.openDm(user: user.id).get()
-                                if let id = channel?.id {
-                                    viewState.selectedTab = .servers
-                                    currentChannel = .channel(id)
-                                }
-                            }
-                        }
+        ScrollView {
+            VStack(spacing: 0) {
+                let filteredDMs = viewState.dms.filter { channel in
+                    switch channel {
+                    case .saved_messages: return false
+                    default: return true
                     }
                 }
-                .background(viewState.theme.background2.color)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal)
-                .padding(.top, 12)
-
-                // DM Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("DIRECT MESSAGES")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-                    
-                    VStack(spacing: 1) {
-                        let filteredDMs = viewState.dms.filter { channel in
-                            switch channel {
-                            case .saved_messages: return false
-                            default: return true
-                            }
-                        }
+                
+                if filteredDMs.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 40))
+                            .foregroundStyle(viewState.theme.foreground3.color)
                         
-                        if filteredDMs.isEmpty {
-                            Text("No recent conversations")
-                                .font(.system(size: 14).italic())
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 40)
-                        } else {
-                            ForEach(filteredDMs) { channel in
-                                DMRow(channel: channel, toggleSidebar: toggleSidebar)
-                            }
-                        }
+                        Text("No recent conversations")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(viewState.theme.foreground3.color)
                     }
-                    .background(viewState.theme.background2.color)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 60)
+                } else {
+                    ForEach(filteredDMs) { channel in
+                        DMRow(channel: channel, toggleSidebar: toggleSidebar)
+                        
+                        // Subtle separator
+                        Rectangle()
+                            .fill(Color.white.opacity(0.04))
+                            .frame(height: 0.5)
+                            .padding(.leading, 76)
+                    }
                 }
             }
             .padding(.bottom, 120)
         }
-        .background(viewState.theme.background.color)
-    }
-}
-}
-
-struct DMUtilityRow: View {
-    let title: String
-    let icon: String
-    let color: Color
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundStyle(color)
-                    .frame(width: 24, height: 24)
-                
-                Text(title)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.secondary.opacity(0.3))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-        }
-        .buttonStyle(.plain)
+        .background(Color.clear)
     }
 }
 
@@ -138,49 +62,116 @@ struct DMRow: View {
     let toggleSidebar: () -> Void
     
     var body: some View {
+        let isSelected = viewState.currentChannel.id == channel.id
+        
         Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
             toggleSidebar()
             viewState.selectDm(withId: channel.id)
         } label: {
-            HStack(spacing: 12) {
-                ChannelIcon(channel: channel, withUserPresence: true, showLabel: false, width: 44, height: 44)
+            HStack(spacing: 14) {
+                // Avatar with presence
+                ChannelIcon(channel: channel, withUserPresence: true, showLabel: false, width: 50, height: 50)
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    let channelName: String = {
-                        switch channel {
-                        case .dm_channel(let c):
-                            if let currentUserId = viewState.currentUser?.id,
-                               let recipientId = c.recipients.first(where: { $0 != currentUserId }),
-                               let recipient = viewState.users[recipientId] {
-                                return recipient.username
+                VStack(alignment: .leading, spacing: 4) {
+                    // Top row: Name + Time
+                    HStack(alignment: .top) {
+                        let channelName: String = {
+                            switch channel {
+                            case .dm_channel(let c):
+                                if let currentUserId = viewState.currentUser?.id,
+                                   let recipientId = c.recipients.first(where: { $0 != currentUserId }),
+                                   let recipient = viewState.users[recipientId] {
+                                    return recipient.display_name ?? recipient.username
+                                }
+                                return "Direct Message"
+                            default:
+                                return channel.name ?? "Unknown"
                             }
-                            return "Direct Message"
-                        default:
-                            return channel.name ?? "Unknown"
+                        }()
+                        
+                        Text(channelName)
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(viewState.theme.foreground.color)
+                            .lineLimit(1)
+                        
+                        Spacer()
+                        
+                        // Timestamp
+                        if let lastMsgId = channel.last_message_id,
+                           let msg = viewState.messages[lastMsgId] {
+                            Text(formatMessageTime(id: msg.id))
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(viewState.theme.foreground3.color)
                         }
-                    }()
-                    
-                    Text(channelName)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(viewState.theme.foreground.color)
-                    
-                    if channel.last_message_id != nil {
-                        Text("Active conversation")
-                            .font(.system(size: 12))
-                            .foregroundStyle(viewState.theme.accent.color.opacity(0.8))
                     }
-                }
-                
-                Spacer()
-                
-                if let unread = viewState.getUnreadCountFor(channel: channel) {
-                    UnreadCounter(unread: unread)
+                    
+                    // Bottom row: Message preview + Unread badge
+                    HStack(alignment: .center) {
+                        // Last message preview
+                        if let lastMsgId = channel.last_message_id,
+                           let msg = viewState.messages[lastMsgId] {
+                            Text(msg.content ?? "")
+                                .font(.system(size: 15))
+                                .foregroundStyle(viewState.theme.foreground3.color)
+                                .lineLimit(1)
+                        } else if channel.last_message_id != nil {
+                            Text("Tap to view")
+                                .font(.system(size: 15))
+                                .foregroundStyle(viewState.theme.foreground3.color)
+                                .lineLimit(1)
+                        } else {
+                            Text("No messages yet")
+                                .font(.system(size: 15))
+                                .italic()
+                                .foregroundStyle(viewState.theme.foreground3.color.opacity(0.6))
+                                .lineLimit(1)
+                        }
+                        
+                        Spacer()
+                        
+                        // Unread counter
+                        if let unread = viewState.getUnreadCountFor(channel: channel) {
+                            UnreadCounter(unread: unread, mentionSize: 22, unreadSize: 10)
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .background(isSelected ? viewState.theme.background3.color.opacity(0.4) : Color.clear)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+    
+    func formatMessageTime(id: String) -> String {
+        // Simple time formatting from ULID timestamp
+        // ULID's first 10 chars encode timestamp in Crockford Base32
+        let crockford = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+        let chars = id.uppercased().prefix(10)
+        var timestamp: UInt64 = 0
+        for char in chars {
+            if let index = crockford.firstIndex(of: char) {
+                timestamp = timestamp * 32 + UInt64(crockford.distance(from: crockford.startIndex, to: index))
+            }
+        }
+        
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp) / 1000.0)
+        let calendar = Calendar.current
+        let now = Date()
+        
+        if calendar.isDateInToday(date) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "h:mm a"
+            return formatter.string(from: date)
+        } else if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MM/dd/yy"
+            return formatter.string(from: date)
+        }
     }
 }
 

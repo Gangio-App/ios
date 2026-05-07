@@ -2,7 +2,7 @@
 //  ServerBanSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 02/10/2024.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import Foundation

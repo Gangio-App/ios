@@ -2,7 +2,7 @@
 //  ReportMessageSheetView.swift
 //  Gangio
 //
-//  Created by Angelo Manca on 2023-11-05.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 //  Now wraps the unified ReportSheet component.
 //

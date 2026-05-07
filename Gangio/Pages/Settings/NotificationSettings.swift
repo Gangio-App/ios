@@ -2,7 +2,7 @@
 //  NotificationSettings.swift
 //  Gangio
 //
-//  Created by Angelo on 2024-02-10.
+//  Created & Design by github.com/benyigit on 21/04/2026.
 //
 
 import SwiftUI

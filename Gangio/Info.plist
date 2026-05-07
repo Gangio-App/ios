@@ -39,7 +39,6 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 		<string>voip</string>
-		<string>push-to-talk</string>
 		<string>audio</string>
 	</array>
 	<key>CFBundleLocalizations</key>
