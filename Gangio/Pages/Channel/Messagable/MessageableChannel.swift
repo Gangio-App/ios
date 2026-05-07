@@ -20,7 +20,7 @@ struct ChannelScrollController {
             highlighted = id
         }
         
-        Task {
+        Task { @MainActor in
             try? await Task.sleep(for: .seconds(2))
             
             withAnimation(.easeInOut) {
