@@ -607,42 +607,7 @@ struct StatusEditorSheet: View {
 
 
 
-// MARK: - Settings Row
-struct SettingsRow<Destination: View>: View {
-    @Environment(\.colorScheme) var colorScheme
-    let icon: String
-    let iconColor: Color
-    let title: String
-    @ViewBuilder let destination: () -> Destination
 
-    var body: some View {
-        NavigationLink(destination: destination) {
-            HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(iconColor.gradient.opacity(0.2))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(iconColor)
-                        .shadow(color: iconColor.opacity(0.3), radius: 4)
-                }
-
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(colorScheme == .dark ? .white : .black.opacity(0.8))
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.gray.opacity(0.3))
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-        }
-    }
-}
 
 
 #Preview {
