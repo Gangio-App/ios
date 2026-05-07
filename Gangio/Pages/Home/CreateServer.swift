@@ -81,8 +81,10 @@ struct CreateServer: View {
         .navigationTitle(currentStep == 1 ? "Create a Server" : "Customize Your Server")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+            if currentStep == 1 {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
             }
         }
         .onChange(of: selectedPhotoItem) { _, newItem in
@@ -123,11 +125,11 @@ struct CreateServer: View {
                         } label: {
                             HStack(spacing: 16) {
                                 Image(systemName: type.icon)
-                                    .font(.system(size: 24))
+                                    .font(.system(size: 20))
                                     .foregroundStyle(type.color)
-                                    .frame(width: 40, height: 40)
-                                    .background(type.color.opacity(0.2))
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .frame(width: 44, height: 44)
+                                    .background(type.color.opacity(0.15))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(type.rawValue)
@@ -280,9 +282,10 @@ struct CreateServer: View {
         
         var icon: String? = nil
         if let photoData = selectedPhotoData {
-            // Upload image and get URL
-            // For now, skip upload and create without icon
-            // TODO: Implement image upload
+            let uploadResult = await viewState.http.uploadFile(data: photoData, name: "avatar.png", category: .icon)
+            if case .success(let response) = uploadResult {
+                icon = response.id
+            }
         }
         
         let payload = CreateServerPayload(

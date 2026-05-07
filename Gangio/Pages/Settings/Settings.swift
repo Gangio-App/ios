@@ -54,20 +54,20 @@ struct Settings: View {
         ScrollView {
             VStack(spacing: 28) {
                 // Settings Header with Wide Logo
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Image("wide")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 32)
+                        .frame(height: 38)
                         .foregroundStyle(viewState.theme.foreground.color)
                     
-                    Text("GANGIO SETTINGS")
-                        .font(.system(size: 12, weight: .black))
+                    Text("SETTINGS")
+                        .font(.system(size: 13, weight: .black))
                         .foregroundStyle(viewState.theme.accent.color)
-                        .tracking(2)
+                        .tracking(3)
                 }
                 .padding(.top, 24)
-                .padding(.bottom, 8)
+                .padding(.bottom, 12)
 
                 // Profile Header Card
                 if let user = viewState.currentUser {
@@ -122,10 +122,10 @@ struct Settings: View {
                         .buttonStyle(.plain)
                     }
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: 4)
                             .fill(cardBackgroundColor)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
+                                RoundedRectangle(cornerRadius: 4)
                                     .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
                             )
                     )
@@ -244,9 +244,9 @@ struct Settings: View {
 
             content()
                 .background(cardBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: 4)
                         .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
                 )
         }
@@ -265,7 +265,7 @@ struct SettingsRow<Destination: View>: View {
         NavigationLink(destination: LazyView(destination())) {
             HStack(spacing: 16) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: 2)
                         .fill(color.opacity(0.15))
                         .frame(width: 32, height: 32)
                     
