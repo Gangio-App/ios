@@ -312,12 +312,6 @@ struct Home: View {
                                 }
                             }
                         
-                        case .voice: // Handle voice tab if it exists
-                            VStack(spacing: 0) {
-                                Color.clear.frame(height: geometry.safeAreaInsets.top)
-                                MaybeChannelView(currentChannel: $currentChannel, currentSelection: $currentSelection, toggleSidebar: toggleSidebar, disableScroll: $disableScroll, disableSidebar: $disableSidebar)
-                            }
-                        
                         case .dms:
                             VStack(spacing: 0) {
                                 PageToolbar(toggleSidebar: toggleSidebar) {
