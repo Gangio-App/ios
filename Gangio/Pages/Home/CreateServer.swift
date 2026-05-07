@@ -69,22 +69,20 @@ struct CreateServer: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                bg.ignoresSafeArea()
-                
-                if currentStep == 1 {
-                    serverTypeSelection
-                } else if currentStep == 2 {
-                    serverDetails
-                }
+        ZStack {
+            bg.ignoresSafeArea()
+            
+            if currentStep == 1 {
+                serverTypeSelection
+            } else if currentStep == 2 {
+                serverDetails
             }
-            .navigationTitle(currentStep == 1 ? "Create a Server" : "Customize Your Server")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
+        }
+        .navigationTitle(currentStep == 1 ? "Create a Server" : "Customize Your Server")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
             }
         }
         .onChange(of: selectedPhotoItem) { _, newItem in

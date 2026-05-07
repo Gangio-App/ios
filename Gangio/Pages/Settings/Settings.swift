@@ -53,10 +53,26 @@ struct Settings: View {
 
         ScrollView {
             VStack(spacing: 28) {
+                // Settings Header with Wide Logo
+                VStack(spacing: 8) {
+                    Image("wide")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 32)
+                        .foregroundStyle(viewState.theme.foreground.color)
+                    
+                    Text("GANGIO SETTINGS")
+                        .font(.system(size: 12, weight: .black))
+                        .foregroundStyle(viewState.theme.accent.color)
+                        .tracking(2)
+                }
+                .padding(.top, 24)
+                .padding(.bottom, 8)
+
                 // Profile Header Card
                 if let user = viewState.currentUser {
                     VStack(spacing: 0) {
-                        NavigationLink(destination: LazyView(ProfileSettings())) {
+                        NavigationLink(value: NavigationDestination.profile_settings) {
                             HStack(spacing: 16) {
                                 AppAvatar(user: user, width: 64, height: 64, withPresence: true)
                                     .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
@@ -81,6 +97,7 @@ struct Settings: View {
                                     .foregroundStyle(viewState.theme.foreground3.color.opacity(0.5))
                             }
                             .padding(20)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         
@@ -99,16 +116,20 @@ struct Settings: View {
                                 Spacer()
                             }
                             .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, 16)
+                            .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                     }
                     .background(
-                        RoundedRectangle(cornerRadius: 24)
+                        RoundedRectangle(cornerRadius: 16)
                             .fill(cardBackgroundColor)
-                            .shadow(color: Color.black.opacity(0.03), radius: 10, x: 0, y: 5)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
+                            )
                     )
                     .padding(.horizontal, 16)
-                    .padding(.top, 12)
                 }
 
                 // Account Section
@@ -182,8 +203,8 @@ struct Settings: View {
             }
         }
         .background(backgroundColor.ignoresSafeArea())
-        .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if let status = viewState.currentUser?.status {
                 statusText = status.text ?? ""
@@ -215,16 +236,19 @@ struct Settings: View {
 
     @ViewBuilder
     func settingsGroup<Content: View>(header: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(header.uppercased())
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(viewState.theme.foreground3.color)
-                .padding(.leading, 8)
+                .font(.system(size: 11, weight: .black))
+                .foregroundStyle(viewState.theme.foreground3.color.opacity(0.7))
+                .padding(.leading, 24)
 
             content()
                 .background(cardBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .shadow(color: Color.black.opacity(0.02), radius: 8, x: 0, y: 4)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
+                )
         }
         .padding(.horizontal, 16)
     }
@@ -241,27 +265,28 @@ struct SettingsRow<Destination: View>: View {
         NavigationLink(destination: LazyView(destination())) {
             HStack(spacing: 16) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
+                    RoundedRectangle(cornerRadius: 8)
                         .fill(color.opacity(0.15))
-                        .frame(width: 36, height: 36)
+                        .frame(width: 32, height: 32)
                     
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(color)
                 }
 
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(viewState.theme.foreground.color)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 12, weight: .black))
                     .foregroundStyle(viewState.theme.foreground3.color.opacity(0.3))
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.vertical, 16)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

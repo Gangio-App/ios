@@ -828,6 +828,7 @@ public class AppViewState: ObservableObject {
                 dms = try! await http.fetchDms().get()
 
                 for dm in dms {
+                    channels[dm.id] = dm
                     if channelMessages[dm.id] == nil {
                         channelMessages[dm.id] = []
                     }
