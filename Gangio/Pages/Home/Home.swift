@@ -452,6 +452,7 @@ struct BottomBar: View {
     func tabName(for tab: MainTab) -> String {
         switch tab {
         case .servers: return "Home"
+        case .dms: return "DMs"
         case .messages: return "Search"
         case .notifications: return "Activity"
         case .profile: return "You"
