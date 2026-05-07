@@ -75,21 +75,8 @@ public struct CallStartedSystemContent: Codable, Equatable {
     public var by: String
 }
 
-public enum SystemMessageContent: Equatable {
-    case text(TextSystemMessageContent)
-    case user_added(UserAddedSystemContent)
-    case user_removed(UserRemovedSystemContent)
-    case user_joined(UserJoinedSystemContent)
-    case user_left(UserLeftSystemContent)
-    case user_kicked(UserKickedSystemContent)
-    case user_banned(UserBannedSystemContent)
-    case channel_renamed(ChannelRenamedSystemContent)
-    case channel_description_changed(ChannelDescriptionChangedSystemContent)
-    case channel_icon_changed(ChannelIconChangedSystemContent)
-    case channel_ownership_changed(ChannelOwnershipChangedSystemContent)
-    case message_pinned(MessagePinnedSystemContent)
-    case message_unpinned(MessagePinnedSystemContent)
     case call_started(CallStartedSystemContent)
+    case unknown
 }
 
 extension SystemMessageContent: Codable {
@@ -100,35 +87,45 @@ extension SystemMessageContent: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let singleValueContainer = try decoder.singleValueContainer()
         
-        switch try container.decode(Tag.self, forKey: .type) {
-            case .text:
-                self = .text(try singleValueContainer.decode(TextSystemMessageContent.self))
-            case .user_added:
-                self = .user_added(try singleValueContainer.decode(UserAddedSystemContent.self))
-            case .user_remove:
-                self = .user_removed(try singleValueContainer.decode(UserRemovedSystemContent.self))
-            case .user_joined:
-                self = .user_joined(try singleValueContainer.decode(UserJoinedSystemContent.self))
-            case .user_left:
-                self = .user_left(try singleValueContainer.decode(UserLeftSystemContent.self))
-            case .user_kicked:
-                self = .user_kicked(try singleValueContainer.decode(UserKickedSystemContent.self))
-            case .user_banned:
-                self = .user_banned(try singleValueContainer.decode(UserBannedSystemContent.self))
-            case .channel_renamed:
-                self = .channel_renamed(try singleValueContainer.decode(ChannelRenamedSystemContent.self))
-            case .channel_description_changed:
-                self = .channel_description_changed(try singleValueContainer.decode(ChannelDescriptionChangedSystemContent.self))
-            case .channel_icon_changed:
-                self = .channel_icon_changed(try singleValueContainer.decode(ChannelIconChangedSystemContent.self))
-            case .channel_ownership_changed:
-                self = .channel_ownership_changed(try singleValueContainer.decode(ChannelOwnershipChangedSystemContent.self))
-            case .message_pinned:
-                self = .message_pinned(try singleValueContainer.decode(MessagePinnedSystemContent.self))
-            case .message_unpinned:
-                self = .message_unpinned(try singleValueContainer.decode(MessagePinnedSystemContent.self))
-            case .call_started:
-                self = .call_started(try singleValueContainer.decode(CallStartedSystemContent.self))
+        guard let typeString = try? container.decode(String.self, forKey: .type),
+              let tag = Tag(rawValue: typeString) else {
+            self = .unknown
+            return
+        }
+
+        do {
+            switch tag {
+                case .text:
+                    self = .text(try singleValueContainer.decode(TextSystemMessageContent.self))
+                case .user_added:
+                    self = .user_added(try singleValueContainer.decode(UserAddedSystemContent.self))
+                case .user_remove:
+                    self = .user_removed(try singleValueContainer.decode(UserRemovedSystemContent.self))
+                case .user_joined:
+                    self = .user_joined(try singleValueContainer.decode(UserJoinedSystemContent.self))
+                case .user_left:
+                    self = .user_left(try singleValueContainer.decode(UserLeftSystemContent.self))
+                case .user_kicked:
+                    self = .user_kicked(try singleValueContainer.decode(UserKickedSystemContent.self))
+                case .user_banned:
+                    self = .user_banned(try singleValueContainer.decode(UserBannedSystemContent.self))
+                case .channel_renamed:
+                    self = .channel_renamed(try singleValueContainer.decode(ChannelRenamedSystemContent.self))
+                case .channel_description_changed:
+                    self = .channel_description_changed(try singleValueContainer.decode(ChannelDescriptionChangedSystemContent.self))
+                case .channel_icon_changed:
+                    self = .channel_icon_changed(try singleValueContainer.decode(ChannelIconChangedSystemContent.self))
+                case .channel_ownership_changed:
+                    self = .channel_ownership_changed(try singleValueContainer.decode(ChannelOwnershipChangedSystemContent.self))
+                case .message_pinned:
+                    self = .message_pinned(try singleValueContainer.decode(MessagePinnedSystemContent.self))
+                case .message_unpinned:
+                    self = .message_unpinned(try singleValueContainer.decode(MessagePinnedSystemContent.self))
+                case .call_started:
+                    self = .call_started(try singleValueContainer.decode(CallStartedSystemContent.self))
+            }
+        } catch {
+            self = .unknown
         }
     }
     
@@ -178,7 +175,8 @@ extension SystemMessageContent: Codable {
             case .call_started(let content):
                 try tagContainer.encode(Tag.call_started, forKey: .type)
                 try content.encode(to: encoder)
-
+            case .unknown:
+                break
         }
     }
 }

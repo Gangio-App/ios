@@ -132,43 +132,20 @@ struct Settings: View {
                     .padding(.horizontal, 16)
                 }
 
-                // Account Section
-                settingsGroup(header: "Account") {
-                    VStack(spacing: 0) {
-                        SettingsRow(icon: "person.fill", title: "My Account", color: .blue) { UserSettings() }
-                        Divider().padding(.leading, 56)
-                        SettingsRow(icon: "paintpalette.fill", title: "Profile Appearance", color: .purple) { ProfileSettings() }
-                        Divider().padding(.leading, 56)
-                        SettingsRow(icon: "lock.shield.fill", title: "Safety & Sessions", color: .green) { SessionsSettings() }
-                    }
+                // Grid of Setting Tiles
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    SettingTile(icon: "person.fill", title: "My Account", color: .blue) { UserSettings() }
+                    SettingTile(icon: "paintpalette.fill", title: "Profile", color: .purple) { ProfileSettings() }
+                    SettingTile(icon: "lock.shield.fill", title: "Safety", color: .green) { SessionsSettings() }
+                    SettingTile(icon: "sparkles", title: "Appearance", color: .orange) { AppearanceSettings() }
+                    SettingTile(icon: "speaker.wave.3.fill", title: "Audio", color: Color(hex: "5865F2")) { AudioSettingsView() }
+                    SettingTile(icon: "bell.badge.fill", title: "Alerts", color: .red) { NotificationSettings() }
+                    SettingTile(icon: "character.bubble.fill", title: "Language", color: .teal) { LanguageSettings() }
+                    SettingTile(icon: "cpu.fill", title: "Developer", color: .indigo) { BotSettings() }
+                    SettingTile(icon: "testtube.2", title: "Experiments", color: .mint) { ExperimentsSettings() }
+                    SettingTile(icon: "info.circle.fill", title: "About", color: .gray) { About() }
                 }
-
-                // Preferences Section
-                settingsGroup(header: "App Settings") {
-                    VStack(spacing: 0) {
-                        SettingsRow(icon: "sparkles", title: "Appearance", color: .orange) { AppearanceSettings() }
-                        Divider().padding(.leading, 56)
-                        SettingsRow(icon: "speaker.wave.3.fill", title: "Voice & Audio", color: Color(hex: "5865F2")) { AudioSettingsView() }
-                        Divider().padding(.leading, 56)
-                        SettingsRow(icon: "bell.badge.fill", title: "Notifications", color: .red) { NotificationSettings() }
-                        Divider().padding(.leading, 56)
-                        SettingsRow(icon: "character.bubble.fill", title: "Language", color: .teal) { LanguageSettings() }
-                    }
-                }
-
-                // Advanced Section
-                settingsGroup(header: "Advanced") {
-                    VStack(spacing: 0) {
-                        SettingsRow(icon: "cpu.fill", title: "Developer Tools", color: .indigo) { BotSettings() }
-                        Divider().padding(.leading, 56)
-                        SettingsRow(icon: "testtube.2", title: "Experimental Features", color: .mint) { ExperimentsSettings() }
-                    }
-                }
-
-                // Support Section
-                settingsGroup(header: "Support") {
-                    SettingsRow(icon: "info.circle.fill", title: "About Gangio", color: .gray) { About() }
-                }
+                .padding(.horizontal, 16)
 
                 // Danger Zone
                 VStack(spacing: 12) {
@@ -254,7 +231,7 @@ struct Settings: View {
     }
 }
 
-struct SettingsRow<Destination: View>: View {
+struct SettingTile<Destination: View>: View {
     @EnvironmentObject var viewState: AppViewState
     let icon: String
     let title: String
@@ -263,29 +240,29 @@ struct SettingsRow<Destination: View>: View {
 
     var body: some View {
         NavigationLink(destination: LazyView(destination())) {
-            HStack(spacing: 16) {
+            VStack(spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 2)
+                    RoundedRectangle(cornerRadius: 12)
                         .fill(color.opacity(0.15))
-                        .frame(width: 32, height: 32)
+                        .frame(width: 44, height: 44)
                     
                     Image(systemName: icon)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: 20, weight: .bold))
                         .foregroundStyle(color)
                 }
 
                 Text(title)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 14, weight: .black))
                     .foregroundStyle(viewState.theme.foreground.color)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .black))
-                    .foregroundStyle(viewState.theme.foreground3.color.opacity(0.3))
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity)
+            .frame(height: 110)
+            .background(viewState.theme.background2.color)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -20,6 +20,7 @@ enum GangioError: Error {
     case JSONDecoding(any Error)
 }
 
+
 struct HTTPClient {
     var token: String?
     var baseURL: String
@@ -77,6 +78,8 @@ struct HTTPClient {
             headers: headers
         )
         
+        print("[Gangio HTTP] \(method.rawValue) \(route)")
+        
         let response = await req.serializingString()
             .response
 
@@ -115,6 +118,7 @@ struct HTTPClient {
                 do {
                     return .success(try JSONDecoder().decode(O.self, from: data))
                 } catch {
+                    print("[Gangio HTTP] Decoding error for \(route): \(error)")
                     return .failure(.JSONDecoding(error))
                 }
 

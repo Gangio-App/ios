@@ -50,6 +50,8 @@ class MessageableChannelViewModel: ObservableObject {
     @Published var highlighted: String? = nil
     @Published var currentlyEditing: Message? = nil
     @Published var replies: [Reply] = []
+    @Published var isLoading: Bool = false
+    @Published var lastError: String? = nil
     
     private var viewModelCache: [String: MessageContentsViewModel] = [:]
     
@@ -132,32 +134,59 @@ class MessageableChannelViewModel: ObservableObject {
     }
 
     func loadMoreMessages(before: String? = nil) async -> FetchHistory? {
-        if isPreview { return nil }
-        let result = (try? await viewState.http.fetchHistory(channel: channel.id, limit: 50, before: before).get()) ?? FetchHistory(messages: [], users: [])
+        guard !isLoading else { return nil }
+        isLoading = true
+        lastError = nil
         
-        for user in result.users { viewState.users[user.id] = user }
-        if let members = result.members {
-            for member in members { viewState.members[member.id.server, default: [:]][member.id.user] = member }
+        if isPreview { 
+            isLoading = false
+            return nil 
         }
         
-        var ids: [String] = []
-        for message in result.messages {
-            viewState.messages[message.id] = message
-            ids.append(message.id)
-        }
+        print("[Gangio] Fetching history for \(channel.id) before \(before ?? "now")")
         
-        let existingIds = Set(viewState.channelMessages[channel.id] ?? [])
-        let newUniqueIds = ids.reversed().filter { !existingIds.contains($0) }
+        let resultResp = await viewState.http.fetchHistory(channel: channel.id, limit: 50, before: before)
         
-        if result.messages.count < 50 {
+        switch resultResp {
+        case .success(let result):
+            print("[Gangio] Successfully fetched \(result.messages.count) messages")
+            
+            for user in result.users { viewState.users[user.id] = user }
+            if let members = result.members {
+                for member in members { viewState.members[member.id.server, default: [:]][member.id.user] = member }
+            }
+            
+            var ids: [String] = []
+            for message in result.messages {
+                viewState.messages[message.id] = message
+                ids.append(message.id)
+            }
+            
+            let existingIds = Set(viewState.channelMessages[channel.id] ?? [])
+            let newUniqueIds = ids.reversed().filter { !existingIds.contains($0) }
+            
+            if result.messages.count < 50 {
+                DispatchQueue.main.async {
+                    self.viewState.atTopOfChannel.insert(self.channel.id)
+                }
+            }
+            
+            viewState.channelMessages[channel.id] = newUniqueIds + (viewState.channelMessages[channel.id] ?? [])
+            updateGroups()
+            isLoading = false
+            return result
+            
+        case .failure(let error):
+            print("[Gangio] ERROR fetching history: \(error)")
+            lastError = "Failed to load messages"
+            isLoading = false
+            
+            // Mark as top of channel to stop infinite loading loops on persistent error
             DispatchQueue.main.async {
                 self.viewState.atTopOfChannel.insert(self.channel.id)
             }
+            return nil
         }
-        
-        viewState.channelMessages[channel.id] = newUniqueIds + (viewState.channelMessages[channel.id] ?? [])
-        updateGroups()
-        return result
     }
     
     func loadMoreMessagesIfNeeded(current: String?) async {

@@ -17,6 +17,13 @@ public enum Presence: String, Codable, Equatable, Hashable {
     case Invisible
     case Online
     case Focus
+    case Unknown
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let status = try? container.decode(String.self)
+        self = Presence(rawValue: status ?? "Online") ?? .Unknown
+    }
 }
 
 public enum Relation: String, Codable, Equatable, Hashable {
@@ -27,6 +34,13 @@ public enum Relation: String, Codable, Equatable, Hashable {
     case None
     case Outgoing
     case User
+    case Unknown
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rel = try? container.decode(String.self)
+        self = Relation(rawValue: rel ?? "None") ?? .Unknown
+    }
 }
 
 public struct Status: Codable, Equatable, Hashable {
