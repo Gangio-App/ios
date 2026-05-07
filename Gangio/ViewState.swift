@@ -640,16 +640,21 @@ public class AppViewState: ObservableObject {
 
     /// A successful result here means pending (the session has been destroyed but the client still has data cached)
     func signOut() async -> Result<(), UserStateError>  {
-        let status = try? await http.signout().get()
-        guard let status = status else { return .failure(.signOutError)}
+        // Try to sign out on the server, but don't block local sign out if it fails
+        let _ = try? await http.signout().get()
+        
         self.ws?.stop()
+        self.ws = nil
         
-        withAnimation {
-            state = .signedOut
+        await MainActor.run {
+            withAnimation(.spring()) {
+                self.forceMainScreen = false
+                self.state = .signedOut
+                self.sessionToken = nil
+                self.http.token = nil
+            }
+            self.destroyCache()
         }
-        
-        // IMPORTANT: do not destroy the cache/session here. It'll cause the app to crash before it can transition to the welcome screen.
-        // The cache is destroyed in GangioApp.swift:ApplicationSwitcher
         
         return .success(())
     }
@@ -684,6 +689,9 @@ public class AppViewState: ObservableObject {
         currentSelection = .dms
         currentChannel = .home
         currentSessionId = nil
+        forceMainScreen = false
+        isOnboarding = false
+        path = NavigationPath()
         
         userSettingsStore.isLoggingOut()
         self.ws?.stop()
