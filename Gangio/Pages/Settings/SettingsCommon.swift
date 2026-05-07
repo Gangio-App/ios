@@ -147,9 +147,9 @@ struct SettingsSectionView<Content: View>: View {
             }
             .background(.ultraThinMaterial.opacity(0.8))
             .background(colorScheme == .dark ? Color.white.opacity(0.02) : Color.black.opacity(0.01))
-            .cornerRadius(20)
+            .cornerRadius(12)
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: 12)
                     .stroke(colorScheme == .dark ? .white.opacity(0.1) : .black.opacity(0.05), lineWidth: 1)
             )
         }

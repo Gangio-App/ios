@@ -54,20 +54,20 @@ struct Settings: View {
         ScrollView {
             VStack(spacing: 28) {
                 // Settings Header with Wide Logo
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     Image("wide")
                         .resizable()
                         .scaledToFit()
-                        .frame(height: 38)
+                        .frame(height: 40)
                         .foregroundStyle(viewState.theme.foreground.color)
                     
                     Text("SETTINGS")
-                        .font(.system(size: 13, weight: .black))
+                        .font(.system(size: 14, weight: .black))
                         .foregroundStyle(viewState.theme.accent.color)
-                        .tracking(3)
+                        .tracking(4)
                 }
-                .padding(.top, 24)
-                .padding(.bottom, 12)
+                .padding(.top, 32)
+                .padding(.bottom, 16)
 
                 // Profile Header Card
                 if let user = viewState.currentUser {
@@ -122,10 +122,10 @@ struct Settings: View {
                         .buttonStyle(.plain)
                     }
                     .background(
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: 12)
                             .fill(cardBackgroundColor)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 4)
+                                RoundedRectangle(cornerRadius: 12)
                                     .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
                             )
                     )
@@ -244,9 +244,9 @@ struct Settings: View {
 
             content()
                 .background(cardBackgroundColor)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: 12)
                         .stroke(viewState.theme.foreground3.color.opacity(0.1), lineWidth: 1)
                 )
         }

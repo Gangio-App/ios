@@ -80,13 +80,6 @@ struct CreateServer: View {
         }
         .navigationTitle(currentStep == 1 ? "Create a Server" : "Customize Your Server")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            if currentStep == 1 {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-        }
         .onChange(of: selectedPhotoItem) { _, newItem in
             Task {
                 if let data = try? await newItem?.loadTransferable(type: Data.self) {
