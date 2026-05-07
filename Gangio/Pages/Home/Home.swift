@@ -752,6 +752,8 @@ struct YouView: View {
         case .Focus: return .purple
         case .Busy: return .red
         case .Invisible, .none: return .gray
+        case .some(.Unknown):
+            <#code#>
         }
     }
 

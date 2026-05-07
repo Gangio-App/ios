@@ -75,6 +75,20 @@ public struct CallStartedSystemContent: Codable, Equatable {
     public var by: String
 }
 
+public enum SystemMessageContent: Equatable {
+    case text(TextSystemMessageContent)
+    case user_added(UserAddedSystemContent)
+    case user_removed(UserRemovedSystemContent)
+    case user_joined(UserJoinedSystemContent)
+    case user_left(UserLeftSystemContent)
+    case user_kicked(UserKickedSystemContent)
+    case user_banned(UserBannedSystemContent)
+    case channel_renamed(ChannelRenamedSystemContent)
+    case channel_description_changed(ChannelDescriptionChangedSystemContent)
+    case channel_icon_changed(ChannelIconChangedSystemContent)
+    case channel_ownership_changed(ChannelOwnershipChangedSystemContent)
+    case message_pinned(MessagePinnedSystemContent)
+    case message_unpinned(MessagePinnedSystemContent)
     case call_started(CallStartedSystemContent)
     case unknown
 }
