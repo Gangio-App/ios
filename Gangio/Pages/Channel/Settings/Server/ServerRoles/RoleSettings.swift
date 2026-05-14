@@ -112,41 +112,7 @@ struct RoleSettings: View {
             ToolbarItem(placement: placement) {
                 if initial != currentValue {
                     Button {
-                        Task {
-                            var payload = RoleEditPayload()
-
-                            if initial.name != currentValue.name {
-                                payload.name = currentValue.name
-                            }
-                            
-                            if initial.colour != currentValue.colour {
-                                if currentValue.colour == nil || currentValue.colour == "" {
-                                    if payload.remove == nil {
-                                        payload.remove = []
-                                    }
-                                    payload.remove!.append(.colour)
-                                } else {
-                                    payload.colour = currentValue.colour
-                                }
-                            }
-                            
-                            if initial.hoist != currentValue.hoist {
-                                payload.hoist = currentValue.hoist
-                            }
-                            
-                            if initial.rank != currentValue.rank {
-                                payload.rank = currentValue.rank
-                            }
-                            
-                            initial = try! await viewState.http.editRole(server: server.id, role: roleId, payload: payload).get()
-                            
-                            if initial.permissions != currentValue.permissions {
-                                let _ = try! await viewState.http.setRolePermissions(server: server.id, role: roleId, overwrite: currentValue.permissions).get()
-                                initial.permissions = currentValue.permissions
-                            }
-                            
-                            currentValue = initial
-                        }
+                        Task { await saveRole() }
                     } label: {
                         Text("Save")
                             .foregroundStyle(viewState.theme.accent)
@@ -154,5 +120,56 @@ struct RoleSettings: View {
                 }
             }
         }
+    }
+    
+    @MainActor
+    private func saveRole() async {
+        var payload = RoleEditPayload()
+        
+        if initial.name != currentValue.name {
+            payload.name = currentValue.name
+        }
+        
+        if initial.colour != currentValue.colour {
+            if currentValue.colour == nil || currentValue.colour == "" {
+                if payload.remove == nil { payload.remove = [] }
+                payload.remove!.append(.colour)
+            } else {
+                payload.colour = currentValue.colour
+            }
+        }
+        
+        if initial.hoist != currentValue.hoist {
+            payload.hoist = currentValue.hoist
+        }
+        
+        if initial.rank != currentValue.rank {
+            payload.rank = currentValue.rank
+        }
+        
+        // Edit role properties (name/colour/hoist/rank) — handle errors gracefully.
+        let editResult = await viewState.http.editRole(server: server.id, role: roleId, payload: payload)
+        guard case .success(var updatedRole) = editResult else {
+            print("[Gangio] editRole failed: \(editResult)")
+            return
+        }
+        
+        // Apply permission changes if any
+        if initial.permissions != currentValue.permissions {
+            let permResult = await viewState.http.setRolePermissions(server: server.id, role: roleId, overwrite: currentValue.permissions)
+            if case .success = permResult {
+                updatedRole.permissions = currentValue.permissions
+            }
+        }
+        
+        // Persist locally so all places (chat, settings, etc.) reflect the new role colour.
+        if viewState.servers[server.id] != nil {
+            viewState.servers[server.id]?.roles?[roleId] = updatedRole
+            // Also update the local @Binding copy so this view's state is in sync.
+            server.roles?[roleId] = updatedRole
+        }
+        
+        initial = updatedRole
+        currentValue = updatedRole
     }
 }

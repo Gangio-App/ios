@@ -666,6 +666,114 @@ fileprivate struct PasswordUpdateSheet: View {
     }
 }
 
+fileprivate struct EmailUpdateSheet: View {
+    @EnvironmentObject var viewState: AppViewState
+    @Environment(\.colorScheme) var colorScheme
+    @Binding var showSheet: Bool
+    
+    @State var newEmail: String
+    @State var password: String = ""
+    @State var isSaving = false
+    @State var errorText: String? = nil
+    @State var succeeded = false
+    
+    init(viewState: AppViewState, showSheet sheet: Binding<Bool>) {
+        _showSheet = sheet
+        _newEmail = State(initialValue: viewState.userSettingsStore.cache.accountData?.email ?? "")
+    }
+    
+    func submitEmail() async {
+        isSaving = true
+        errorText = nil
+        do {
+            _ = try await viewState.http.updateEmail(newEmail: newEmail, currentPassword: password).get()
+            succeeded = true
+            // Refresh the cached email so the Settings row updates without
+            // requiring the user to relaunch.
+            await viewState.userSettingsStore.fetchFromApi()
+            showSheet = false
+        } catch {
+            errorText = "Incorrect password or email invalid / already in use"
+        }
+        isSaving = false
+    }
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 12) {
+                Image(systemName: "envelope.badge.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(viewState.theme.accent.color)
+                
+                Text("Change Email")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                
+                Text("We'll send a confirmation to the new address before it becomes active on your account.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
+            .padding(.top, 20)
+            
+            VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("NEW EMAIL")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.gray)
+                    
+                    TextField("name@example.com", text: $newEmail)
+                        .keyboardType(.emailAddress)
+                        .textContentType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("CONFIRM PASSWORD")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.gray)
+                    
+                    SecureField("Current Password", text: $password)
+                        .padding()
+                        .background(colorScheme == .dark ? Color(white: 0.1) : Color(white: 0.95))
+                        .cornerRadius(12)
+                }
+                
+                if let error = errorText {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .padding(.top, 4)
+                }
+            }
+            
+            Button(action: { Task { await submitEmail() } }) {
+                HStack {
+                    if isSaving {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("Update Email")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(RoundedRectangle(cornerRadius: 12).fill(viewState.theme.accent.color))
+            }
+            .disabled(isSaving || newEmail.isEmpty || password.isEmpty || !newEmail.contains("@"))
+            
+            Spacer().frame(height: 10)
+        }
+        .padding(24)
+    }
+}
+
+
 fileprivate struct DisableAccountSheet: View {
     @EnvironmentObject var viewState: AppViewState
     @Binding var showSheet: Bool
@@ -972,6 +1080,16 @@ struct UserSettings: View {
         }) {
             SettingsSheetContainer(showSheet: $presentChangeUsernameSheet) {
                 UsernameUpdateSheet(viewState: viewState, showSheet: $presentChangeUsernameSheet)
+            }
+            .presentationBackground(viewState.theme.background)
+        }
+        .sheet(isPresented: $presentChangeEmailSheet, onDismiss: {
+            Task {
+                await viewState.userSettingsStore.fetchFromApi()
+            }
+        }) {
+            SettingsSheetContainer(showSheet: $presentChangeEmailSheet) {
+                EmailUpdateSheet(viewState: viewState, showSheet: $presentChangeEmailSheet)
             }
             .presentationBackground(viewState.theme.background)
         }

@@ -235,8 +235,12 @@ struct CreateServer: View {
                             .padding(.horizontal, 16)
                     }
                     
-                    // Create button
+                    // Create button. Guard against rapid double-taps by flipping
+                    // `isCreating` synchronously on the button action before any
+                    // async work begins, so subsequent taps are ignored.
                     Button {
+                        guard canCreate, !isCreating else { return }
+                        isCreating = true
                         Task { await createServer() }
                     } label: {
                         HStack {
@@ -249,7 +253,7 @@ struct CreateServer: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(canCreate ? .blue : Color.gray.opacity(0.4))
+                        .background(canCreate && !isCreating ? .blue : Color.gray.opacity(0.4))
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
@@ -263,9 +267,10 @@ struct CreateServer: View {
     
     @MainActor
     private func createServer() async {
-        errorMessage = nil
-        isCreating = true
+        // `isCreating` is set to true synchronously by the Button action before
+        // this function is invoked. We just guarantee it's reset on exit.
         defer { isCreating = false }
+        errorMessage = nil
         
         let serverName = name.trimmingCharacters(in: .whitespaces)
         guard !serverName.isEmpty else {
@@ -291,11 +296,41 @@ struct CreateServer: View {
         
         switch result {
         case .success(let server):
-            viewState.servers[server.id] = server
-            viewState.currentChannel = .channel(server.channels.first ?? "")
+            // Wait a moment for the backend to link the icon and process the server fully
+            try? await Task.sleep(for: .seconds(1))
+            
+            // Fetch the full server and its channels to ensure everything is in sync
+            let fullServerRes = await viewState.http.fetchServer(server: server.id)
+            if case .success(let fullServer) = fullServerRes {
+                viewState.servers[fullServer.id] = fullServer
+                // Also fetch channels for this server
+                let channelsRes = await viewState.http.fetchChannels(server: server.id)
+                if case .success(let channels) = channelsRes {
+                    for channel in channels {
+                        viewState.channels[channel.id] = channel
+                    }
+                }
+                viewState.currentChannel = .channel(fullServer.channels.first ?? "")
+            } else {
+                viewState.servers[server.id] = server
+                viewState.currentChannel = .channel(server.channels.first ?? "")
+            }
             dismiss()
-        case .failure:
-            errorMessage = "Failed to create server. Please try again."
+        case .failure(let error):
+            // Check if server was actually created despite error (e.g. decoding failure or timeout)
+            // Try to find a server with the same name and owner that was recently created
+            if let existing = viewState.servers.values.first(where: { $0.name == serverName && $0.owner == viewState.currentUser?.id }) {
+                // Refresh it to be sure
+                let fullServerRes = await viewState.http.fetchServer(server: existing.id)
+                if case .success(let fullServer) = fullServerRes {
+                    viewState.servers[fullServer.id] = fullServer
+                    viewState.currentChannel = .channel(fullServer.channels.first ?? "")
+                }
+                dismiss()
+            } else {
+                errorMessage = "Failed to create server. Please try again."
+                print("Server creation error: \(error)")
+            }
         }
     }
 }

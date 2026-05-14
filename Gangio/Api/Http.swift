@@ -78,7 +78,16 @@ struct HTTPClient {
             headers: headers
         )
         
-        print("[Gangio HTTP] \(method.rawValue) \(route)")
+        // Log the JSON body for non-GET requests so backend "InvalidOperation"
+        // / "InvalidPayload" responses can be diffed against the web client's
+        // request without needing a packet sniffer.
+        if let parameters, method != .get,
+           let data = try? JSONEncoder().encode(parameters),
+           let body = String(data: data, encoding: .utf8) {
+            print("[Gangio HTTP] \(method.rawValue) \(route) body=\(body)")
+        } else {
+            print("[Gangio HTTP] \(method.rawValue) \(route)")
+        }
         
         let response = await req.serializingString()
             .response
@@ -162,9 +171,12 @@ struct HTTPClient {
         var attachmentIds: [String] = []
 
         for attachment in attachments {
-            let response = try! await uploadFile(data: attachment.0, name: attachment.1, category: .attachment).get()
-
-            attachmentIds.append(response.id)
+            let result = await uploadFile(data: attachment.0, name: attachment.1, category: .attachment)
+            if case .success(let response) = result {
+                attachmentIds.append(response.id)
+            } else {
+                logger.error("Failed to upload attachment: \(attachment.1)")
+            }
         }
 
         return await req(method: .post, route: "/channels/\(channel)/messages", parameters: SendMessage(replies: replies, content: content, attachments: attachmentIds, nonce: nonce))
@@ -175,7 +187,7 @@ struct HTTPClient {
     }
 
     func deleteMessage(channel: String, message: String) async -> Result<EmptyResponse, GangioError> {
-        await req(method: .delete, route: "\(baseURL)/channels/\(channel)/messages/\(message)")
+        await req(method: .delete, route: "/channels/\(channel)/messages/\(message)")
     }
 
     func fetchHistory(channel: String, limit: Int, before: String?) async -> Result<FetchHistory, GangioError> {
@@ -320,8 +332,24 @@ struct HTTPClient {
         await req(method: .post, route: "/servers/create", parameters: payload)
     }
 
+    func fetchServer(server: String) async -> Result<Server, GangioError> {
+        await req(method: .get, route: "/servers/\(server)")
+    }
+
+    func fetchChannels(server: String) async -> Result<[Channel], GangioError> {
+        await req(method: .get, route: "/servers/\(server)/channels")
+    }
+
     func editServer(server: String, edits: ServerEdit) async -> Result<Server, GangioError> {
         await req(method: .patch, route: "/servers/\(server)", parameters: edits)
+    }
+    
+    func deleteServer(server: String) async -> Result<EmptyResponse, GangioError> {
+        await req(method: .delete, route: "/servers/\(server)")
+    }
+    
+    func leaveServer(server: String) async -> Result<EmptyResponse, GangioError> {
+        await req(method: .delete, route: "/servers/\(server)?leave_silently=false")
     }
 
     func reactMessage(channel: String, message: String, emoji: String) async -> Result<EmptyResponse, GangioError> {
@@ -380,6 +408,10 @@ struct HTTPClient {
     
     func updatePassword(newPassword: String, oldPassword: String) async -> Result<EmptyResponse, GangioError> {
         await req(method: .patch, route: "/auth/account/change/password", parameters: ["password": newPassword, "current_password": oldPassword])
+    }
+    
+    func updateEmail(newEmail: String, currentPassword: String) async -> Result<EmptyResponse, GangioError> {
+        await req(method: .patch, route: "/auth/account/change/email", parameters: ["email": newEmail, "current_password": currentPassword])
     }
     
     func disableAccount(mfaToken: String) async -> Result<EmptyResponse, GangioError> {
@@ -498,6 +530,18 @@ struct HTTPClient {
         await req(method: .patch, route: "/bots/\(id)", parameters: parameters)
     }
     
+    func inviteBot(bot: String, server: String) async -> Result<EmptyResponse, GangioError> {
+        await req(method: .post, route: "/bots/\(bot)/invite", parameters: ["server": server])
+    }
+    
+    func inviteBotToGroup(bot: String, group: String) async -> Result<EmptyResponse, GangioError> {
+        await req(method: .post, route: "/bots/\(bot)/invite", parameters: ["group": group])
+    }
+    
+    func fetchPublicBot(bot: String) async -> Result<Bot, GangioError> {
+        await req(method: .get, route: "/bots/\(bot)/invite")
+    }
+    
     func fetchMembers(server: String, excludeOffline: Bool) async -> Result<MembersWithUsers, GangioError> {
         await req(method: .get, route: "/servers/\(server)/members?exclude_offline=\(excludeOffline ? "true" : "false")")
     }
@@ -516,6 +560,16 @@ struct HTTPClient {
     
     func unbanUser(server: String, user: String) async -> Result<EmptyResponse, GangioError> {
         await req(method: .delete, route: "/servers/\(server)/bans/\(user)")
+    }
+    
+    func kickMember(server: String, user: String) async -> Result<EmptyResponse, GangioError> {
+        await req(method: .delete, route: "/servers/\(server)/members/\(user)")
+    }
+    
+    func banMember(server: String, user: String, reason: String? = nil) async -> Result<EmptyResponse, GangioError> {
+        var params: [String: String] = [:]
+        if let reason = reason { params["reason"] = reason }
+        return await req(method: .put, route: "/servers/\(server)/bans/\(user)", parameters: params.isEmpty ? nil : params)
     }
     
     func createWebhook(channel: String, body: CreateWebhookPayload) async -> Result<Webhook, GangioError> {

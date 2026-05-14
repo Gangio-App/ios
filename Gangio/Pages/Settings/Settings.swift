@@ -59,7 +59,9 @@ struct Settings: View {
                         .resizable()
                         .scaledToFit()
                         .frame(height: 40)
-                        .maybeColorInvert(color: viewState.theme.background, isDefaultImage: false, defaultIsLight: true)
+                        .if(colorScheme == .dark) { view in
+                            view.colorInvert()
+                        }
                     
                     Text("SETTINGS")
                         .font(.system(size: 14, weight: .black))
@@ -197,7 +199,7 @@ struct Settings: View {
                     }
                     .disabled(isLoggingOut)
                     
-                    Text("Gangio v1.0.0 (Premium)")
+                    Text("Gangio - version 0.0.1 BETA")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(viewState.theme.foreground3.color)
                 }
@@ -623,6 +625,17 @@ struct StatusEditorSheet: View {
                 .response
 
                 await viewState.userSettingsStore.fetchFromApi()
+                
+                // Immediately update local currentUser to reflect changes in UI
+                await MainActor.run {
+                    if var user = viewState.currentUser {
+                        user.status = Types.Status(
+                            text: statusText.isEmpty ? nil : statusText,
+                            presence: selectedPresence
+                        )
+                        viewState.currentUser = user
+                    }
+                }
             }
             
             await MainActor.run {

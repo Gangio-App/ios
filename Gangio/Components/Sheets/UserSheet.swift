@@ -57,6 +57,17 @@ struct UserSheet: View {
     var user: User
     var member: Member?
     
+    /// Always-fresh view of the user from the global store. The `user`
+    /// argument is captured by value when the sheet is presented, so a
+    /// `UserRelationship` websocket update (e.g. an outgoing friend request
+    /// flipping the relation from `.None` to `.Outgoing`) would otherwise
+    /// not reach the action button — the icon and tap handler kept showing
+    /// the stale "+" state and tapping again hit the backend's
+    /// `AlreadySentRequest` 409.
+    private var liveUser: User {
+        viewState.users[user.id] ?? user
+    }
+    
     @State var profile: Profile?
     @State var owner: User = .init(id: String(repeating: "0", count: 26), username: "Unknown", discriminator: "0000")
     @State var mutualServers: [String] = []
@@ -91,15 +102,25 @@ struct UserSheet: View {
                         HStack {
                             Spacer()
                             Button {
-                                switch user.relationship ?? .None {
+                                let u = liveUser
+                                switch u.relationship ?? .None {
                                 case .User:
                                     viewState.path.append(NavigationDestination.settings)
                                 case .Friend:
-                                    Task { await viewState.openDm(with: user.id) }
-                                case .Incoming, .None:
-                                    Task { await viewState.http.sendFriendRequest(username: user.username) }
+                                    Task { await viewState.openDm(with: u.id) }
+                                case .None:
+                                    // Backend `POST /users/friend` requires
+                                    // the full `username#discriminator` form;
+                                    // sending just the username yields
+                                    // `InvalidProperty`.
+                                    Task { await viewState.http.sendFriendRequest(username: "\(u.username)#\(u.discriminator)") }
+                                case .Incoming:
+                                    // Re-issuing the request server-side
+                                    // accepts an incoming one, but use the
+                                    // explicit accept endpoint for clarity.
+                                    Task { await viewState.http.acceptFriendRequest(user: u.id) }
                                 case .Outgoing:
-                                    Task { await viewState.http.removeFriend(user: user.id) }
+                                    Task { await viewState.http.removeFriend(user: u.id) }
                                 case .Blocked, .BlockedOther, .Unknown:
                                     break
                                 }
@@ -119,7 +140,7 @@ struct UserSheet: View {
                     ZStack(alignment: .bottomTrailing) {
                         ZStack {
                             Circle()
-                                .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                                .fill(statusColor(for: user.effectivePresence))
                                 .frame(width: 100, height: 100)
                             
                             Circle()
@@ -132,7 +153,7 @@ struct UserSheet: View {
                         
                         // Status indicator dot
                         Circle()
-                            .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                            .fill(statusColor(for: user.effectivePresence))
                             .frame(width: 22, height: 22)
                             .overlay(Circle().stroke(viewState.theme.background.color, lineWidth: 3))
                             .offset(x: -6, y: -6)
@@ -341,7 +362,7 @@ struct UserSheet: View {
                             Label("Copy ID", systemImage: "doc.on.doc")
                         }
                         
-                        if user.relationship != .User {
+                        if liveUser.relationship != .User {
                             Button {
                                 Task {
                                     if case .success(let blockedUser) = await viewState.http.blockUser(user: user.id) {
@@ -406,11 +427,15 @@ struct UserSheet: View {
     }
     
     private var actionButtonIcon: String {
-        switch user.relationship ?? .None {
+        switch liveUser.relationship ?? .None {
         case .User: return "pencil"
-        case .Friend: return "message.fill"
-        case .Incoming, .None: return "plus"
-        case .Outgoing: return "xmark"
+        // Friend: arkadaşlık göstergesi (tap = DM aç)
+        case .Friend: return "person.2.fill"
+        // None / Incoming: arkadaş değil → kişi+ (tap = istek gönder, Incoming
+        // için backend send=accept davranışı)
+        case .None, .Incoming: return "person.badge.plus"
+        // Outgoing: istek beklemede → saat (tap = iptal et)
+        case .Outgoing: return "clock"
         case .Blocked, .BlockedOther, .Unknown: return "nosign"
         }
     }

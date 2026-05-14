@@ -325,6 +325,8 @@ public class AppViewState: ObservableObject {
     @Published var currentVoiceChannel: String? = nil
     @Published var currentVoice: Room? = nil
     @Published var voiceUpdater: Bool = false
+    /// Used for scrolling to a specific message after navigating from search/jump
+    @Published var pendingScrollToMessage: String? = nil
     var voiceDelegate: PersistentVoiceDelegate?
     @Published var profiles: [String: Profile] = [:]
     
@@ -375,8 +377,11 @@ public class AppViewState: ObservableObject {
             if let locale = currentLocale {
                 let langCode = locale.language.languageCode?.identifier ?? locale.identifier
                 UserDefaults.standard.set([langCode], forKey: "AppleLanguages")
+                // Live-swap localization bundle so already-rendered strings update.
+                Bundle.setInAppLanguage(langCode)
             } else {
                 UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+                Bundle.setInAppLanguage(nil)
             }
             UserDefaults.standard.synchronize()
         }
@@ -640,20 +645,28 @@ public class AppViewState: ObservableObject {
 
     /// A successful result here means pending (the session has been destroyed but the client still has data cached)
     func signOut() async -> Result<(), UserStateError>  {
-        // Try to sign out on the server, but don't block local sign out if it fails
-        let _ = try? await http.signout().get()
-        
-        self.ws?.stop()
-        self.ws = nil
-        
+        // Update UI immediately so the user is taken to the Welcome screen without waiting on network.
         await MainActor.run {
             withAnimation(.spring()) {
                 self.forceMainScreen = false
                 self.state = .signedOut
                 self.sessionToken = nil
                 self.http.token = nil
+                self.path = NavigationPath()
             }
             self.destroyCache()
+        }
+        
+        // Stop voice / websocket and notify backend in the background — don't block UI.
+        Task.detached { [weak self] in
+            guard let self = self else { return }
+            await self.leaveVoice()
+            // Server-side signout is best-effort; ignore failures.
+            let _ = try? await self.http.signout().get()
+            await MainActor.run {
+                self.ws?.stop()
+                self.ws = nil
+            }
         }
         
         return .success(())
@@ -833,20 +846,25 @@ public class AppViewState: ObservableObject {
                     members[member.id.server]![member.id.user] = member
                 }
 
-                dms = try! await http.fetchDms().get()
-
-                for dm in dms {
-                    channels[dm.id] = dm
-                    if channelMessages[dm.id] == nil {
-                        channelMessages[dm.id] = []
+                // Fetch DMs and unreads in parallel for faster startup
+                async let dmsTask = http.fetchDms()
+                async let unreadsTask = http.fetchUnreads()
+                
+                if case .success(let fetchedDms) = await dmsTask {
+                    dms = fetchedDms
+                    for dm in dms {
+                        channels[dm.id] = dm
+                        if channelMessages[dm.id] == nil {
+                            channelMessages[dm.id] = []
+                        }
                     }
                 }
-
-                let unreads = try! await http.fetchUnreads().get()
+                
                 self.unreads = [:]
-
-                for unread in unreads {
-                    self.unreads[unread.id.channel] = unread
+                if case .success(let fetchedUnreads) = await unreadsTask {
+                    for unread in fetchedUnreads {
+                        self.unreads[unread.id.channel] = unread
+                    }
                 }
 
                 for emoji in event.emojis {
@@ -1039,12 +1057,16 @@ public class AppViewState: ObservableObject {
                 currentlyTyping[e.id]?.removeAll(where: { $0 == e.user })
 
             case .message_delete(let e):
+                // Remove from the channel's id list AND the messages dictionary
+                // together so dependent views never observe a half-deleted state
+                // (id removed but message body still present, or vice versa).
                 if var channel = channelMessages[e.channel] {
                     if let index = channel.firstIndex(of: e.id) {
                         channel.remove(at: index)
                         channelMessages[e.channel] = channel
                     }
                 }
+                messages.removeValue(forKey: e.id)
 
             case .channel_ack(let e):
                 unreads[e.id]?.last_id = e.message_id
@@ -1100,7 +1122,7 @@ public class AppViewState: ObservableObject {
             case .error(let e):
                 print(e.data)
             case .logout:
-                try! await signOut().get()
+                _ = await signOut()
             case .pong(let e):
                 print("ponog")
             case .message_remove_reaction(let e):
@@ -1434,7 +1456,16 @@ public class AppViewState: ObservableObject {
                     users[e.id] = user
                 }
             case .user_relationship(let e):
-                users[e.id] = e.user
+                // `e.id` is the *current* user's id (the websocket payload
+                // says "user <e.id>'s relationship with <e.user> is now
+                // <e.user.relationship>"). Writing the updated record under
+                // `e.id` overwrote the local user record with the *other*
+                // person's data and never touched the target's entry — so
+                // every UI reading `viewState.users[targetId].relationship`
+                // (UserSheet's friend button, FriendsList rows, etc.) saw
+                // the stale `.None` and kept hammering POST /users/friend
+                // until the backend returned `AlreadySentRequest`.
+                users[e.user.id] = e.user
             case .user_settings_update(let e):
                 ()  // TODO: update local settings from the event
             case .user_platform_wipe(let e):
@@ -1502,6 +1533,34 @@ public class AppViewState: ObservableObject {
 
         currentSelection = .dms
         currentChannel = .channel(channel!.id)
+    }
+
+    /// Resolved channel permissions for the **current** user. Centralized so
+    /// every consumer (sidebar visibility, message box gating, navigation
+    /// guards, ...) follows the same logic. Returns `Permissions.none` if
+    /// there's no current user.
+    func channelPermissions(for channel: Channel) -> Permissions {
+        guard let me = currentUser else { return Permissions.none }
+        let server = channel.server.flatMap { servers[$0] }
+        let member = server.flatMap { members[$0.id]?[me.id] }
+        return resolveChannelPermissions(
+            from: me,
+            targettingUser: me,
+            targettingMember: member,
+            channel: channel,
+            server: server
+        )
+    }
+    
+    /// Whether the current user is allowed to see this channel at all.
+    /// Discord/Revolt convention: hide channels that lack View Channel.
+    func canViewChannel(_ channel: Channel) -> Bool {
+        return channelPermissions(for: channel).contains(.viewChannel)
+    }
+    
+    /// Whether the current user is allowed to send messages here.
+    func canSendMessages(in channel: Channel) -> Bool {
+        return channelPermissions(for: channel).contains(.sendMessages)
     }
 
     func getUnreadCountFor(channel: Channel) -> UnreadCount? {
@@ -1646,7 +1705,7 @@ public class AppViewState: ObservableObject {
     func verifyStateIntegrity() async {
         if currentUser == nil {
             logger.warning("Current user is empty, logging out")
-            try! await signOut().get()
+            _ = await signOut()
         }
         
         if let token = UserDefaults.standard.string(forKey: "sessionToken") {
@@ -1805,6 +1864,15 @@ class PersistentVoiceDelegate: RoomDelegate {
     
     func room(_ room: Room, didDisconnectWithError error: LiveKitError?) {
         print("❌ Voice room disconnected: \(String(describing: error))")
+        if let error = error {
+            // Log to sentry or other service if possible
+            print("Disconnect detail: \(error.localizedDescription)")
+        }
+        
+        DispatchQueue.main.async {
+            self.viewState?.voiceUpdater.toggle()
+            // If disconnected unexpectedly, we might want to trigger a reconnect if error is recoverable
+        }
     }
     
     func room(_ room: Room, trackPublication: TrackPublication, didUpdateE2EEState state: E2EEState) {

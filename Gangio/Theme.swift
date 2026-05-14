@@ -475,7 +475,15 @@ func convertCSSColorToString(input: CssColor) -> String {
             parts.append(contentsOf: ["var(", string, ")"])
     }
     
+    // Joining with " " produced strings like `linear-gradient ( to right ,
+    // #FF0000FF , #00FF00FF )`, which the server's CSS-colour validator
+    // refused — meaning a saved gradient came back as a plain non-gradient
+    // string and the role looked like the change had silently failed.
+    // Emit the canonical compact form clients expect.
     return parts.joined(separator: " ")
+        .replacingOccurrences(of: " ,", with: ",")
+        .replacingOccurrences(of: "( ", with: "(")
+        .replacingOccurrences(of: " )", with: ")")
 }
 
 func convertCSSColorToColorType(input: String) -> ColorType {
@@ -495,12 +503,15 @@ func convertColorTypeToString(input: ColorType) -> String {
         case .hex(let string):
             return "#\(string)"
         case .rgba(let r, let g, let b, let a):
-            let r = String(r, radix: 16, uppercase: true).padding(toLength: 2, withPad: "0", startingAt: 0)
-            let g = String(g, radix: 16, uppercase: true).padding(toLength: 2, withPad: "0", startingAt: 0)
-            let b = String(b, radix: 16, uppercase: true).padding(toLength: 2, withPad: "0", startingAt: 0)
-            let a = String(a, radix: 16, uppercase: true).padding(toLength: 2, withPad: "0", startingAt: 0)
-            
-            return "#\(r)\(g)\(b)\(a)"
+            // Swift's `padding(toLength:withPad:startingAt:)` *appends* to
+            // reach the target length, so e.g. "5" became "50" — turning a
+            // genuine red of `#0F0000FF` into `#F00000FF`. Pad the front
+            // instead so single-digit components keep their leading zero.
+            func hex2(_ v: Int) -> String {
+                let s = String(v, radix: 16, uppercase: true)
+                return s.count == 1 ? "0" + s : s
+            }
+            return "#\(hex2(r))\(hex2(g))\(hex2(b))\(hex2(a))"
     }
 }
 

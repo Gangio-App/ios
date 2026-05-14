@@ -161,7 +161,7 @@ struct FriendRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 } else {
-                    Text(user.status?.presence?.rawValue ?? "Offline")
+                    Text(user.effectivePresence?.rawValue ?? "Offline")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
@@ -170,7 +170,10 @@ struct FriendRow: View {
             Spacer()
             
             HStack(spacing: 16) {
-                if user.relationship == .Incoming {
+                switch user.relationship ?? .None {
+                case .Incoming:
+                    // Accept (✓) and reject (✗): backend treats DELETE
+                    // /users/{id}/friend on an Incoming request as "decline".
                     Button {
                         Task { await viewState.http.acceptFriendRequest(user: user.id) }
                     } label: {
@@ -178,14 +181,40 @@ struct FriendRow: View {
                             .font(.title3)
                             .foregroundStyle(.green)
                     }
-                }
-                
-                Button {
-                    Task { await viewState.openDm(with: user.id) }
-                } label: {
-                    Image(systemName: "bubble.left.fill")
-                        .font(.title3)
-                        .foregroundStyle(Color(hex: "5865F2"))
+                    Button {
+                        Task { await viewState.http.removeFriend(user: user.id) }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.red)
+                    }
+                case .Outgoing:
+                    // Cancel pending request.
+                    Button {
+                        Task { await viewState.http.removeFriend(user: user.id) }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.orange)
+                    }
+                case .Friend:
+                    Button {
+                        Task { await viewState.openDm(with: user.id) }
+                    } label: {
+                        Image(systemName: "bubble.left.fill")
+                            .font(.title3)
+                            .foregroundStyle(Color(hex: "5865F2"))
+                    }
+                case .Blocked:
+                    Button {
+                        Task { _ = await viewState.http.unblockUser(user: user.id) }
+                    } label: {
+                        Image(systemName: "lock.open.fill")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+                default:
+                    EmptyView()
                 }
             }
         }
@@ -194,6 +223,17 @@ struct FriendRow: View {
         .contentShape(Rectangle())
         .onTapGesture {
             viewState.openUserSheet(user: user)
+        }
+        .contextMenu {
+            // Long-press menu mirrors Discord: a single "Remove Friend"
+            // entry on real friends, otherwise nothing destructive.
+            if user.relationship == .Friend {
+                Button(role: .destructive) {
+                    Task { await viewState.http.removeFriend(user: user.id) }
+                } label: {
+                    Label("Remove Friend", systemImage: "person.badge.minus")
+                }
+            }
         }
     }
 }

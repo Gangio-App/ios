@@ -58,13 +58,13 @@ struct ColorSheet: View {
                             }
                         case (.simple, .linear):
                             if case .simple(let colorType) = current {
-                                current = .linear_gradiant(.init(stops: [.init(color: colorType)]))
+                                current = .linear_gradiant(.init(stops: [.init(color: colorType), .init(color: colorType)]))
                             }
                         case (_, .variable):
                             current = .variable("--accent")
                         case (.variable, .linear):
                             if case .variable(let string) = current {
-                                current = .linear_gradiant(LinearGradiant(stops: [ColorStop(color: convertSwiftUIColor(color: resolveVariable(currentTheme: viewState.theme, name: string)))]))
+                                current = .linear_gradiant(LinearGradiant(stops: [ColorStop(color: convertSwiftUIColor(color: resolveVariable(currentTheme: viewState.theme, name: string))), ColorStop(color: convertSwiftUIColor(color: resolveVariable(currentTheme: viewState.theme, name: string)))]))
                             }
                         case (.variable, .simple):
                             if case .variable(let string) = current {

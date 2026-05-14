@@ -333,6 +333,8 @@ class UserSettingsData {
         
         do {
             self.cache.user = try await state.http.fetchSelf().get()
+            let user = self.cache.user
+            await MainActor.run { state.currentUser = user }
             self.cache.accountData = UserSettingsAccountData(
                 email: try await state.http.fetchAccount().get().email,
                 mfaStatus: try await state.http.fetchMFAStatus().get()

@@ -159,10 +159,17 @@ struct MessageBox: View {
     @State private var autocompleteResults: AutocompleteValues = .usersAndRoles([])
     @State private var searchTask: Task<Void, Never>? = nil
 
-    @State var currentPermissions: Permissions = .default
-
     let channel: Channel
     let server: Server?
+    
+    /// Live channel permissions for the current user. Computed every body
+    /// re-evaluation so role/overwrite/timeout changes pushed over the
+    /// websocket immediately lock or unlock the composer without waiting
+    /// for a navigation cycle. Falls back to `.none` when no current user
+    /// (i.e. logged-out preview state).
+    private var currentPermissions: Permissions {
+        viewState.channelPermissions(for: channel)
+    }
 
     init(channel: Channel, server: Server?, channelReplies: Binding<[Reply]>, focusState f: FocusState<Bool>.Binding, showingSelectEmoji: Binding<Bool>, editing: Binding<Message?>) {
         self.channel = channel
@@ -178,6 +185,11 @@ struct MessageBox: View {
     }
 
     func sendMessage() {
+        // Defensive permission check at the action site. The UI already
+        // hides the composer when sendMessages is missing, but a stale view
+        // (e.g. permissions revoked mid-keystroke) could otherwise still
+        // fire this and trigger a 403 from the server.
+        guard currentPermissions.contains(.sendMessages) else { return }
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         var c = content
         // Apply autocomplete replacements (e.g. @korybantes -> <@user_id>)
@@ -442,64 +454,84 @@ struct MessageBox: View {
             }
 
             // ── Discord-style input bar ───────────────────────────────────
-            HStack(alignment: .bottom, spacing: 10) {
-                // + Attach button
-                UploadButton(
-                    showingSelectFile: $showingSelectFile,
-                    showingSelectPhoto: $showingSelectPhoto,
-                    selectedPhotoItems: $selectedPhotoItems,
-                    selectedPhotos: $selectedPhotos
-                )
-                .frame(width: 38, height: 38)
-                .background(Circle().fill(isDark ? Color(white: 0.18) : Color(white: 0.90)))
-                .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
-                .padding(.bottom, 3)
+            // Discord-style permission gate: if the user lacks Send Messages
+            // in this channel, replace the entire composer with a locked
+            // banner. We deliberately keep the layout slot occupied so the
+            // chat area doesn't reflow when a moderator toggles permissions
+            // live over the websocket.
+            if !currentPermissions.contains(.sendMessages) {
+                HStack(spacing: 10) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Text("You do not have permission to send messages in this channel.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.ultraThinMaterial)
+            } else {
+                HStack(alignment: .bottom, spacing: 10) {
+                    // + Attach button
+                    UploadButton(
+                        showingSelectFile: $showingSelectFile,
+                        showingSelectPhoto: $showingSelectPhoto,
+                        selectedPhotoItems: $selectedPhotoItems,
+                        selectedPhotos: $selectedPhotos
+                    )
+                    .frame(width: 38, height: 38)
+                    .background(Circle().fill(isDark ? Color(white: 0.18) : Color(white: 0.90)))
+                    .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                    .padding(.bottom, 3)
+                    .disabled(!currentPermissions.contains(.uploadFiles))
+                    .opacity(currentPermissions.contains(.uploadFiles) ? 1 : 0.4)
 
-                // Main input pill
-                HStack(alignment: .bottom, spacing: 8) {
-                    TextField("", text: $content.animation(), axis: .vertical)
-                        .focused(focusState)
-                        .placeholder(when: content.isEmpty) {
-                            Text("Message #\(channel.getName(viewState))")
-                                .foregroundStyle(.secondary.opacity(0.5))
+                    // Main input pill
+                    HStack(alignment: .bottom, spacing: 8) {
+                        TextField("", text: $content.animation(), axis: .vertical)
+                            .focused(focusState)
+                            .placeholder(when: content.isEmpty) {
+                                Text("Message #\(channel.getName(viewState))")
+                                    .foregroundStyle(.secondary.opacity(0.5))
+                            }
+                            .font(.system(size: 16))
+                            .lineLimit(1...8)
+                            .padding(.vertical, 10)
+                            .padding(.leading, 14)
+                            .onChange(of: content) { _, _ in updateAutocomplete() }
+
+                        Button {
+                            focusState.wrappedValue = false
+                            showingSelectEmoji.toggle()
+                        } label: {
+                            Image(systemName: "face.smiling")
+                                .font(.system(size: 20))
+                                .foregroundStyle(.secondary.opacity(0.7))
+                                .padding(.bottom, 10)
+                                .padding(.trailing, 10)
                         }
-                        .font(.system(size: 16))
-                        .lineLimit(1...8)
-                        .padding(.vertical, 10)
-                        .padding(.leading, 14)
-                        .onChange(of: content) { _, _ in updateAutocomplete() }
-
-                    Button {
-                        focusState.wrappedValue = false
-                        showingSelectEmoji.toggle()
-                    } label: {
-                        Image(systemName: "face.smiling")
-                            .font(.system(size: 20))
-                            .foregroundStyle(.secondary.opacity(0.7))
-                            .padding(.bottom, 10)
-                            .padding(.trailing, 10)
                     }
-                }
-                .background(RoundedRectangle(cornerRadius: 22).fill(isDark ? Color(white: 0.12) : Color(white: 0.94)))
-                .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.secondary.opacity(0.1), lineWidth: 0.5))
+                    .background(RoundedRectangle(cornerRadius: 22).fill(isDark ? Color(white: 0.12) : Color(white: 0.94)))
+                    .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.secondary.opacity(0.1), lineWidth: 0.5))
 
-                // Send button
-                Button(action: sendMessage) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .resizable()
-                        .frame(width: 36, height: 36)
-                        .foregroundStyle(content.isEmpty && selectedPhotos.isEmpty ? .secondary.opacity(0.3) : viewState.theme.accent.color)
+                    // Send button
+                    Button(action: sendMessage) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .resizable()
+                            .frame(width: 36, height: 36)
+                            .foregroundStyle(content.isEmpty && selectedPhotos.isEmpty ? .secondary.opacity(0.3) : viewState.theme.accent.color)
+                    }
+                    .disabled(content.isEmpty && selectedPhotos.isEmpty)
+                    .padding(.bottom, 4)
                 }
-                .disabled(content.isEmpty && selectedPhotos.isEmpty)
-                .padding(.bottom, 4)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial)
-        }
-        .onAppear {
-            let member = server.flatMap { viewState.members[$0.id]?[viewState.currentUser!.id] }
-            currentPermissions = resolveChannelPermissions(from: viewState.currentUser!, targettingUser: viewState.currentUser!, targettingMember: member, channel: channel, server: server)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("InsertEmoji"))) { note in
             if let emoji = note.userInfo?["emoji"] as? PickerEmoji {
@@ -640,20 +672,19 @@ struct UploadButton: View {
                     Text("Select Photo")
                 }
             }
-            .onChange(of: selectedPhotoItems) { before, after in
+            .onChange(of: selectedPhotoItems) { _, after in
                 if after.isEmpty { return }
                 Task {
                     for item in after {
                         if let data = try? await item.loadTransferable(type: Data.self) {
-#if os(macOS)
+                            #if os(macOS)
                             let img = NSImage(data: data)
-#else
+                            #else
                             let img = UIImage(data: data)
-#endif
+                            #endif
 
                             if let img = img {
-                                let fileType = item.supportedContentTypes[0].preferredFilenameExtension!
-                                let fileName = (item.itemIdentifier ?? "Image") + ".\(fileType)"
+                                let fileName = item.itemIdentifier ?? "image-\(UUID().uuidString.prefix(8)).jpg"
                                 selectedPhotos.append(.init(data: data, image: img, id: UUID(), filename: fileName))
                             }
                         }

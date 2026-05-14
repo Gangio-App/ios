@@ -20,10 +20,22 @@ import SwiftUI
 struct LanguageSettings: View {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var viewState: AppViewState
+    @State private var showRestartAlert = false
 
     private var isDark: Bool { colorScheme == .dark }
     private var bg: Color { isDark ? Color(white: 0.07) : Color(white: 0.95) }
     private var card: Color { isDark ? Color(white: 0.12) : Color.white }
+
+    private let availableLanguages: [(code: String, name: String, flag: String)] = [
+        ("en", "English", "🇺🇸"),
+        ("tr", "Türkçe", "🇹🇷")
+    ]
+
+    private var currentCode: String {
+        viewState.currentLocale?.language.languageCode?.identifier
+            ?? Locale.current.language.languageCode?.identifier
+            ?? "en"
+    }
 
     var body: some View {
         ZStack {
@@ -31,7 +43,7 @@ struct LanguageSettings: View {
 
             ScrollView {
                 VStack(spacing: 20) {
-                    // Info card
+                    // Header
                     VStack(spacing: 14) {
                         Image(systemName: "globe")
                             .font(.system(size: 48))
@@ -40,9 +52,9 @@ struct LanguageSettings: View {
                         Text("Language")
                             .font(.title2.bold())
 
-                        Text("Gangio uses iOS's built-in per-app language system.\n\nYou can set your preferred language — **English** or **Türkçe** — directly in your iPhone's Settings app under **Gangio → Language**.")
+                        Text("Choose your preferred language. The app will restart to apply changes.")
                             .multilineTextAlignment(.center)
-                            .font(.system(size: 15))
+                            .font(.system(size: 14))
                             .foregroundStyle(.secondary)
                     }
                     .padding(24)
@@ -52,62 +64,35 @@ struct LanguageSettings: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
 
-                    // Current language info
-                    HStack(spacing: 14) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .font(.system(size: 22))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Current language")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.secondary)
-                            Text(currentLanguageDisplay)
-                                .font(.system(size: 16, weight: .semibold))
-                        }
-                        Spacer()
-                    }
-                    .padding(16)
-                    .background(card)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal, 16)
-
-                    // Open Settings button
-                    Button {
-                        if let url = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(url)
-                        }
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 18))
-                            Text("Open Language Settings")
-                                .font(.system(size: 16, weight: .semibold))
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(16)
-                        .background(viewState.theme.accent.color)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                    }
-                    .padding(.horizontal, 16)
-
-                    // Steps guide
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("HOW TO CHANGE")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(.secondary)
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            stepRow(number: 1, text: "Tap \"Open Language Settings\" above")
-                            stepRow(number: 2, text: "Scroll to find **Language** option")
-                            stepRow(number: 3, text: "Choose **English** or **Türkçe**")
-                            stepRow(number: 4, text: "Return to Gangio — it will switch automatically")
+                    // Language picker
+                    VStack(spacing: 0) {
+                        ForEach(Array(availableLanguages.enumerated()), id: \.offset) { idx, lang in
+                            Button {
+                                selectLanguage(code: lang.code)
+                            } label: {
+                                HStack(spacing: 14) {
+                                    Text(lang.flag)
+                                        .font(.system(size: 28))
+                                    Text(lang.name)
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundStyle(isDark ? .white : .black)
+                                    Spacer()
+                                    if currentCode == lang.code {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(viewState.theme.accent.color)
+                                            .font(.system(size: 22))
+                                    }
+                                }
+                                .padding(16)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            
+                            if idx < availableLanguages.count - 1 {
+                                Divider().padding(.leading, 56)
+                            }
                         }
                     }
-                    .padding(16)
                     .background(card)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .padding(.horizontal, 16)
@@ -117,30 +102,17 @@ struct LanguageSettings: View {
         }
         .navigationTitle("Language")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private var currentLanguageDisplay: String {
-        let code = Locale.current.language.languageCode?.identifier ?? "en"
-        switch code {
-        case "tr": return "🇹🇷 Türkçe"
-        case "en": return "🇺🇸 English"
-        default:   return "🌐 \(Locale.current.localizedString(forLanguageCode: code) ?? code)"
+        .alert("Language Changed", isPresented: $showRestartAlert) {
+            Button("OK") {}
+        } message: {
+            Text("The app's language has been switched. Some screens may need to be re-opened to update.")
         }
     }
-
-    private func stepRow(number: Int, text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Text("\(number)")
-                .font(.system(size: 12, weight: .bold))
-                .frame(width: 22, height: 22)
-                .background(viewState.theme.accent.color.opacity(0.15))
-                .foregroundStyle(viewState.theme.accent.color)
-                .clipShape(Circle())
-            Text(LocalizedStringKey(text))
-                .font(.system(size: 14))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+    
+    private func selectLanguage(code: String) {
+        // Bundle.setInAppLanguage is called inside `currentLocale.didSet`.
+        viewState.currentLocale = Locale(identifier: code)
+        showRestartAlert = true
     }
 }
 

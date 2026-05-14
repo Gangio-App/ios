@@ -100,6 +100,34 @@ public struct User: Identifiable, Codable, Equatable, Hashable {
         case id = "_id"
         case username, discriminator, display_name, avatar, relations, badges, status, relationship, online, flags, bot, privileged
     }
+    
+    /// The presence value to actually display in the UI.
+    ///
+    /// Mirrors what web/desktop clients show:
+    ///   - Bot users are treated as always reachable. Backends almost never
+    ///     flip the `online` flag for bots (they don't hold a persistent
+    ///     gateway connection the same way humans do), so without this
+    ///     bots like RoleBot/ModBot would forever show as Offline on iOS
+    ///     even though they're clearly online on every other client.
+    ///   - For humans: `online == true` is required. If the gateway hasn't
+    ///     reported them as online yet, they're shown as Offline — this is
+    ///     why disconnected users no longer leak through with a stale
+    ///     cached `status.presence` of Online.
+    ///   - `Invisible` is always rendered as Offline, regardless of the
+    ///     connection state, again matching other clients.
+    ///   - A connected user with no explicit presence falls back to Online,
+    ///     which is the default everywhere else.
+    public var effectivePresence: Presence? {
+        let connected = online == true || bot != nil
+        guard connected else { return nil }
+        if let p = status?.presence, p == .Invisible { return nil }
+        return status?.presence ?? .Online
+    }
+    
+    /// Whether this user should be considered online for UI purposes.
+    public var isOnline: Bool {
+        return effectivePresence != nil
+    }
 }
 
 public struct Profile: Codable, Equatable, Hashable {

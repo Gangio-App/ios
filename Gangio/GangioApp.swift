@@ -25,14 +25,26 @@ struct GangioApp: App {
     @StateObject var state = AppViewState.shared ?? AppViewState()
 
     init() {
+        // Enable runtime language switching via custom bundle subclass and
+        // restore any previously-saved language so the app launches localized.
+        Bundle.enableInAppLocalization()
+        if let saved = UserDefaults.standard.array(forKey: "AppleLanguages")?.first as? String {
+            Bundle.setInAppLanguage(saved)
+        }
+        
         if !isPreview {
+            // Sentry DSN host (sentry.gangio.chat) currently fails DNS lookup
+            // on some networks. Initialize defensively so a missing/unreachable
+            // host can never block app launch — disable launch profiling and
+            // keep sample rates low. Errors during DSN connection are logged
+            // by the SDK but do not affect the rest of the app.
             SentrySDK.start { options in
                 options.dsn = "https://4049414032e74d9098a44e67779aa648@sentry.gangio.chat/7"
-                options.tracesSampleRate = 1.0
-                options.profilesSampleRate = 1.0
+                options.tracesSampleRate = 0.1
+                options.profilesSampleRate = 0.0
                 options.attachViewHierarchy = true
-                options.enableAppLaunchProfiling = true
-//                options.enableMetrics = true
+                options.enableAppLaunchProfiling = false
+                options.enableAutoSessionTracking = true
             }
         }
     }
@@ -99,151 +111,169 @@ struct ApplicationSwitcher: View {
     @State var banner: WsState? = nil
     /// Track whether initial connection has completed (don't show banner on first connect)
     @State var hasInitiallyConnected = false
+    @State var showSplash = true
     
     var body: some View {
-        if viewState.state != .signedOut && !viewState.isOnboarding {
-            InnerApp()
-                .transition(.slide)
-                .task {
-                    await viewState.backgroundWsTask()
-                    // Don't reset state to connecting if we already have cached data showing
-                    if viewState.state != .signedOut && !viewState.forceMainScreen {
-                        withAnimation {
-                            viewState.state = .connecting
-                        }
-                    }
-                }
-                .overlay(alignment: .top) {
-                    if let banner = banner {
-                        connectionBanner(banner)
-                            .padding(.top, 54)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                            .zIndex(100)
-                            .animation(.spring(response: 0.45, dampingFraction: 0.75), value: banner)
-                    }
-                }
-                .onChange(of: colorScheme) { before, after in
-                    // automatically switch the color scheme if the user pressed "auto" in the preferences menu
-                    if viewState.theme.shouldFollowiOSTheme {
-                        withAnimation {
-                            _ = viewState.applySystemScheme(theme: after, followSystem: true)
-                        }
-                    }
-                }
-                .onChange(of: viewState.ws?.currentState, { before, after in
-                    if case .connected = after {
-                        if hasInitiallyConnected {
-                            // Only show "Connected" banner on REconnection, not initial
-                            banner = .connected
-                            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+        ZStack {
+            if showSplash {
+                SplashView()
+            } else {
+                if viewState.state != .signedOut && !viewState.isOnboarding {
+                    InnerApp()
+                        .transition(.slide)
+                        .task {
+                            await viewState.backgroundWsTask()
+                            // Don't reset state to connecting if we already have cached data showing
+                            if viewState.state != .signedOut && !viewState.forceMainScreen {
                                 withAnimation {
-                                    banner = nil
+                                    viewState.state = .connecting
                                 }
                             }
-                        } else {
-                            // First connection — just silently dismiss any banner
-                            hasInitiallyConnected = true
-                            withAnimation {
-                                banner = nil
+                        }
+                        .overlay(alignment: .top) {
+                            if let banner = banner {
+                                connectionBanner(banner)
+                                    .padding(.top, 54)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                                    .zIndex(100)
+                                    .animation(.spring(response: 0.45, dampingFraction: 0.75), value: banner)
                             }
                         }
-                    } else if before != nil && hasInitiallyConnected {
-                        // Only show reconnecting/disconnected after initial connection
-                        banner = after
-                    }
-                })
-                .overlay {
-                    // Global Full Screen Image Viewer
-                    if let file = viewState.fullScreenImage {
-                        ZStack {
-                            Color.black.ignoresSafeArea()
-                            
-                            LazyImage(source: .file(file), clipTo: Rectangle())
-                                .aspectRatio(contentMode: .fit)
-                                .ignoresSafeArea()
-                            
-                            VStack {
-                                HStack {
-                                    Spacer()
-                                    Button {
+                        .onChange(of: colorScheme) { before, after in
+                            // automatically switch the color scheme if the user pressed "auto" in the preferences menu
+                            if viewState.theme.shouldFollowiOSTheme {
+                                withAnimation {
+                                    _ = viewState.applySystemScheme(theme: after, followSystem: true)
+                                }
+                            }
+                        }
+                        .onChange(of: viewState.ws?.currentState, { before, after in
+                            if case .connected = after {
+                                if hasInitiallyConnected {
+                                    // Only show "Connected" banner on REconnection, not initial
+                                    banner = .connected
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
                                         withAnimation {
-                                            viewState.fullScreenImage = nil
+                                            banner = nil
                                         }
-                                    } label: {
-                                        Image(systemName: "xmark")
-                                            .font(.system(size: 20, weight: .bold))
+                                    }
+                                } else {
+                                    // First connection — just silently dismiss any banner
+                                    hasInitiallyConnected = true
+                                    withAnimation {
+                                        banner = nil
+                                    }
+                                }
+                            } else if before != nil && hasInitiallyConnected {
+                                // Only show reconnecting/disconnected after initial connection
+                                banner = after
+                            }
+                        })
+                        .overlay {
+                            // Global Full Screen Image Viewer
+                            if let file = viewState.fullScreenImage {
+                                ZStack {
+                                    Color.black.ignoresSafeArea()
+                                    
+                                    ZoomableContainer {
+                                        LazyImage(source: .file(file), clipTo: Rectangle())
+                                            .aspectRatio(contentMode: .fit)
+                                    }
+                                    .ignoresSafeArea()
+                                    
+                                    VStack {
+                                        HStack {
+                                            Spacer()
+                                            Button {
+                                                withAnimation {
+                                                    viewState.fullScreenImage = nil
+                                                }
+                                            } label: {
+                                                Image(systemName: "xmark")
+                                                    .font(.system(size: 20, weight: .bold))
+                                                    .foregroundStyle(.white)
+                                                    .padding(12)
+                                                    .background(Circle().fill(Color.black.opacity(0.6)))
+                                            }
+                                            .padding(20)
+                                        }
+                                        Spacer()
+                                        
+                                        // Download button
+                                        Button {
+                                            // TODO: Implement save to photos
+                                        } label: {
+                                            HStack {
+                                                Image(systemName: "square.and.arrow.down")
+                                                Text("Save Image")
+                                            }
+                                            .font(.system(size: 15, weight: .bold))
                                             .foregroundStyle(.white)
-                                            .padding(12)
-                                            .background(Circle().fill(Color.black.opacity(0.6)))
+                                            .padding(.horizontal, 20)
+                                            .padding(.vertical, 12)
+                                            .background(Capsule().fill(Color.white.opacity(0.2)))
+                                        }
+                                        .padding(.bottom, 40)
                                     }
-                                    .padding(20)
                                 }
-                                Spacer()
-                                
-                                // Download button
-                                Button {
-                                    // TODO: Implement save to photos
-                                } label: {
-                                    HStack {
-                                        Image(systemName: "square.and.arrow.down")
-                                        Text("Save Image")
+                                .transition(.opacity)
+                                .zIndex(200)
+                            }
+                            
+                            // Global Full Screen Video Stream Viewer
+                            if let track = viewState.selectedTrack {
+                                ZStack {
+                                    Color.black.ignoresSafeArea()
+                                    
+                                    ZoomableContainer {
+                                        SwiftUIVideoView(track, layoutMode: .fit)
                                     }
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
-                                    .background(Capsule().fill(Color.white.opacity(0.2)))
+                                    .ignoresSafeArea()
+                                    
+                                    VStack {
+                                        HStack {
+                                            Spacer()
+                                            Button {
+                                                withAnimation {
+                                                    viewState.selectedTrack = nil
+                                                }
+                                            } label: {
+                                                Image(systemName: "xmark")
+                                                    .font(.system(size: 20, weight: .bold))
+                                                    .foregroundStyle(.white)
+                                                    .padding(12)
+                                                    .background(Circle().fill(Color.black.opacity(0.6)))
+                                            }
+                                            .padding(20)
+                                        }
+                                        Spacer()
+                                    }
                                 }
-                                .padding(.bottom, 40)
+                                .transition(.opacity)
+                                .zIndex(201)
                             }
                         }
-                        .transition(.opacity)
-                        .zIndex(200)
-                    }
-                    
-                    // Global Full Screen Video Stream Viewer
-                    if let track = viewState.selectedTrack {
-                        ZStack {
-                            Color.black.ignoresSafeArea()
-                            
-                            SwiftUIVideoView(track, layoutMode: .fit)
-                                .ignoresSafeArea()
-                            
-                            VStack {
-                                HStack {
-                                    Spacer()
-                                    Button {
-                                        withAnimation {
-                                            viewState.selectedTrack = nil
-                                        }
-                                    } label: {
-                                        Image(systemName: "xmark")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundStyle(.white)
-                                            .padding(12)
-                                            .background(Circle().fill(Color.black.opacity(0.6)))
-                                    }
-                                    .padding(20)
+                } else {
+                    Welcome(wasSignedOut: $wasSignedOut)
+                        .transition(.slideNext)
+                        .onAppear {
+                            if viewState.state == .signedOut && viewState.sessionToken != nil { // signging out
+                                viewState.sessionToken = nil
+                                viewState.destroyCache()
+                                withAnimation {
+                                    wasSignedOut = true
                                 }
-                                Spacer()
                             }
                         }
-                        .transition(.opacity)
-                        .zIndex(201)
-                    }
                 }
-        } else {
-            Welcome(wasSignedOut: $wasSignedOut)
-                .transition(.slideNext)
-                .onAppear {
-                    if viewState.state == .signedOut && viewState.sessionToken != nil { // signging out
-                        viewState.sessionToken = nil
-                        viewState.destroyCache()
-                        withAnimation {
-                            wasSignedOut = true
-                        }
-                    }
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    showSplash = false
                 }
+            }
         }
     }
 

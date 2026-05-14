@@ -77,11 +77,24 @@ public struct Permissions: OptionSet, Hashable {
     public static let mentionEveryone = Permissions(rawValue: 1 << 37)
     public static let mentionRoles = Permissions(rawValue: 1 << 38)
     
-    public static let all = Permissions(arrayLiteral: [.manageChannel, .manageServer, .managePermissions, .manageRole, .manageCustomisation, .kickMembers, .banMembers, .timeoutMembers, .assignRoles, .manageNickname, .changeNicknames, .changeAvatars, .removeAvatars, .viewChannel, .readMessageHistory, .sendEmbeds, .manageMessages, .manageWebhooks, .inviteOthers, .sendEmbeds, .uploadFiles, .masquerade, .react,.connect, .speak, .video, .muteMembers, .deafenMembers, .moveMembers, .mentionEveryone, .mentionRoles])
+    // NOTE: this list MUST contain every defined permission bit. It's used
+    // by `apply(overwrite:)` as the universe to intersect against after a
+    // deny mask is applied — any bit missing here gets silently zeroed on
+    // every overwrite resolution. The previous list was missing
+    // `sendMessages` entirely (and listed `sendEmbeds` twice), which is
+    // why members of any role-overwritten channel could not send messages
+    // no matter how the role was configured.
+    public static let all = Permissions(arrayLiteral: [.manageChannel, .manageServer, .managePermissions, .manageRole, .manageCustomisation, .kickMembers, .banMembers, .timeoutMembers, .assignRoles, .manageNickname, .changeNicknames, .changeAvatars, .removeAvatars, .viewChannel, .readMessageHistory, .sendMessages, .sendEmbeds, .manageMessages, .manageWebhooks, .inviteOthers, .uploadFiles, .masquerade, .react, .connect, .speak, .video, .muteMembers, .deafenMembers, .moveMembers, .mentionEveryone, .mentionRoles])
     
     public static let defaultViewOnly = Permissions([.viewChannel, .readMessageHistory])
-    public static let `default` = Permissions.defaultViewOnly.intersection(Permissions([.sendMessages, .inviteOthers, .sendEmbeds, .uploadFiles, .connect, .speak]))
-    public static let defaultDirectMessages = Permissions.defaultViewOnly.intersection(Permissions([.manageChannel, .react]))
+    // NOTE: previously defined with `.intersection(...)`, which always yielded
+    // an empty set (the two operands had no common bits) and silently broke
+    // every channel-permission consumer that relied on these defaults — most
+    // visibly DMs, where `defaultDirectMessages` came out empty so the new
+    // sendMessages gate would lock you out of your own DMs. Use union as
+    // intended so the defaults actually grant the listed bits.
+    public static let `default` = Permissions.defaultViewOnly.union(Permissions([.sendMessages, .inviteOthers, .sendEmbeds, .uploadFiles, .connect, .speak]))
+    public static let defaultDirectMessages = Permissions.defaultViewOnly.union(Permissions([.manageChannel, .sendMessages, .inviteOthers, .sendEmbeds, .uploadFiles, .connect, .speak, .react, .masquerade]))
     public static let defaultAllowInTimeout = Permissions([.viewChannel, .readMessageHistory])
     public static let none = Permissions([])
     

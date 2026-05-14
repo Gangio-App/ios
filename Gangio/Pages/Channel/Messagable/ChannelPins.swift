@@ -24,9 +24,8 @@ struct ChannelPins: View {
                 MessageView(
                     viewModel: .init(
                         viewState: viewState,
-                        message: .constant(result),
-                        author: .constant(viewState.users[result.author]!),
-                        member: .constant(channel.server.flatMap({ viewState.members[$0]?[result.author] })),
+                        messageId: result.id,
+                        channelId: channel.id,
                         server: server,
                         channel: $channel,
                         replies: .constant([]),
@@ -55,24 +54,31 @@ struct ChannelPins: View {
         }
         .toolbarBackground(viewState.theme.topBar, for: .automatic)
         .task {
-            Task {
-                let response = try! await viewState.http.fetchChannelPins(channel: channel.id).get()
-                
-                for user in response.users {
-                    if !viewState.users.keys.contains(user.id) {
-                        viewState.users[user.id] = user
-                    }
-                }
-                
-                for member in response.members {
-                    if !(viewState.members[member.id.server]?.keys.contains(member.id.user) ?? false) {
-                        viewState.members[member.id.server]![member.id.user] = member
-                    }
-                }
-                
-                results = response.messages
+            guard let response = try? await viewState.http.fetchChannelPins(channel: channel.id).get() else {
+                return
             }
-
+            
+            for user in response.users {
+                if !viewState.users.keys.contains(user.id) {
+                    viewState.users[user.id] = user
+                }
+            }
+            
+            for member in response.members {
+                if viewState.members[member.id.server] == nil {
+                    viewState.members[member.id.server] = [:]
+                }
+                if !(viewState.members[member.id.server]?.keys.contains(member.id.user) ?? false) {
+                    viewState.members[member.id.server]?[member.id.user] = member
+                }
+            }
+            
+            // Stage messages so the id-based VM can resolve them.
+            for msg in response.messages {
+                viewState.messages[msg.id] = msg
+            }
+            
+            results = response.messages
         }
     }
 }

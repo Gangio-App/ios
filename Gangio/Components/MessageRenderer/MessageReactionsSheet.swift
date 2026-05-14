@@ -17,14 +17,19 @@ struct MessageReactionsSheet: View {
     
     init(viewModel: MessageContentsViewModel) {
         self.viewModel = viewModel
-        selection = viewModel.message.reactions!.keys.first!
+        // Best-effort initial selection. Body re-resolves from viewState live.
+        selection = viewModel.message.reactions?.keys.first ?? ""
     }
     
     var body: some View {
+        // Read live message from viewState so updates re-render this sheet.
+        let liveMessage = viewState.messages[viewModel.messageId] ?? viewModel.message
+        let reactions = liveMessage.reactions ?? [:]
+        
         VStack {
             ScrollView(.horizontal) {
                 HStack {
-                    ForEach(Array(viewModel.message.reactions!.keys), id: \.self) { emoji in
+                    ForEach(Array(reactions.keys), id: \.self) { emoji in
                         Button {
                             selection = emoji
                         } label: {
@@ -36,8 +41,7 @@ struct MessageReactionsSheet: View {
                                         .font(.system(size: 16))
                                 }
                                 
-                                Text(verbatim: String(viewModel.message.reactions![emoji]!.count))
-                                
+                                Text(verbatim: String(reactions[emoji]?.count ?? 0))
                             }
                         }
                         .padding(8)
@@ -48,11 +52,11 @@ struct MessageReactionsSheet: View {
             }
             
             HStack {
-                let users = viewModel.message.reactions![selection]!
+                let users = reactions[selection] ?? []
                 
                 List {
                     ForEach(users.compactMap({ viewState.users[$0] }), id: \.self) { user in
-                        let member = viewModel.server.flatMap { viewState.members[$0.id]![user.id] }
+                        let member: Member? = viewModel.server.flatMap { viewState.members[$0.id]?[user.id] }
                         
                         Button {
                             viewState.openUserSheet(user: user, member: member)
@@ -67,7 +71,6 @@ struct MessageReactionsSheet: View {
                     .listRowSeparator(.hidden)
                     .listRowBackground(viewState.theme.background)
                 }
-                
             }
         }
         .padding(.top, 16)

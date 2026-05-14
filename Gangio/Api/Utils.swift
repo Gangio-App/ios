@@ -10,7 +10,13 @@ import ULID
 import Types
 
 func createdAt(id: String) -> Date {
-    ULID(ulidString: id)!.timestamp
+    // Safely decode ULID timestamp; fall back to a sentinel "now" date for non-ULID
+    // ids so callers don't crash. We previously force-unwrapped which produced
+    // nonsensical or "Member Since 2019" looking dates for legacy ids.
+    if id.count == 26, let ulid = ULID(ulidString: id) {
+        return ulid.timestamp
+    }
+    return Date()
 }
 
 enum FileCategory: String {

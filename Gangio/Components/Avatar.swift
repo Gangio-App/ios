@@ -58,7 +58,9 @@ struct AppAvatar: View {
                         .frame(width: width / 2.5, height: width / 2.5)
                         .blendMode(.destinationOut)
 
-                    PresenceIndicator(presence: user.status?.presence, width: width / 3, height: height / 3)
+                    // Use effectivePresence so disconnected users render gray
+                    // even if their cached `status.presence` is still Online.
+                    PresenceIndicator(presence: user.effectivePresence, width: width / 3, height: height / 3)
                 }
                     .padding(.bottom, -2)
                     .padding(.trailing, -2)

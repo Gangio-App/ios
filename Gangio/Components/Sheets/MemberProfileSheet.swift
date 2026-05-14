@@ -25,6 +25,10 @@ struct MemberProfileSheet: View {
     @State var showAvatarPhotoPicker: Bool = false
     @State var avatarPhoto: PhotosPickerItem? = nil
     
+    // Stable identifiers for the preview message rendered inside this sheet.
+    private let previewMessageId = "00000000000000000000000000"
+    private let previewChannelId = "00000000000000000000000000"
+    
     static func fromAppViewState(_ viewState: AppViewState, server: Server) -> Self {
         let member = viewState.members[server.id]![viewState.currentUser!.id]!
         
@@ -147,15 +151,26 @@ struct MemberProfileSheet: View {
                 
                 MessageView(viewModel: MessageContentsViewModel(
                     viewState: viewState,
-                    message: .constant(Message(id: "00000000000000000000000000", content: "Hello everyone!", author: viewState.currentUser!.id, channel: "00000000000000000000000000")),
-                    author: .constant(viewState.currentUser!),
-                    member: Binding($member),
+                    messageId: previewMessageId,
+                    channelId: previewChannelId,
                     server: .constant(server),
-                    channel: .constant(Channel.text_channel(TextChannel(id: "00000000000000000000000000", server: server.id, name: "Fake Channel"))),
+                    channel: .constant(Channel.text_channel(TextChannel(id: previewChannelId, server: server.id, name: "Fake Channel"))),
                     replies: .constant([]),
                     channelScrollPosition: .empty,
                     editing: .constant(nil)
                 ), isStatic: true)
+                .onAppear {
+                    // Stage a fake message in viewState so the new id-based VM
+                    // can resolve it. Local-only; never sent to the server.
+                    if viewState.messages[previewMessageId] == nil {
+                        viewState.messages[previewMessageId] = Message(
+                            id: previewMessageId,
+                            content: "Hello everyone!",
+                            author: viewState.currentUser!.id,
+                            channel: previewChannelId
+                        )
+                    }
+                }
             }
         }
         .padding(16)

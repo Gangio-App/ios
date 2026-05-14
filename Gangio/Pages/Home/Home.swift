@@ -15,33 +15,37 @@ struct MaybeChannelView: View {
     @Binding var disableScroll: Bool
     @Binding var disableSidebar: Bool
     
-    func getRawChannelView(channel: Channel) -> AnyView {
+    // ViewBuilder (instead of returning `AnyView`) preserves the static view
+    // identity so SwiftUI keeps the same `MessageableChannelView` instance
+    // — and therefore its `@StateObject` view model — across unrelated
+    // `viewState` re-renders. The `.id(channel.id)` modifier scopes that
+    // identity to the channel, so switching channels still gives a fresh VM.
+    @ViewBuilder
+    func getRawChannelView(channel: Channel) -> some View {
         let messages = Binding(get: { viewState.channelMessages[channel.id] ?? [] }, set: { viewState.channelMessages[channel.id] = $0 })
         let server = currentSelection.id.flatMap { viewState.servers[$0] }
         
         switch channel {
             case .voice_channel:
-                return AnyView(VoiceChannelView(
+                VoiceChannelView(
                     channel: channel,
                     server: server,
                     toggleSidebar: toggleSidebar,
                     disableScroll: $disableScroll,
                     disableSidebar: $disableSidebar
-                ))
-            case .text_channel(let tc):
-                if tc.voice != nil {
-                    return AnyView(VoiceChannelView(
-                        channel: channel,
-                        server: server,
-                        toggleSidebar: toggleSidebar,
-                        disableScroll: $disableScroll,
-                        disableSidebar: $disableSidebar
-                    ))
-                } else {
-                    fallthrough
-                }
+                )
+                .id(channel.id)
+            case .text_channel(let tc) where tc.voice != nil:
+                VoiceChannelView(
+                    channel: channel,
+                    server: server,
+                    toggleSidebar: toggleSidebar,
+                    disableScroll: $disableScroll,
+                    disableSidebar: $disableSidebar
+                )
+                .id(channel.id)
             default:
-                return AnyView(MessageableChannelView(
+                MessageableChannelView(
                     viewModel: MessageableChannelViewModel(
                         viewState: viewState,
                         channel: channel,
@@ -51,7 +55,8 @@ struct MaybeChannelView: View {
                     toggleSidebar: toggleSidebar,
                     disableScroll: $disableScroll,
                     disableSidebar: $disableSidebar
-                ))
+                )
+                .id(channel.id)
         }
     }
 
@@ -72,7 +77,10 @@ struct MaybeChannelView: View {
                 
             case .force_textchannel(let channelId):
                 if let channel = viewState.channels[channelId] {
-                    let messages = Binding($viewState.channelMessages[channelId])!
+                    // Mirror the same `?? []` fallback as `getRawChannelView`
+                    // — `Binding($viewState.channelMessages[channelId])!`
+                    // would crash if the dict has no entry yet.
+                    let messages = Binding(get: { viewState.channelMessages[channelId] ?? [] }, set: { viewState.channelMessages[channelId] = $0 })
                     
                     MessageableChannelView(
                         viewModel: MessageableChannelViewModel(
@@ -85,6 +93,7 @@ struct MaybeChannelView: View {
                         disableScroll: $disableScroll,
                         disableSidebar: $disableSidebar
                     )
+                    .id(channelId)
                 } else {
                     Text("Unknown Channel")
                         .onAppear {
@@ -264,24 +273,33 @@ struct Home: View {
                                     MaybeChannelView(currentChannel: $currentChannel, currentSelection: $currentSelection, toggleSidebar: toggleSidebar, disableScroll: $disableScroll, disableSidebar: $disableSidebar)
                                         .allowsHitTesting(offset == 0)
                                         .offset(x: offset)
-                                        .shadow(color: .black.opacity(offset > 0 && offset < sidebarWidth ? (isDark ? 0.4 : 0.15) : 0), radius: 15, x: -5, y: 0)
-                                        .onTapGesture {
-                                            if offset != 0.0 {
-                                                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-                                                    offset = .zero
-                                                }
-                                            }
+                                }
+                                .shadow(color: .black.opacity(offset > 0 && offset < sidebarWidth ? (isDark ? 0.4 : 0.15) : 0), radius: 15, x: -5, y: 0)
+                                .onTapGesture {
+                                    if offset != 0.0 {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                                            offset = .zero
                                         }
+                                    }
                                 }
                                 .simultaneousGesture(
-                                    DragGesture(minimumDistance: 25)
+                                    DragGesture(minimumDistance: 60)
                                         .onChanged({ g in
-                                            if offset == 0 && g.startLocation.x > 25 { return }
-                                            guard abs(g.translation.width) > abs(g.translation.height) * 3 else { return }
+                                            // Only allow opening the sidebar via a left-edge swipe
+                                            // (within 16pt of the left edge). When the sidebar is
+                                            // already open we let any horizontal drag resize it.
+                                            if offset == 0 && g.startLocation.x > 16 { return }
                                             
-                                            if g.translation.width >= 25 {
-                                                disableScroll = true
-                                            }
+                                            // Require very strongly horizontal motion (12x more
+                                            // than vertical) to avoid hijacking vertical chat scrolls.
+                                            guard abs(g.translation.width) > abs(g.translation.height) * 12 else { return }
+                                            // Require a meaningful horizontal distance so accidental
+                                            // small drags don't open the panel.
+                                            guard abs(g.translation.width) > 60 else { return }
+                                            // Reject if vertical movement is significant in absolute terms.
+                                            guard abs(g.translation.height) < 12 else { return }
+                                            
+                                            disableScroll = true
                                             offset = min(max(g.translation.width, 0), sidebarWidth)
                                         })
                                         .onEnded({ v in
@@ -334,10 +352,6 @@ struct Home: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .overlay(alignment: .top) {
-                        GlobalVoiceBanner(currentChannel: $currentChannel, offset: $offset)
-                            .padding(.top, 4)
-                    }
 
                     // Tab bar: only hide when inside an active chat channel AND sidebar is closed
                     if !isChatOpen { BottomBar() }
@@ -396,8 +410,13 @@ struct BottomBar: View {
                 Button {
                     let impact = UIImpactFeedbackGenerator(style: .light)
                     impact.impactOccurred()
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        viewState.selectedTab = tab
+                    if tab == .dms {
+                        // DM tab now navigates to Discover/Explore Servers
+                        viewState.path.append(NavigationDestination.discover)
+                    } else {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            viewState.selectedTab = tab
+                        }
                     }
                 } label: {
                     let isSelected = viewState.selectedTab == tab
@@ -432,7 +451,7 @@ struct BottomBar: View {
         case .servers:
             Image(systemName: isSelected ? "house.fill" : "house")
         case .dms:
-            Image(systemName: isSelected ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right")
+            Image(systemName: "safari.fill")
         case .messages:
             Image(systemName: "magnifyingglass")
         case .notifications:
@@ -452,7 +471,7 @@ struct BottomBar: View {
     func tabName(for tab: MainTab) -> String {
         switch tab {
         case .servers: return "Home"
-        case .dms: return "DMs"
+        case .dms: return "Explore"
         case .messages: return "Search"
         case .notifications: return "Activity"
         case .profile: return "You"
@@ -526,7 +545,7 @@ struct YouView: View {
                     ZStack(alignment: .bottomTrailing) {
                         ZStack {
                             Circle()
-                                .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                                .fill(statusColor(for: user.effectivePresence))
                                 .frame(width: 100, height: 100)
                             
                             Circle()
@@ -539,7 +558,7 @@ struct YouView: View {
                         
                         // Status indicator dot
                         Circle()
-                            .fill(statusColor(for: user.status?.presence ?? (user.online == true ? .Online : nil)))
+                            .fill(statusColor(for: user.effectivePresence))
                             .frame(width: 22, height: 22)
                             .overlay(Circle().stroke(backgroundColor, lineWidth: 3))
                             .offset(x: -6, y: -6)
@@ -588,7 +607,7 @@ struct YouView: View {
                     if let status = user.status?.text, !status.isEmpty {
                         HStack(spacing: 8) {
                             Circle()
-                                .fill(statusColor(for: user.status?.presence))
+                                .fill(statusColor(for: user.effectivePresence))
                                 .frame(width: 10, height: 10)
                             Text(status)
                                 .font(.system(size: 14, weight: .medium))
@@ -758,9 +777,33 @@ struct YouView: View {
     }
 
     func getCreationDate(from id: String) -> String {
-        // Simple snowflake decoding for Gangio/Gangio IDs (ULSIDs)
-        // For now just return a formatted version of the ID or a mock until I have a proper ULID decoder
-        return "Dec 9, 2019" // Keeping the requested date style for now, but making it look less like a placeholder
+        // Decode ULID timestamp (first 10 chars of ULID, Crockford's Base32).
+        // ULID strings are exactly 26 characters; anything else is not a valid ULID
+        // (e.g. legacy UUIDs) and we should not try to decode it.
+        guard id.count == 26 else { return "—" }
+        
+        let alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+        let timestampPart = String(id.prefix(10)).uppercased()
+        guard timestampPart.count == 10 else { return "—" }
+        
+        var timestamp: UInt64 = 0
+        for char in timestampPart {
+            guard let index = alphabet.firstIndex(of: char) else { return "—" }
+            let value = UInt64(alphabet.distance(from: alphabet.startIndex, to: index))
+            timestamp = timestamp * 32 + value
+        }
+        
+        // Sanity-check: timestamp should be after 2020 and before 100 years from now.
+        let seconds = TimeInterval(timestamp) / 1000.0
+        let now = Date().timeIntervalSince1970
+        guard seconds > 1577836800 /* 2020-01-01 */ && seconds < now + (365 * 24 * 3600 * 5) else {
+            return "—"
+        }
+        
+        let date = Date(timeIntervalSince1970: seconds)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter.string(from: date)
     }
 }
 
@@ -845,6 +888,7 @@ extension Color {
 struct NotificationView: View {
     @EnvironmentObject var viewState: AppViewState
     @State private var selectedFilter: NotificationFilter = .all
+    @State private var showUpdatesSheet = false
     
     enum NotificationFilter {
         case all, mentions, friendRequests
@@ -923,12 +967,17 @@ struct NotificationView: View {
                 
                 Spacer()
                 
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(viewState.theme.accent.color)
-                    .padding(10)
-                    .background(viewState.theme.accent.color.opacity(0.1))
-                    .clipShape(Circle())
+                Button {
+                    showUpdatesSheet = true
+                } label: {
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(viewState.theme.accent.color)
+                        .padding(10)
+                        .background(viewState.theme.accent.color.opacity(0.1))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 24)
             .padding(.top, 20)
@@ -1020,6 +1069,12 @@ struct NotificationView: View {
             }
         }
         .background(viewState.theme.background.color)
+        .sheet(isPresented: $showUpdatesSheet) {
+            AppUpdatesSheet()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(viewState.theme.background)
+        }
     }
 }
 

@@ -59,41 +59,58 @@ struct ChannelListItem: View {
             }
         }()
         
-        Button {
-            toggleSidebar()
-            viewState.selectChannel(inServer: server.id, withId: channel.id)
-        } label: {
-            HStack(spacing: 8) {
-                // Channel type icon
-                channelTypeIcon
-                    .font(.system(size: 18))
-                    .foregroundStyle(channelForeground)
-                    .frame(width: 24)
-                
-                // Channel name
-                Text(channel.getName(viewState))
-                    .font(.system(size: 15, weight: isSelected || unread != nil ? .semibold : .regular))
-                    .foregroundStyle(channelForeground)
-                    .lineLimit(1)
-                
-                Spacer()
-                
-                // Unread badge
-                if let unread = unread, !isMuted {
-                    UnreadCounter(unread: unread, mentionSize: 20, unreadSize: 8)
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                toggleSidebar()
+                viewState.selectChannel(inServer: server.id, withId: channel.id)
+            } label: {
+                HStack(spacing: 8) {
+                    // Channel type icon
+                    channelTypeIcon
+                        .font(.system(size: 18))
+                        .foregroundStyle(channelForeground)
+                        .frame(width: 24)
+                    
+                    // Channel name
+                    Text(channel.getName(viewState))
+                        .font(.system(size: 15, weight: isSelected || unread != nil ? .semibold : .regular))
+                        .foregroundStyle(channelForeground)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    // Unread badge
+                    if let unread = unread, !isMuted {
+                        UnreadCounter(unread: unread, mentionSize: 20, unreadSize: 8)
+                    }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    isSelected
+                        ? viewState.theme.background4.color.opacity(0.5)
+                        : Color.clear
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 6))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(
-                isSelected
-                    ? viewState.theme.background4.color.opacity(0.5)
-                    : Color.clear
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 6))
             
-            // Voice state participants
+            // Voice state participants (below the channel button, indented like Discord)
             if let channelVoiceState = viewState.voiceStates[channel.id] {
+                // Voice Connected indicator
+                if viewState.currentVoiceChannel == channel.id && viewState.currentVoice != nil {
+                    HStack(spacing: 6) {
+                        Image(systemName: "speaker.wave.2.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(viewState.theme.accent.color)
+                        Text("Voice Connected")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(viewState.theme.foreground2.color)
+                    }
+                    .padding(.leading, 44)
+                    .padding(.top, 2)
+                    .padding(.bottom, 4)
+                }
+                
                 ForEach(channelVoiceState.values.compactMap({ participant in
                     let user = viewState.users[participant.id]
                     let member = viewState.members[server.id]![participant.id]
@@ -103,14 +120,20 @@ struct ChannelListItem: View {
                     } else {
                         Task {
                             if user == nil {
-                                viewState.users[participant.id] = try! await viewState.http.fetchUser(user: participant.id).get()
+                                let res = await viewState.http.fetchUser(user: participant.id)
+                                if case .success(let fetchedUser) = res {
+                                    await MainActor.run { viewState.users[participant.id] = fetchedUser }
+                                }
                             }
                             
                             if member == nil {
-                                viewState.members[server.id]![participant.id] = try! await viewState.http.fetchMember(server: server.id, member: participant.id).get()
+                                let res = await viewState.http.fetchMember(server: server.id, member: participant.id)
+                                if case .success(let fetchedMember) = res {
+                                    await MainActor.run { viewState.members[server.id]?[participant.id] = fetchedMember }
+                                }
                             }
                             
-                            updateVoiceState.toggle()
+                            await MainActor.run { updateVoiceState.toggle() }
                         }
                         
                         return nil
@@ -122,27 +145,27 @@ struct ChannelListItem: View {
                         viewState.openUserSheet(user: user, member: member)
                     } label: {
                         HStack(spacing: 8) {
-                            AppAvatar(user: user, width: 16, height: 16)
+                            AppAvatar(user: user, width: 24, height: 24)
                             Text(verbatim: user.display_name ?? user.username)
-                                .font(.caption)
-                                .foregroundStyle(Color(hex: "B9BBBE"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(viewState.theme.foreground2.color)
                             
                             Spacer()
                             
                             if participant.camera {
-                                Image(systemName: "camera.fill")
+                                Image(systemName: "video.fill")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 14, height: 14)
-                                    .foregroundStyle(Color(hex: "B9BBBE"))
+                                    .foregroundStyle(viewState.theme.foreground3.color)
                             }
                             
                             if participant.screensharing {
-                                Image(systemName: "desktopcomputer")
+                                Image(systemName: "rectangle.on.rectangle")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 14, height: 14)
-                                    .foregroundStyle(Color(hex: "B9BBBE"))
+                                    .foregroundStyle(viewState.theme.foreground3.color)
                             }
                             
                             if !(member.can_receive ?? true) {
@@ -157,7 +180,7 @@ struct ChannelListItem: View {
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 14, height: 14)
-                                    .foregroundStyle(Color(hex: "72767D"))
+                                    .foregroundStyle(viewState.theme.foreground3.color)
                             }
                             
                             if !(member.can_receive ?? true) {
@@ -172,12 +195,14 @@ struct ChannelListItem: View {
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 14, height: 14)
-                                    .foregroundStyle(Color(hex: "72767D"))
+                                    .foregroundStyle(viewState.theme.foreground3.color)
                             }
                         }
+                        .padding(.vertical, 4)
                     }
                 }
-                .padding(.leading, 40)
+                .padding(.leading, 44)
+                .padding(.trailing, 12)
             }
         }
         .contentShape(.contextMenuPreview, RoundedRectangle(cornerRadius: 6))
@@ -237,40 +262,49 @@ struct CategoryListItem: View {
 
     var body: some View {
         let isClosed = viewState.userSettingsStore.store.closedCategories[server.id]?.contains(category.id) ?? false
+        // Resolve once per body eval. If every channel in the category is
+        // hidden by permissions, suppress the whole category header too —
+        // otherwise users would see an empty "ADMIN" / "STAFF" label that
+        // expands to nothing, which isn't how Discord behaves.
+        let visibleChannels = category.channels
+            .compactMap { viewState.channels[$0] }
+            .filter { viewState.canViewChannel($0) }
         
-        VStack(alignment: .leading, spacing: 2) {
-            // Category header
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    if isClosed {
-                        viewState.userSettingsStore.store.closedCategories[server.id]?.remove(category.id)
-                    } else {
-                        viewState.userSettingsStore.store.closedCategories[server.id, default: Set()].insert(category.id)
+        if !visibleChannels.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                // Category header
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        if isClosed {
+                            viewState.userSettingsStore.store.closedCategories[server.id]?.remove(category.id)
+                        } else {
+                            viewState.userSettingsStore.store.closedCategories[server.id, default: Set()].insert(category.id)
+                        }
                     }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.right")
+                            .resizable()
+                            .rotationEffect(Angle(degrees: isClosed ? 0 : 90))
+                            .scaledToFit()
+                            .frame(width: 8, height: 8)
+                            .foregroundStyle(viewState.theme.foreground3.color)
+                        
+                        Text(category.title.uppercased())
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(viewState.theme.foreground3.color)
+                            .tracking(0.5)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 10)
                 }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
-                        .resizable()
-                        .rotationEffect(Angle(degrees: isClosed ? 0 : 90))
-                        .scaledToFit()
-                        .frame(width: 8, height: 8)
-                        .foregroundStyle(viewState.theme.foreground3.color)
-                    
-                    Text(category.title.uppercased())
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(viewState.theme.foreground3.color)
-                        .tracking(0.5)
-                    
-                    Spacer()
-                }
-                .padding(.horizontal, 4)
-                .padding(.vertical, 10)
-            }
-            
-            if !isClosed {
-                ForEach(category.channels.compactMap({ viewState.channels[$0] }), id: \.id) { channel in
-                    ChannelListItem(server: server, channel: channel, toggleSidebar: toggleSidebar)
+                
+                if !isClosed {
+                    ForEach(visibleChannels, id: \.id) { channel in
+                        ChannelListItem(server: server, channel: channel, toggleSidebar: toggleSidebar)
+                    }
                 }
             }
         }
@@ -358,8 +392,8 @@ struct ServerChannelScrollView: View {
                     }
                     .padding(.bottom, 16)
                     
-                    // Non-category channels
-                    ForEach(nonCategoryChannels.compactMap({ viewState.channels[$0] })) { channel in
+                    // Non-category channels (also gated on viewChannel)
+                    ForEach(nonCategoryChannels.compactMap({ viewState.channels[$0] }).filter { viewState.canViewChannel($0) }) { channel in
                         ChannelListItem(server: server, channel: channel, toggleSidebar: toggleSidebar)
                     }
                     

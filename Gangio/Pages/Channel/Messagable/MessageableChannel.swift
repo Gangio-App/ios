@@ -54,6 +54,7 @@ class MessageableChannelViewModel: ObservableObject {
     @Published var lastError: String? = nil
     
     private var viewModelCache: [String: MessageContentsViewModel] = [:]
+    private var lastGroupedSnapshot: [String] = []
     
     init(viewState: AppViewState, channel: Channel, server: Server?, messages: Binding<[String]>) {
         self.viewState = viewState
@@ -65,37 +66,21 @@ class MessageableChannelViewModel: ObservableObject {
     }
     
     func getCachedViewModel(id: String, scrollProxy: ScrollViewProxy, replies: Binding<[Reply]>, editing: Binding<Message?>, highlighted: Binding<String?>) -> MessageContentsViewModel? {
+        // Drop cache for messages that were removed from viewState (e.g. after
+        // delete) so we never hand back a stale view model.
+        if viewState.messages[id] == nil {
+            viewModelCache.removeValue(forKey: id)
+            return nil
+        }
         if let cached = viewModelCache[id] { return cached }
-        guard viewState.messages[id] != nil else { return nil }
         
-        let msg = Binding<Message>(
-            get: { self.viewState.messages[id]! },
-            set: { self.viewState.messages[id] = $0 }
-        )
-        
-        let author = Binding<User>(
-            get: { self.viewState.users[msg.wrappedValue.author] ?? User(id: String(repeating: "0", count: 26), username: "Unknown", discriminator: "0000") },
-            set: { self.viewState.users[msg.wrappedValue.author] = $0 }
-        )
-        
-        let member = Binding<Member?>(
-            get: { 
-                guard let sid = self.server?.id else { return nil }
-                return self.viewState.members[sid]?[msg.wrappedValue.author]
-            },
-            set: { newValue in
-                guard let sid = self.server?.id else { return }
-                if self.viewState.members[sid] != nil {
-                    self.viewState.members[sid]![msg.wrappedValue.author] = newValue
-                }
-            }
-        )
-
+        // VM holds only ids + channel-level bindings. Live message/author/member
+        // are resolved by the views directly from viewState so SwiftUI's
+        // dependency tracking re-renders on any change.
         let newVM = MessageContentsViewModel(
             viewState: viewState,
-            message: msg,
-            author: author,
-            member: member,
+            messageId: id,
+            channelId: channel.id,
             server: Binding(get: { self.server }, set: { self.server = $0 }),
             channel: Binding(get: { self.channel }, set: { self.channel = $0 }),
             replies: replies,
@@ -110,6 +95,16 @@ class MessageableChannelViewModel: ObservableObject {
         let ids = viewState.channelMessages[channel.id] ?? []
         var seen = Set<String>()
         let uniqueIds = ids.filter { seen.insert($0).inserted }
+        
+        // Skip recomputation if message ID list is unchanged - avoids unnecessary re-renders
+        if uniqueIds == lastGroupedSnapshot && !groupedIds.isEmpty {
+            return
+        }
+        lastGroupedSnapshot = uniqueIds
+        
+        // Prune cache for removed messages
+        let validIds = Set(uniqueIds)
+        viewModelCache = viewModelCache.filter { validIds.contains($0.key) }
         
         var groups: [MessageGroup] = []
         for id in uniqueIds {
@@ -165,13 +160,26 @@ class MessageableChannelViewModel: ObservableObject {
             let existingIds = Set(viewState.channelMessages[channel.id] ?? [])
             let newUniqueIds = ids.reversed().filter { !existingIds.contains($0) }
             
+            // If the server returned fewer than the requested page size, we've
+            // reached the start of the channel. This applies to BOTH the
+            // initial load (before == nil) and pagination (before != nil) —
+            // otherwise small/empty channels keep the top spinner spinning.
             if result.messages.count < 50 {
                 DispatchQueue.main.async {
                     self.viewState.atTopOfChannel.insert(self.channel.id)
                 }
             }
             
-            viewState.channelMessages[channel.id] = newUniqueIds + (viewState.channelMessages[channel.id] ?? [])
+            // If `before` was given, prepend (older messages). Otherwise, merge with existing (latest).
+            if before != nil {
+                viewState.channelMessages[channel.id] = newUniqueIds + (viewState.channelMessages[channel.id] ?? [])
+            } else {
+                // Merge new latest messages, keeping order: existing + new (deduplicated)
+                let existing = viewState.channelMessages[channel.id] ?? []
+                let combined = existing + newUniqueIds
+                // Sort by message ID (ULID is time-sortable)
+                viewState.channelMessages[channel.id] = combined.sorted()
+            }
             updateGroups()
             isLoading = false
             return result
@@ -198,7 +206,14 @@ class MessageableChannelViewModel: ObservableObject {
 
 struct MessageableChannelView: View {
     @EnvironmentObject var viewState: AppViewState
-    @ObservedObject var viewModel: MessageableChannelViewModel
+    // StateObject (rather than ObservedObject) so the VM survives body
+    // re-evaluations of the parent view. Combined with `.id(channel.id)` in
+    // the parent it gets recreated only when the user actually switches
+    // channels — not every time `viewState` publishes an unrelated change.
+    // This is what makes the very first `loadMoreMessages` from `onAppear`
+    // visible immediately, instead of needing the user to navigate away and
+    // back to force a fresh VM.
+    @StateObject var viewModel: MessageableChannelViewModel
     
     
     
@@ -252,24 +267,35 @@ struct MessageableChannelView: View {
                 ZStack(alignment: .bottomTrailing) {
                     ScrollView {
                         LazyVStack(spacing: max(CGFloat(viewState.messageSpacing), 8)) {
-                            if viewState.atTopOfChannel.contains(viewModel.channel.id) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("#\(viewModel.channel.getName(viewState))")
-                                        .font(.system(size: 32, weight: .bold))
-                                    Text("This is the start of the #\(viewModel.channel.getName(viewState)) channel.")
-                                        .foregroundStyle(.secondary)
-                                }
+                            // Discord-style: welcome header is ALWAYS the first item
+                            // in the scroll, regardless of whether older messages
+                            // are still being paginated. Pagination is driven by
+                            // message-id `onAppear` triggers, not a top spinner.
+                            ChannelWelcomeHeader(channel: viewModel.channel)
                                 .padding(.horizontal, 16)
-                                .padding(.vertical, 32)
+                                .padding(.top, 24)
+                                .padding(.bottom, 8)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            } else {
-                                ProgressView().padding(.vertical, 20).id(topID)
+                                .id(topID)
+                            
+                            // Subtle pagination loader, only while older messages
+                            // are still loading. Sits between the welcome header
+                            // and the messages so it never pushes the header.
+                            if !viewState.atTopOfChannel.contains(viewModel.channel.id) && viewModel.isLoading {
+                                ProgressView()
+                                    .padding(.vertical, 8)
                             }
-
-                            ForEach(viewModel.groupedIds) { group in
+                            
+                            ForEach(Array(viewModel.groupedIds.enumerated()), id: \.element.id) { idx, group in
                                 let vms = group.messages.compactMap { id in getCachedViewModel(id: id, scrollProxy: proxy) }
                                 if !vms.isEmpty {
+                                    // Day divider: show when this group's date differs from the previous one
+                                    if shouldShowDateDivider(at: idx) {
+                                        DateDivider(date: createdAt(id: group.id))
+                                            .padding(.vertical, 8)
+                                    }
                                     MessageGroupContainer(group: vms, selection: .constant([]), highlighted: $viewModel.highlighted)
+                                        .id(group.id)
                                 }
                             }
                             
@@ -291,24 +317,42 @@ struct MessageableChannelView: View {
                         }
                     }
                     .onAppear {
-                        if (viewState.channelMessages[viewModel.channel.id] ?? []).isEmpty {
+                        // Force-assume we're at bottom on initial appearance so any
+                        // groupedIds change while loading scrolls down to latest.
+                        nearBottom = true
+                        
+                        let cached = viewState.channelMessages[viewModel.channel.id] ?? []
+                        if cached.isEmpty {
                             Task {
                                 _ = await viewModel.loadMoreMessages()
-                                DispatchQueue.main.async {
-                                    proxy.scrollTo("bottom", anchor: .bottom)
+                                await MainActor.run {
+                                    handleInitialScroll(proxy: proxy)
                                 }
                             }
                         } else {
                             viewModel.updateGroups()
+                            // Always refresh to get latest messages on channel open
+                            Task {
+                                _ = await viewModel.loadMoreMessages()
+                                await MainActor.run {
+                                    // Always scroll to bottom after refresh on channel open,
+                                    // regardless of where the cached scroll ended up.
+                                    handleInitialScroll(proxy: proxy)
+                                    // Second tick to guarantee layout completion
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        handleInitialScroll(proxy: proxy)
+                                    }
+                                }
+                            }
                         }
                         
                         // Immediate scroll to bottom
-                        proxy.scrollTo("bottom", anchor: .bottom)
+                        handleInitialScroll(proxy: proxy)
                         
                         // Fallback delayed scroll to ensure layout is ready
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             withAnimation(.easeOut(duration: 0.2)) {
-                                proxy.scrollTo("bottom", anchor: .bottom)
+                                handleInitialScroll(proxy: proxy)
                             }
                         }
                     }
@@ -391,6 +435,46 @@ struct MessageableChannelView: View {
         Binding($viewState.users[message.author.wrappedValue]) ?? .constant(User(id: String(repeating: "0", count: 26), username: "Unknown", discriminator: "0000"))
     }
     
+    /// Returns true if a date divider should appear above the group at `idx`.
+    func shouldShowDateDivider(at idx: Int) -> Bool {
+        guard idx < viewModel.groupedIds.count else { return false }
+        let currentGroup = viewModel.groupedIds[idx]
+        let currentDate = createdAt(id: currentGroup.id)
+        let calendar = Calendar.current
+        
+        if idx == 0 {
+            return true  // Always show divider for the first group
+        }
+        
+        let prevGroup = viewModel.groupedIds[idx - 1]
+        let prevDate = createdAt(id: prevGroup.id)
+        return !calendar.isDate(currentDate, inSameDayAs: prevDate)
+    }
+    
+    /// Handle initial scroll - either to a pending search target or to the bottom
+    func handleInitialScroll(proxy: ScrollViewProxy) {
+        if let target = viewState.pendingScrollToMessage,
+           let msgs = viewState.channelMessages[viewModel.channel.id],
+           msgs.contains(target) {
+            withAnimation(.easeInOut) {
+                proxy.scrollTo(target, anchor: .center)
+            }
+            viewModel.highlighted = target
+            // Clear pending after a short delay to allow render
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                viewState.pendingScrollToMessage = nil
+            }
+            // Clear highlight after 3 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                if viewModel.highlighted == target {
+                    viewModel.highlighted = nil
+                }
+            }
+        } else {
+            proxy.scrollTo("bottom", anchor: .bottom)
+        }
+    }
+    
     func getCachedViewModel(id: String, scrollProxy: ScrollViewProxy) -> MessageContentsViewModel? {
         viewModel.getCachedViewModel(
             id: id,
@@ -425,13 +509,47 @@ struct MessageableChannelView: View {
         return "\(base) \(ending)..."
     }
 
+    /// Whether the current user is allowed to read message history here.
+    /// Used as the deep-link / cached-channel safety net: even if a stale
+    /// `lastOpenChannel` or a search hit lands the user on a channel they
+    /// can no longer access, we render a Discord-style "no access" screen
+    /// instead of silently fetching messages they shouldn't see.
+    private var canReadHistory: Bool {
+        viewState.channelPermissions(for: viewModel.channel)
+            .contains(.readMessageHistory)
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             toolbarContent
-            messagesContent
+            if canReadHistory {
+                messagesContent
+            } else {
+                noAccessContent
+            }
         }
         .frame(maxWidth: .infinity)
         .background(viewState.theme.background)
+    }
+    
+    @ViewBuilder
+    private var noAccessContent: some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "lock.shield")
+                .font(.system(size: 44, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Text("No access")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(viewState.theme.foreground.color)
+            Text("You don't have permission to view this channel.")
+                .font(.system(size: 14))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -466,6 +584,11 @@ struct MessageWrapper<C: View>: View {
     @State var showReactSheet: Bool = false
     @State var showReactionsSheet: Bool = false
     
+    private var liveMessage: Message {
+        viewState.messages[viewModel.messageId]
+            ?? Message(id: viewModel.messageId, content: nil, author: "", channel: viewModel.channelId)
+    }
+    
     private var canManageMessages: Bool {
         let member = viewModel.server.flatMap {
             viewState.members[$0.id]?[viewState.currentUser!.id]
@@ -475,7 +598,7 @@ struct MessageWrapper<C: View>: View {
     }
     
     private var isMessageAuthor: Bool {
-        viewModel.message.author == viewState.currentUser?.id
+        liveMessage.author == viewState.currentUser?.id
     }
     
     private var canDeleteMessage: Bool {
@@ -483,19 +606,24 @@ struct MessageWrapper<C: View>: View {
     }
     
     func toggle() {
-        if selection.contains(viewModel.message.id) {
-            selection.remove(viewModel.message.id)
+        let id = viewModel.messageId
+        if selection.contains(id) {
+            selection.remove(id)
         } else {
-            selection.insert(viewModel.message.id)
+            selection.insert(id)
         }
     }
     
     @State private var dragOffset: CGFloat = 0
 
     var body: some View {
+        // Resolve once per render so SwiftUI tracks viewState.messages.
+        let message = liveMessage
+        let messageId = viewModel.messageId
+        
         HStack(alignment: .center, spacing: 0) {
             if !selection.isEmpty {
-                let contains = selection.contains(viewModel.message.id)
+                let contains = selection.contains(messageId)
                 Image(systemName: contains ? "checkmark.circle.fill" : "circle")
                     .resizable()
                     .frame(width: 24, height: 24)
@@ -514,7 +642,7 @@ struct MessageWrapper<C: View>: View {
             EmojiPicker(background: AnyView(viewState.theme.background)) { emoji in
                 Task {
                     showReactSheet = false
-                    _ = await viewState.http.reactMessage(channel: viewModel.message.channel, message: viewModel.message.id, emoji: emoji.id)
+                    _ = await viewState.http.reactMessage(channel: viewModel.channelId, message: messageId, emoji: emoji.id)
                 }
             }
             .padding([.top, .horizontal])
@@ -525,7 +653,7 @@ struct MessageWrapper<C: View>: View {
         .sheet(isPresented: $showReactionsSheet) {
             MessageReactionsSheet(viewModel: viewModel)
         }
-        .background((viewModel.message.mentions?.firstIndex(of: viewState.currentUser!.id) != nil || highlighted == viewModel.message.id
+        .background((message.mentions?.firstIndex(of: viewState.currentUser!.id) != nil || highlighted == messageId
                      ? viewState.theme.mention
                      : viewState.theme.background).animation(.default))
         .contextMenu {
@@ -533,17 +661,17 @@ struct MessageWrapper<C: View>: View {
                 Button {
                     Task {
                         var replies: [Reply] = []
-                        for reply in viewModel.message.replies ?? [] {
-                            var message: Message? = viewState.messages[reply]
-                            if message == nil {
-                                message = try? await viewState.http.fetchMessage(channel: viewModel.channel.id, message: reply).get()
+                        for reply in message.replies ?? [] {
+                            var msg: Message? = viewState.messages[reply]
+                            if msg == nil {
+                                msg = try? await viewState.http.fetchMessage(channel: viewModel.channel.id, message: reply).get()
                             }
-                            if let message {
-                                replies.append(Reply(message: message, mention: viewModel.message.mentions?.contains(message.author) ?? false))
+                            if let msg {
+                                replies.append(Reply(message: msg, mention: message.mentions?.contains(msg.author) ?? false))
                             }
                         }
                         viewModel.channelReplies = replies
-                        viewModel.editing = viewModel.message
+                        viewModel.editing = message
                     }
                 } label: {
                     Label("Edit Message", systemImage: "pencil")
@@ -560,7 +688,7 @@ struct MessageWrapper<C: View>: View {
                 Label("React", systemImage: "face.smiling.inverse")
             }
             
-            if !(viewModel.message.reactions?.isEmpty ?? true) {
+            if !(message.reactions?.isEmpty ?? true) {
                 Button {
                     showReactionsSheet = true
                 } label: {
@@ -569,7 +697,7 @@ struct MessageWrapper<C: View>: View {
             }
             
             if canManageMessages {
-                if !(viewModel.message.pinned ?? false) {
+                if !(message.pinned ?? false) {
                     Button {
                         Task { await viewModel.pin() }
                     } label: {
@@ -585,23 +713,23 @@ struct MessageWrapper<C: View>: View {
             }
             
             Button {
-                copyText(text: viewModel.message.content ?? "")
+                copyText(text: message.content ?? "")
             } label: {
                 Label("Copy text", systemImage: "doc.on.clipboard")
             }
             
             Button {
                 if let server = viewModel.server {
-                    copyUrl(url: URL(string: "https://gangio.pro/server/\(server.id)/channel/\(viewModel.channel.id)/\(viewModel.message.id)")!)
+                    copyUrl(url: URL(string: "https://gangio.pro/server/\(server.id)/channel/\(viewModel.channel.id)/\(messageId)")!)
                 } else {
-                    copyUrl(url: URL(string: "https://gangio.pro/channel/\(viewModel.channel.id)/\(viewModel.message.id)")!)
+                    copyUrl(url: URL(string: "https://gangio.pro/channel/\(viewModel.channel.id)/\(messageId)")!)
                 }
             } label: {
                 Label("Copy Message Link", systemImage: "link")
             }
             
             Button {
-                copyText(text: viewModel.message.id)
+                copyText(text: messageId)
             } label: {
                 Label("Copy Message ID", systemImage: "doc.on.clipboard")
             }
@@ -629,10 +757,10 @@ struct MessageWrapper<C: View>: View {
         .gesture(TapGesture().onEnded(toggle), isEnabled: !selection.isEmpty)
         .offset(x: dragOffset)
         .simultaneousGesture(
-            DragGesture(minimumDistance: 20)
+            DragGesture(minimumDistance: 30)
                 .onChanged { value in
-                    // Extremely strict check: horizontal must be 4x vertical AND vertical movement must be tiny
-                    if abs(value.translation.width) > abs(value.translation.height) * 4 && abs(value.translation.height) < 15 {
+                    // Strict check: horizontal must be 6x vertical AND vertical movement must be tiny
+                    if abs(value.translation.width) > abs(value.translation.height) * 6 && abs(value.translation.height) < 10 {
                         if value.translation.width < 0 {
                             dragOffset = max(value.translation.width, -60)
                         }
@@ -659,53 +787,116 @@ struct MessageGroupContainer: View {
     @Binding var highlighted: String?
     
     var body: some View {
-        let first = group.first!
-        let rest = group.dropFirst()
-        
-        VStack(alignment: .leading, spacing: 0) {
-            if first.message.id == viewState.unreads[first.channel.id]?.last_id,
-               first.message.id != viewState.channelMessages[first.channel.id]?.last {
-                HStack(spacing: 0) {
-                    Text("NEW")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 8)
-                        .background(RoundedRectangle(cornerRadius: 100).foregroundStyle(viewState.theme.accent))
-                    Rectangle()
-                        .frame(height: 1)
-                        .foregroundStyle(viewState.theme.accent)
-                }
-            }
+        // Guard against an empty group; the parent already filters but keep
+        // this safe since `group.first!` would crash an entire channel.
+        if let first = group.first {
+            let rest = group.dropFirst()
             
-            MessageWrapper(viewModel: first, highlighted: $highlighted) {
-                MessageView(viewModel: first, isStatic: false)
-                    .padding(.top, 6)
-                    .padding(.leading, selection.isEmpty ? 12 : 0)
-                    .padding(.bottom, rest.isEmpty ? 6 : 2)
-                    .padding(.trailing, selection.isEmpty ? 12 : 4)
-            }
-            .environment(\.channelMessageSelection, $selection)
-            
-            ForEach(rest) { message in
-                MessageWrapper(viewModel: message, highlighted: $highlighted) {
-                    HStack(alignment: .firstTextBaseline, spacing: 0) {
-                        Group {
-                            if message.message.edited != nil {
-                                Text("(edited)")
-                                    .font(.caption)
-                                    .foregroundStyle(viewState.theme.foreground3)
-                                    .multilineTextAlignment(.center)
-                            } else {
-                                Spacer()
-                            }
-                        }
-                        .frame(width: 60)
-                        MessageContentsView(viewModel: message)
+            VStack(alignment: .leading, spacing: 0) {
+                if first.messageId == viewState.unreads[first.channelId]?.last_id,
+                   first.messageId != viewState.channelMessages[first.channelId]?.last {
+                    HStack(spacing: 0) {
+                        Text("NEW")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 8)
+                            .background(RoundedRectangle(cornerRadius: 100).foregroundStyle(viewState.theme.accent))
+                        Rectangle()
+                            .frame(height: 1)
+                            .foregroundStyle(viewState.theme.accent)
                     }
-                    .padding(.trailing, selection.isEmpty ? 12 : 4)
                 }
+                
+                MessageWrapper(viewModel: first, highlighted: $highlighted) {
+                    MessageView(viewModel: first, isStatic: false)
+                        .padding(.top, 6)
+                        .padding(.leading, selection.isEmpty ? 12 : 0)
+                        .padding(.bottom, rest.isEmpty ? 6 : 2)
+                        .padding(.trailing, selection.isEmpty ? 12 : 4)
+                }
+                .environment(\.channelMessageSelection, $selection)
+                
+                ForEach(rest) { message in
+                    let liveMsg = viewState.messages[message.messageId]
+                    MessageWrapper(viewModel: message, highlighted: $highlighted) {
+                        HStack(alignment: .firstTextBaseline, spacing: 0) {
+                            Group {
+                                if liveMsg?.edited != nil {
+                                    Text("(edited)")
+                                        .font(.caption)
+                                        .foregroundStyle(viewState.theme.foreground3)
+                                        .multilineTextAlignment(.center)
+                                } else {
+                                    Spacer()
+                                }
+                            }
+                            .frame(width: 60)
+                            MessageContentsView(viewModel: message)
+                        }
+                        .padding(.trailing, selection.isEmpty ? 12 : 4)
+                    }
+                }
+                .environment(\.channelMessageSelection, $selection)
             }
-            .environment(\.channelMessageSelection, $selection)
+        }
+    }
+}
+
+/// Discord-style welcome header shown at the very top of a channel once the
+/// user has scrolled (or paginated) past the first message.
+struct ChannelWelcomeHeader: View {
+    @EnvironmentObject var viewState: AppViewState
+    let channel: Channel
+    
+    private var isTextChannel: Bool {
+        if case .text_channel = channel { return true }
+        return false
+    }
+    
+    private var iconSystemName: String {
+        switch channel {
+        case .text_channel: return "number"
+        case .voice_channel: return "speaker.wave.2.fill"
+        case .dm_channel, .group_dm_channel: return "at"
+        case .saved_messages: return "bookmark.fill"
+        }
+    }
+    
+    var body: some View {
+        let name = channel.getName(viewState)
+        VStack(alignment: .leading, spacing: 10) {
+            // Big circular channel icon
+            ZStack {
+                Circle()
+                    .fill(viewState.theme.background2.color)
+                    .frame(width: 72, height: 72)
+                Image(systemName: iconSystemName)
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(viewState.theme.foreground.color)
+            }
+            .padding(.bottom, 4)
+            
+            // Title
+            Text(verbatim: isTextChannel ? "Welcome to #\(name)!" : "Welcome to \(name)!")
+                .font(.system(size: 28, weight: .heavy))
+                .foregroundStyle(viewState.theme.foreground.color)
+            
+            // Subtitle
+            Text(isTextChannel
+                 ? "This is the start of the #\(name) channel."
+                 : "This is the start of \(name).")
+                .font(.system(size: 15))
+                .foregroundStyle(viewState.theme.foreground2.color)
+            
+            // Description if present (text channels only)
+            if case .text_channel(let tc) = channel,
+               let description = tc.description,
+               !description.isEmpty {
+                Text(verbatim: description)
+                    .font(.system(size: 14))
+                    .foregroundStyle(viewState.theme.foreground2.color.opacity(0.85))
+                    .padding(.top, 2)
+            }
         }
     }
 }

@@ -25,9 +25,8 @@ struct ChannelSearch: View {
                 MessageView(
                     viewModel: .init(
                         viewState: viewState,
-                        message: .constant(result),
-                        author: .constant(viewState.users[result.author]!),
-                        member: .constant(channel.server.flatMap({ viewState.members[$0]?[result.author] })),
+                        messageId: result.id,
+                        channelId: channel.id,
                         server: server,
                         channel: $channel,
                         replies: .constant([]),
@@ -58,7 +57,9 @@ struct ChannelSearch: View {
         .onChange(of: searchQuery, { _, query in
             if query.count >= 1, query.count <= 64 {
                 Task {
-                    let response = try! await viewState.http.searchChannel(channel: channel.id, query: query).get()
+                    guard let response = try? await viewState.http.searchChannel(channel: channel.id, query: query).get() else {
+                        return
+                    }
                     
                     for user in response.users {
                         if !viewState.users.keys.contains(user.id) {
@@ -67,9 +68,18 @@ struct ChannelSearch: View {
                     }
                     
                     for member in response.members {
-                        if !(viewState.members[member.id.server]?.keys.contains(member.id.user) ?? false) {
-                            viewState.members[member.id.server]![member.id.user] = member
+                        if viewState.members[member.id.server] == nil {
+                            viewState.members[member.id.server] = [:]
                         }
+                        if !(viewState.members[member.id.server]?.keys.contains(member.id.user) ?? false) {
+                            viewState.members[member.id.server]?[member.id.user] = member
+                        }
+                    }
+                    
+                    // Stage messages so the id-based MessageContentsViewModel
+                    // can resolve them via viewState.messages.
+                    for msg in response.messages {
+                        viewState.messages[msg.id] = msg
                     }
                     
                     results = response.messages

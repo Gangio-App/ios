@@ -62,11 +62,26 @@ func resolveChannelPermissions(from: User, targettingUser user: User, targetting
                 return Permissions.none
             }
         case .text_channel(let textChannel):
-            if server!.owner == user.id {
+            // Without a server we can't resolve role-based perms; without a
+            // member the user isn't part of the server. Either way, deny.
+            // (Previously this force-unwrapped `server!`/`member!` and would
+            // crash for channels the user hadn't joined yet.)
+            guard let server, let member else { return Permissions.none }
+            if server.owner == user.id {
                 return Permissions.all
             }
             
-            var permissions = resolveServerPermissions(user: user, member: member!, server: server!)
+            // Discord-style baseline: every member starts with the standard
+            // "default" perms (view + read history + send + embeds + upload +
+            // invite + connect + speak). Channel admins lock things down by
+            // adding explicit DENY overwrites — nothing-defined means
+            // nothing-restricted. Without this baseline, a server whose
+            // `default_permissions` happen to omit `sendMessages` (the common
+            // case for permission-tightened community servers) would silently
+            // lock everyone out of every channel they hadn't been explicitly
+            // granted.
+            let serverPerms = resolveServerPermissions(user: user, member: member, server: server)
+            var permissions = serverPerms.union(Permissions.default)
             
             if let defaultPermissions = textChannel.default_permissions {
                 permissions.formApply(overwrite: defaultPermissions)
@@ -74,7 +89,7 @@ func resolveChannelPermissions(from: User, targettingUser user: User, targetting
             
             let overwrites = textChannel.role_permissions?
                 .compactMap({ (id, overwrite) in
-                    guard let role = server?.roles?[id] else {
+                    guard let role = server.roles?[id] else {
                         return nil
                     }
                     
@@ -87,7 +102,7 @@ func resolveChannelPermissions(from: User, targettingUser user: User, targetting
                 permissions.formApply(overwrite: overwrite)
             }
             
-            if member!.timeout != nil {
+            if member.timeout != nil {
                 permissions.formIntersection(Permissions.defaultAllowInTimeout)
             }
             
@@ -98,25 +113,29 @@ func resolveChannelPermissions(from: User, targettingUser user: User, targetting
             return permissions
     
         case .voice_channel(let voiceChannel):
-            if server!.owner == user.id {
+            guard let server, let member else { return Permissions.none }
+            if server.owner == user.id {
                 return Permissions.all
             }
             
-            var permissions = resolveServerPermissions(user: user, member: member!, server: server!)
+            let hasChannelOverrides = voiceChannel.default_permissions != nil
+                || !(voiceChannel.role_permissions?.isEmpty ?? true)
+            let serverPerms = resolveServerPermissions(user: user, member: member, server: server)
+            var permissions = hasChannelOverrides ? serverPerms : serverPerms.union(Permissions.default)
             
             if let defaultPermissions = voiceChannel.default_permissions {
                 permissions.formApply(overwrite: defaultPermissions)
             }
             
             let overwrites = voiceChannel.role_permissions?
-                .compactMap({ (id, perm) in server?.roles?[id].map { role in (role, perm) } })
+                .compactMap({ (id, perm) in server.roles?[id].map { role in (role, perm) } })
                 .sorted(by: {$0.0.rank < $1.0.rank}) ?? []
             
             for (_, overwrite) in overwrites {
                 permissions.formApply(overwrite: overwrite)
             }
             
-            if member!.timeout != nil {
+            if member.timeout != nil {
                 permissions.formIntersection(Permissions.defaultAllowInTimeout)
             }
             

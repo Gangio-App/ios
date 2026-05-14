@@ -1060,9 +1060,18 @@ struct InnerContents: UIViewRepresentable {
     
     @Binding var content: String
     
-    class Coordinator {
+    class Coordinator: NSObject, UITextViewDelegate {
         var lastContent: String?
         var lastFontSize: CGFloat?
+        
+        func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange, interaction: UITextItemInteraction) -> Bool {
+            // Open all links (http, custom schemes, etc.) in the system handler
+            if interaction == .invokeDefaultAction {
+                UIApplication.shared.open(URL, options: [:], completionHandler: nil)
+                return false
+            }
+            return true
+        }
     }
     
     func makeCoordinator() -> Coordinator {
@@ -1095,6 +1104,7 @@ struct InnerContents: UIViewRepresentable {
     func makeUIView(context: Context) -> UIViewType {
         let textview = SubviewAttachingTextView()
         textview.isEditable = false
+        textview.delegate = context.coordinator
 
         textview.textContainer.maximumNumberOfLines = lineLimit
         textview.textContainer.lineBreakMode = .byTruncatingTail
@@ -1109,7 +1119,12 @@ struct InnerContents: UIViewRepresentable {
                 textview.textAlignment = UIApplication.shared.userInterfaceLayoutDirection == .rightToLeft ? .left : .right
         }
 
-        textview.isSelectable = false
+        textview.isSelectable = true
+        textview.dataDetectorTypes = [.link]
+        textview.linkTextAttributes = [
+            .foregroundColor: viewState.theme.accent.uiColor,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
+        ]
         textview.font = contentFont
         textview.backgroundColor = nil
         textview.isScrollEnabled = false
@@ -1261,19 +1276,26 @@ struct InnerContents: UIViewRepresentable {
             let upper = match.range.upperBound
             
             let currentAttrs = attrString.attributes(at: lowerInt, effectiveRange: nil)
-            let currentFont = (currentAttrs[.font] ?? contentFont) as! UIFont
+            let currentFont = (currentAttrs[.font] ?? contentFont) as? UIFont ?? UIFont.systemFont(ofSize: 16)
             
             let globalRange = Range(uncheckedBounds: (lower, upper))
             
             attrString.deleteCharacters(in: NSRange(globalRange, in: attrString.string))
             
+            // Constrain emoji size to font size to avoid breaking line layout
+            let emojiSize = currentFont.pointSize * 1.2
             let attachment = NSTextAttachment()
+            // Set bounds to align with text baseline
+            attachment.bounds = CGRect(x: 0, y: currentFont.descender, width: emojiSize, height: emojiSize)
             
-            
-            KF.url(URL(string: "\(viewState.apiInfo!.features.autumn.url)/emojis/\(id)")!)
-                .placeholder(.none)
-                .appendProcessor(ResizingImageProcessor(referenceSize: CGSize(width: currentFont.lineHeight, height: currentFont.lineHeight), mode: .aspectFit))
-                .set(to: attachment, attributedView: textview)
+            // Safely build URL, fallback if apiInfo is missing
+            let autumnUrl = viewState.apiInfo?.features.autumn.url ?? "https://gangio.pro/autumn"
+            if let url = URL(string: "\(autumnUrl)/emojis/\(id)") {
+                KF.url(url)
+                    .placeholder(.none)
+                    .appendProcessor(ResizingImageProcessor(referenceSize: CGSize(width: emojiSize, height: emojiSize), mode: .aspectFit))
+                    .set(to: attachment, attributedView: textview)
+            }
             
             attrString.insert(NSAttributedString(attachment: attachment), at: lowerInt)
         }
@@ -1465,7 +1487,9 @@ struct InnerContents: UIViewRepresentable {
                     formatter.unitsStyle = .full
                     content = formatter.localizedString(for: date, relativeTo: Date.now)
                 default:
-                    fatalError()
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "dd MMMM YYYY HH:mm"
+                    content = formatter.string(from: date)
             }
             
             let linkString = NSAttributedString(string: content, attributes: [

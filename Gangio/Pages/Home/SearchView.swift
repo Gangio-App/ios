@@ -37,6 +37,23 @@ struct SearchView: View {
         return Array(results.prefix(50)) // Limit to 50 results
     }
     
+    /// Server search results
+    private var serverResults: [Server] {
+        guard searchText.count >= 2 else { return [] }
+        let query = searchText.lowercased()
+        return viewState.servers.values.filter { $0.name.lowercased().contains(query) }
+    }
+    
+    /// User search results
+    private var userResults: [User] {
+        guard searchText.count >= 2 else { return [] }
+        let query = searchText.lowercased()
+        return viewState.users.values.filter {
+            $0.username.lowercased().contains(query) ||
+            ($0.display_name?.lowercased().contains(query) ?? false)
+        }.prefix(20).map { $0 }
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -143,13 +160,74 @@ struct SearchView: View {
                 }
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 2) {
-                        ForEach(searchResults, id: \.message.id) { result in
-                            SearchResultRow(
-                                message: result.message,
-                                channel: result.channel,
-                                user: result.user
-                            )
+                    LazyVStack(spacing: 8) {
+                        // Servers section
+                        if !serverResults.isEmpty {
+                            sectionHeader("SERVERS")
+                            ForEach(serverResults, id: \.id) { server in
+                                Button {
+                                    viewState.selectServer(withId: server.id)
+                                    viewState.selectedTab = .servers
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        ServerIcon(server: server, height: 40, width: 40, clipTo: RoundedRectangle(cornerRadius: 10))
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(server.name)
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(viewState.theme.foreground.color)
+                                            if let desc = server.description {
+                                                Text(desc).lineLimit(1)
+                                                    .font(.system(size: 12))
+                                                    .foregroundStyle(viewState.theme.foreground3.color)
+                                            }
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(12)
+                                    .background(viewState.theme.background2.color)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        
+                        // Users section
+                        if !userResults.isEmpty {
+                            sectionHeader("USERS")
+                            ForEach(userResults, id: \.id) { user in
+                                Button {
+                                    viewState.openUserSheet(user: user, member: nil)
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        AppAvatar(user: user, width: 40, height: 40)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(user.display_name ?? user.username)
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(viewState.theme.foreground.color)
+                                            Text("@\(user.username)#\(user.discriminator)")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(viewState.theme.foreground3.color)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(12)
+                                    .background(viewState.theme.background2.color)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        
+                        // Messages section
+                        if !searchResults.isEmpty {
+                            sectionHeader("MESSAGES")
+                            ForEach(searchResults, id: \.message.id) { result in
+                                SearchResultRow(
+                                    message: result.message,
+                                    channel: result.channel,
+                                    user: result.user
+                                )
+                            }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -161,6 +239,18 @@ struct SearchView: View {
         .onAppear {
             isSearchFocused = true
         }
+    }
+    
+    @ViewBuilder
+    private func sectionHeader(_ title: String) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(viewState.theme.foreground3.color)
+                .tracking(1.0)
+            Spacer()
+        }
+        .padding(.top, 8)
     }
 }
 
@@ -176,7 +266,7 @@ struct SearchResultRow: View {
     
     var body: some View {
         Button {
-            // Navigate to the message's channel
+            // Navigate to the message's channel and scroll to message
             if let channel = channel {
                 if let server = channel.server {
                     viewState.currentSelection = .server(server)
@@ -185,6 +275,7 @@ struct SearchResultRow: View {
                 }
                 viewState.currentChannel = .channel(channel.id)
                 viewState.selectedTab = .servers
+                viewState.pendingScrollToMessage = message.id
             }
         } label: {
             VStack(alignment: .leading, spacing: 6) {

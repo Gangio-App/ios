@@ -36,41 +36,55 @@ struct MessageView: View {
         return TEMP_IS_COMPACT_MODE
     }
     
-    private func pfpView(size: AvatarSize) -> some View {
+    // Resolve the live message + author + member directly from viewState so any
+    // change to viewState.messages/users/members triggers a re-render here.
+    private var resolvedMessage: Message {
+        viewState.messages[viewModel.messageId]
+            ?? Message(id: viewModel.messageId, content: nil, author: "", channel: viewModel.channelId)
+    }
+    private var resolvedAuthor: User {
+        viewState.users[resolvedMessage.author]
+            ?? User(id: String(repeating: "0", count: 26), username: "Unknown", discriminator: "0000")
+    }
+    private var resolvedMember: Member? {
+        guard let sid = viewModel.server?.id else { return nil }
+        return viewState.members[sid]?[resolvedMessage.author]
+    }
+    
+    private func pfpView(size: AvatarSize, message: Message, author: User, member: Member?) -> some View {
         Button {
-            if !isStatic || viewModel.message.webhook != nil {
-                viewState.openUserSheet(withId: viewModel.author.id, server: viewModel.server?.id)
+            if !isStatic || message.webhook != nil {
+                viewState.openUserSheet(withId: author.id, server: viewModel.server?.id)
             }
         } label: {
             ZStack(alignment: .topLeading) {
-                AppAvatar(user: viewModel.author, member: viewModel.member, masquerade: viewModel.message.masquerade, webhook: viewModel.message.webhook, width: size.sizes.0, height: size.sizes.0)
+                AppAvatar(user: author, member: member, masquerade: message.masquerade, webhook: message.webhook, width: size.sizes.0, height: size.sizes.0)
                 
-                if viewModel.message.masquerade != nil {
-                    AppAvatar(user: viewModel.author, member: viewModel.member, webhook: viewModel.message.webhook, width: size.sizes.1, height: size.sizes.1)
+                if message.masquerade != nil {
+                    AppAvatar(user: author, member: member, webhook: message.webhook, width: size.sizes.1, height: size.sizes.1)
                         .padding(.leading, -size.sizes.2)
                         .padding(.top, -size.sizes.2)
                 }
             }
         }
         .buttonStyle(.plain)
-        
     }
     
-    private var nameView: some View {
-        let name = viewModel.message.webhook?.name
-            ?? viewModel.message.masquerade?.name
-            ?? viewModel.member?.nickname
-            ?? viewModel.author.display_name
-            ?? viewModel.author.username
+    private func nameView(message: Message, author: User, member: Member?) -> some View {
+        let name = message.webhook?.name
+            ?? message.masquerade?.name
+            ?? member?.nickname
+            ?? author.display_name
+            ?? author.username
         
         return Text(verbatim: name)
             .onTapGesture {
-                if !isStatic || viewModel.message.webhook != nil {
-                    viewState.openUserSheet(withId: viewModel.author.id, server: viewModel.server?.id)
+                if !isStatic || message.webhook != nil {
+                    viewState.openUserSheet(withId: author.id, server: viewModel.server?.id)
                 }
             }
             .foregroundStyle({
-                if let member = viewModel.member, let server = viewModel.server {
+                if let member = member, let server = viewModel.server {
                     return member.displayColour(theme: viewState.theme, server: server) ?? AnyShapeStyle(viewState.theme.foreground.color)
                 }
                 return AnyShapeStyle(viewState.theme.foreground.color)
@@ -80,12 +94,18 @@ struct MessageView: View {
     }
     
     var body: some View {
+        // Read once per render — establishes a SwiftUI dependency on
+        // viewState.messages/users/members for this body so updates re-render.
+        let message = resolvedMessage
+        let author = resolvedAuthor
+        let member = resolvedMember
+        
         VStack(alignment: .leading, spacing: 4) {
-            if let replies = viewModel.message.replies {
+            if let replies = message.replies {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(replies, id: \.self) { id in
                         MessageReplyView(
-                            mentions: viewModel.$message.mentions,
+                            mentions: .constant(message.mentions),
                             channelScrollPosition: viewModel.channelScrollPosition,
                             id: id,
                             server: viewModel.server,
@@ -96,30 +116,30 @@ struct MessageView: View {
                 }
             }
             
-            if viewModel.message.system != nil {
-                SystemMessageView(message: $viewModel.message)
+            if message.system != nil {
+                SystemMessageView(message: .constant(message))
             } else {
                 if isCompactMode.0 {
                     HStack(alignment: .top, spacing: 4) {
                         HStack(alignment: .center, spacing: 4) {
-                            Text(formatMessageDate(createdAt(id: viewModel.message.id)))
+                            Text(formatMessageDate(createdAt(id: message.id)))
                                 .font(.caption)
                                 .foregroundStyle(viewState.theme.foreground2)
                             
                             if isCompactMode.1 {
-                                pfpView(size: .compact)
+                                pfpView(size: .compact, message: message, author: author, member: member)
                             }
                             
-                            nameView
+                            nameView(message: message, author: author, member: member)
                             
-                            if viewModel.author.bot != nil {
+                            if author.bot != nil {
                                 MessageBadge(text: String(localized: "Bot"), color: viewState.theme.accent.color)
                             }
                         }
                         
                         MessageContentsView(viewModel: viewModel, onlyShowContent: onlyShowContent)
                         
-                        if viewModel.message.edited != nil {
+                        if message.edited != nil {
                             Text("(edited)")
                                 .font(.caption)
                                 .foregroundStyle(.gray)
@@ -128,28 +148,28 @@ struct MessageView: View {
                 } else {
                     HStack(alignment: .top, spacing: 0) {
                         // AppAvatar (Discord: 40pt)
-                        pfpView(size: .regular)
+                        pfpView(size: .regular, message: message, author: author, member: member)
                             .padding(.top, 1)
                             .padding(.trailing, 12)
 
                         VStack(alignment: .leading, spacing: 2) {
                             // Name + timestamp row
                             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                nameView
+                                nameView(message: message, author: author, member: member)
                                     .font(.system(size: 15, weight: .semibold))
 
-                                if viewModel.author.bot != nil {
+                                if author.bot != nil {
                                     MessageBadge(text: String(localized: "Bot"), color: viewState.theme.accent.color)
                                 }
-                                if viewModel.message.webhook != nil {
+                                if message.webhook != nil {
                                     MessageBadge(text: String(localized: "Webhook"), color: viewState.theme.accent.color)
                                 }
 
-                                Text(formatMessageDate(createdAt(id: viewModel.message.id)))
+                                Text(formatMessageDate(createdAt(id: message.id)))
                                 .font(.system(size: 11))
                                 .foregroundStyle(viewState.theme.foreground2.color.opacity(0.6))
 
-                                if viewModel.message.edited != nil {
+                                if message.edited != nil {
                                     Text("(edited)")
                                         .font(.system(size: 11))
                                         .foregroundStyle(.secondary.opacity(0.5))
@@ -194,8 +214,6 @@ struct MessageView: View {
 struct MessageView_Previews: PreviewProvider {
     static var viewState: AppViewState = AppViewState.preview()
     @State static var message = viewState.messages["01HDEX6M2E3SHY8AC2S6B9SEAW"]!
-    @State static var author = viewState.users[message.author]!
-    @State static var member = viewState.members["0"]!["0"]
     @State static var channel = viewState.channels["0"]!
     @State static var server = viewState.servers["0"]
     @State static var replies: [Reply] = []
@@ -204,9 +222,21 @@ struct MessageView_Previews: PreviewProvider {
     static var previews: some View {
         ScrollViewReader { p in
             List {
-                MessageView(viewModel: MessageContentsViewModel(viewState: viewState, message: $message, author: $author, member: $member, server: $server, channel: $channel, replies: $replies, channelScrollPosition: ChannelScrollController(proxy: p, highlighted: $highlighted), editing: .constant(nil)), isStatic: false)
+                MessageView(
+                    viewModel: MessageContentsViewModel(
+                        viewState: viewState,
+                        messageId: message.id,
+                        channelId: channel.id,
+                        server: $server,
+                        channel: $channel,
+                        replies: $replies,
+                        channelScrollPosition: ChannelScrollController(proxy: p, highlighted: $highlighted),
+                        editing: .constant(nil)
+                    ),
+                    isStatic: false
+                )
             }
         }
-            .applyPreviewModifiers(withState: viewState)
+        .applyPreviewModifiers(withState: viewState)
     }
 }

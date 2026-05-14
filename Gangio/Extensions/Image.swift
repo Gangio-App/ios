@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import Types
 
-extension Image {
+extension View {
     /// Inverts the image depending on the lightness of color
     /// This is specifically designed for use in the sessions settings menu
     @ViewBuilder

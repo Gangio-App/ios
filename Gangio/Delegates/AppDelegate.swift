@@ -140,8 +140,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 await state.http.uploadNotificationToken(token: token)
             }
         } else {
-            SentrySDK.capture(message: "Received notification token without available session token")
-            fatalError("Received notification token without available session token")
+            // User is signed out - silently store token for future use
+            print("Received notification token without available session token, will retry after login")
         }
     }
 }

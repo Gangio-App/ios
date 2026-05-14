@@ -42,7 +42,9 @@ struct UserDisplay: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                     } else {
-                        switch user.status?.presence {
+                        // Use effectivePresence so disconnected users show "Offline"
+                        // even when their cached status.presence is still set.
+                        switch user.effectivePresence {
                             case .Busy:
                                 Text("Busy")
                                     .font(.caption)
@@ -50,11 +52,6 @@ struct UserDisplay: View {
                                 
                             case .Idle:
                                 Text("Idle")
-                                    .font(.caption)
-                                    .foregroundStyle(viewState.theme.foreground2.color)
-                                
-                            case .Invisible:
-                                Text("Invisible")
                                     .font(.caption)
                                     .foregroundStyle(viewState.theme.foreground2.color)
                                 
@@ -73,7 +70,9 @@ struct UserDisplay: View {
                                     .font(.caption)
                                     .foregroundStyle(viewState.theme.foreground2.color)
                                 
-                            case nil:
+                            // .Invisible never reaches here (effectivePresence
+                            // collapses it to nil), so anything else is offline.
+                            case .Invisible, nil:
                                 Text("Offline")
                                     .font(.caption)
                                     .foregroundStyle(viewState.theme.foreground2.color)
@@ -165,13 +164,15 @@ struct ChannelInfo: View {
                 return groupDMChannel.recipients.map { UserMaybeMember(user: viewState.users[$0]!) }
 
             case .text_channel(_), .voice_channel(_):
-                return viewState.members[channel.server!]!.values.compactMap {
-                    if let user = viewState.users[$0.id.user], user.status != nil, user.status?.presence != nil, user.status?.presence != .Invisible {
-                        return UserMaybeMember(user: user, member: $0)
-                    } else {
-                        return nil
-                    }
-                }
+                // Show all known members. Determining online vs offline is now
+                // the job of `effectivePresence` (which honors `online`), so we
+                // no longer hide users just because their cached presence is
+                // missing — that previously hid users who *were* connected
+                // but had no explicit presence set.
+                return viewState.members[channel.server!]?.values.compactMap {
+                    guard let user = viewState.users[$0.id.user] else { return nil }
+                    return UserMaybeMember(user: user, member: $0)
+                } ?? []
         }
     }
     
@@ -278,13 +279,18 @@ struct ChannelInfo: View {
                     .listRowBackground(viewState.theme.background2.color)
                 }
                 
-                let users = getUsers()
+                let allUsers = getUsers()
+                // Split online/offline so role-hoisted sections only contain
+                // currently connected users; everyone else collapses into a
+                // single "Offline" section at the bottom (Discord-style).
+                let onlineUsers = allUsers.filter { $0.user.isOnline }
+                let offlineUsers = allUsers.filter { !$0.user.isOnline }
                 let sections = getRoleSectionHeaders()
                 
                 let server = channel.server.map { viewState.servers[$0]! }
                 
                 ForEach(sections, id: \.0) { (roleId, role) in
-                    let role_users = getRoleSectionContents(users: users, role: roleId)
+                    let role_users = getRoleSectionContents(users: onlineUsers, role: roleId)
                     
                     if !role_users.isEmpty {
                         Section("\(role.name) - \(role_users.count)") {
@@ -298,11 +304,20 @@ struct ChannelInfo: View {
                     }
                 }
                 
-                let no_role = getNoRoleSectionContents(users: users)
+                let no_role = getNoRoleSectionContents(users: onlineUsers)
                 
                 if !no_role.isEmpty {
                     Section("Members - \(no_role.count)") {
                         ForEach(no_role) { u in
+                            UserDisplay(server: server, user: u.user, member: u.member)
+                        }
+                    }
+                    .listRowBackground(viewState.theme.background2)
+                }
+                
+                if !offlineUsers.isEmpty {
+                    Section("Offline - \(offlineUsers.count)") {
+                        ForEach(offlineUsers) { u in
                             UserDisplay(server: server, user: u.user, member: u.member)
                         }
                     }

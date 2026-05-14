@@ -24,12 +24,16 @@ enum AddTarget: Identifiable, Hashable, Equatable {
 
 struct AddBot: View {
     @EnvironmentObject var viewState: AppViewState
+    @Environment(\.dismiss) private var dismiss
     
     var user: User
     var bot: Bot
     
     @State var targets: [AddTarget] = []
     @State var selected: Set<AddTarget> = []
+    @State private var isInviting = false
+    @State private var inviteResultMessage: String? = nil
+    @State private var showResult = false
 
     var body: some View {
         VStack(alignment: .center, spacing: 12) {
@@ -86,17 +90,27 @@ struct AddBot: View {
             .font(.footnote)
             
             Button {
-                
+                Task { await inviteBotTo(targets: selected) }
             } label: {
-                Text("Add Bot")
-                    .foregroundStyle(selected.isEmpty ? viewState.theme.foreground2 : viewState.theme.foreground)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 16)
+                HStack {
+                    if isInviting { ProgressView().tint(viewState.theme.foreground.color) }
+                    Text(isInviting ? "Adding..." : "Add Bot")
+                        .foregroundStyle(selected.isEmpty || isInviting ? viewState.theme.foreground2 : viewState.theme.foreground)
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
             }
-            .disabled(selected.isEmpty)
+            .disabled(selected.isEmpty || isInviting)
             .background(viewState.theme.background2)
             .clipShape(.capsule)
             .padding(.leading, 8)
+        }
+        .alert(inviteResultMessage ?? "", isPresented: $showResult) {
+            Button("OK") {
+                if inviteResultMessage?.contains("successfully") == true {
+                    dismiss()
+                }
+            }
         }
         .onAppear {
             for server in viewState.servers.values {
@@ -113,5 +127,34 @@ struct AddBot: View {
         .navigationTitle("Add bot")
         .toolbarBackground(viewState.theme.topBar, for: .automatic)
         .environment(\.editMode, .constant(.active))
+    }
+    
+    private func inviteBotTo(targets: Set<AddTarget>) async {
+        guard !targets.isEmpty else { return }
+        isInviting = true
+        var successCount = 0
+        var failCount = 0
+        
+        for target in targets {
+            let result: Result<EmptyResponse, GangioError>
+            switch target {
+            case .server(let server):
+                result = await viewState.http.inviteBot(bot: bot.id, server: server.id)
+            case .group(let group):
+                result = await viewState.http.inviteBotToGroup(bot: bot.id, group: group.id)
+            }
+            switch result {
+            case .success: successCount += 1
+            case .failure: failCount += 1
+            }
+        }
+        
+        isInviting = false
+        if failCount == 0 {
+            inviteResultMessage = "Bot added successfully to \(successCount) target\(successCount == 1 ? "" : "s")."
+        } else {
+            inviteResultMessage = "Added to \(successCount), failed for \(failCount)."
+        }
+        showResult = true
     }
 }
